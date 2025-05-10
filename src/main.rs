@@ -1,58 +1,65 @@
-// This is a conceptual Rust snippet, not a full MMO server!
-// You'd use Tokio or async-std for a real server.
-use std::io::{Read, Write};
-use std::net::{TcpListener, TcpStream};
-use std::thread;
+use std::error::Error;
+use std::net::SocketAddr;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::net::{TcpListener, TcpStream};
 
-fn handle_client(mut stream: TcpStream) {
-    let peer_addr = stream
-        .peer_addr()
-        .unwrap_or_else(|_| "unknown".parse().unwrap());
-    println!("New client connected: {}", peer_addr);
-    let mut buffer = [0; 1024]; // Buffer for reading
+const SERVER_ADDR: &str = "127.0.0.1:8000";
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
+    let listener = TcpListener::bind(SERVER_ADDR).await?;
+    println!("[Server] Listening on: {}", SERVER_ADDR);
 
     loop {
-        match stream.read(&mut buffer) {
-            Ok(bytes_read) => {
-                if bytes_read == 0 {
-                    // Connection closed by client
-                    println!("Client {} disconnected.", peer_addr);
-                    break;
-                }
-                let received_str = String::from_utf8_lossy(&buffer[..bytes_read]);
-                println!("Received from {}: {}", peer_addr, received_str);
+        // `accept()` returns a tuple of `(TcpStream, SocketAddr)`
+        match listener.accept().await {
+            Ok((stream, addr)) => {
+                println!("[Server] Accepted new connection from: {}", addr);
 
-                // Echo back
-                let response = format!("Server received: {}", received_str);
-                if let Err(e) = stream.write_all(response.as_bytes()) {
-                    eprintln!("Failed to send response to {}: {}", peer_addr, e);
-                    break;
-                }
-                println!("Sent to {}: {}", peer_addr, response);
+                tokio::spawn(async move {
+                    if let Err(e) = handle_client(stream, addr).await {
+                        eprintln!("[Server] Error handling client {}: {}", addr, e);
+                    }
+                });
             }
             Err(e) => {
-                eprintln!("Error reading from client {}: {}", peer_addr, e);
-                break;
+                eprintln!("[Server] Failed to accept connection: {}", e);
             }
         }
     }
 }
 
-fn main() -> std::io::Result<()> {
-    let listener = TcpListener::bind("127.0.0.1:8000")?;
-    println!("Server listening on 127.0.0.1:8000");
+async fn handle_client(mut stream: TcpStream, addr: SocketAddr) -> Result<(), Box<dyn Error>> {
+    println!("[Client {}] Connected.", addr);
 
-    for stream in listener.incoming() {
-        match stream {
-            Ok(stream) => {
-                thread::spawn(|| {
-                    handle_client(stream);
-                });
+    let mut buffer = [0u8; 1024];
+
+    loop {
+        match stream.read(&mut buffer).await {
+            Ok(0) => {
+                println!("[Client {}] Connection closed by client.", addr);
+                return Ok(());
+            }
+            Ok(n) => {
+                let received_data = &buffer[..n];
+                let received_string = String::from_utf8_lossy(received_data);
+
+                println!("[Client {}] Received: {}", addr, received_string.trim_end());
+
+                if let Err(e) = stream.write_all(received_data).await {
+                    eprintln!("[Client {}] Failed to write to stream: {}", addr, e);
+                    return Err(e.into());
+                }
+                println!(
+                    "[Client {}] Echoed back: {}",
+                    addr,
+                    received_string.trim_end()
+                );
             }
             Err(e) => {
-                eprintln!("Connection failed: {}", e);
+                eprintln!("[Client {}] Failed to read from stream: {}", addr, e);
+                return Err(e.into());
             }
         }
     }
-    Ok(())
 }
