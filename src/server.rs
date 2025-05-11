@@ -3,6 +3,7 @@ use std::net::SocketAddr;
 use std::{error::Error, sync::Arc};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
+use tracing::instrument;
 
 use crate::configuration::{DatabaseSettings, Settings};
 
@@ -43,16 +44,16 @@ impl Application {
         loop {
             match self.listener.accept().await {
                 Ok((stream, addr)) => {
-                    println!("[Server] Accepted new connection from: {}", addr);
+                    tracing::info!("accepted new connection from: {}", addr);
 
                     tokio::spawn(async move {
                         if let Err(e) = handle_client(stream, addr).await {
-                            eprintln!("[Server] Error handling client {}: {}", addr, e);
+                            tracing::error!("error handling client {}: {}", addr, e);
                         }
                     });
                 }
                 Err(e) => {
-                    eprintln!("[Server] Failed to accept connection: {}", e);
+                    tracing::error!("failed to accept connection: {}", e);
                 }
             }
         }
@@ -67,35 +68,32 @@ pub fn get_connection_pool(settings: &DatabaseSettings) -> PgPool {
     PgPoolOptions::new().connect_lazy_with(settings.with_db())
 }
 
+#[instrument(name="client", skip_all, fields(addr = ?addr))]
 async fn handle_client(mut stream: TcpStream, addr: SocketAddr) -> Result<(), Box<dyn Error>> {
-    println!("[Client {}] Connected.", addr);
+    tracing::info!("connected");
 
     let mut buffer = [0u8; 1024];
 
     loop {
         match stream.read(&mut buffer).await {
             Ok(0) => {
-                println!("[Client {}] Connection closed by client.", addr);
+                tracing::info!("connection closed by client");
                 return Ok(());
             }
             Ok(n) => {
                 let received_data = &buffer[..n];
                 let received_string = String::from_utf8_lossy(received_data);
 
-                println!("[Client {}] Received: {}", addr, received_string.trim_end());
+                tracing::info!("received: {}", received_string.trim_end());
 
                 if let Err(e) = stream.write_all(received_data).await {
-                    eprintln!("[Client {}] Failed to write to stream: {}", addr, e);
+                    tracing::error!("failed to write to stream: {}", e);
                     return Err(e.into());
                 }
-                println!(
-                    "[Client {}] Echoed back: {}",
-                    addr,
-                    received_string.trim_end()
-                );
+                tracing::info!("echoed back: {}", received_string.trim_end());
             }
             Err(e) => {
-                eprintln!("[Client {}] Failed to read from stream: {}", addr, e);
+                tracing::error!("failed to read from stream: {}", e);
                 return Err(e.into());
             }
         }
