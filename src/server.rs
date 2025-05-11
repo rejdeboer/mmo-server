@@ -68,7 +68,7 @@ pub fn get_connection_pool(settings: &DatabaseSettings) -> PgPool {
     PgPoolOptions::new().connect_lazy_with(settings.with_db())
 }
 
-#[instrument(name="client", skip_all, fields(addr = ?addr))]
+#[instrument(name="client", skip_all, fields(?addr))]
 async fn handle_client(mut stream: TcpStream, addr: SocketAddr) -> Result<(), Box<dyn Error>> {
     tracing::info!("connected");
 
