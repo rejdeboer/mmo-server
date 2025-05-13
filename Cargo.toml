@@ -3,6 +3,9 @@ name = "mmo-server"
 version = "0.1.0"
 edition = "2024"
 
+[lib]
+path = "src/lib.rs"
+
 [dependencies]
 bevy_ecs = "0.16.0"
 config = "0.11"

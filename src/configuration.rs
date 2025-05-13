@@ -12,12 +12,12 @@ pub enum Environment {
 
 #[derive(serde::Deserialize, Clone)]
 pub struct Settings {
-    pub application: ApplicationSettings,
+    pub server: ServerSettings,
     pub database: DatabaseSettings,
 }
 
 #[derive(serde::Deserialize, Clone)]
-pub struct ApplicationSettings {
+pub struct ServerSettings {
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub port: u16,
     pub host: String,
