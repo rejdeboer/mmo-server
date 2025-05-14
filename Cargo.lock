@@ -1221,6 +1221,7 @@ dependencies = [
  "bevy_ecs",
  "chacha20poly1305",
  "config",
+ "renetcode",
  "secrecy",
  "serde 1.0.219",
  "serde-aux",
@@ -1660,6 +1661,16 @@ name = "regex-syntax"
 version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2b15c43186be67a4fd63bee50d0303afffcef381492ebe2c5d87f324e1b8815c"
+
+[[package]]
+name = "renetcode"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "118d456f815f7fd5bd12713a9e69a0b0f8b45806bd515e05bb60146f1867310d"
+dependencies = [
+ "chacha20poly1305",
+ "log",
+]
 
 [[package]]
 name = "rsa"
