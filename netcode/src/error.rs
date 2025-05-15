@@ -1,5 +1,27 @@
-use super::MAX_PAYLOAD_BYTES;
+use crate::MAX_PAYLOAD_BYTES;
+use crate::packet::SerializationError;
 use std::{error, fmt};
+
+/// Possible reasons for a disconnection.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DisconnectReason {
+    /// Connection was terminated by the transport layer
+    Transport,
+    /// Connection was terminated by the server
+    DisconnectedByClient,
+    /// Connection was terminated by the server
+    DisconnectedByServer,
+    /// Failed to serialize packet
+    PacketSerialization(SerializationError),
+    /// Failed to deserialize packet
+    PacketDeserialization(SerializationError),
+    /// Received message from channel with invalid id
+    ReceivedInvalidChannelId(u8),
+    /// Error occurred in a send channel
+    SendChannelError { channel_id: u8, error: ChannelError },
+    /// Error occurred in a receive channel
+    ReceiveChannelError { channel_id: u8, error: ChannelError },
+}
 
 #[derive(Debug)]
 pub enum NetcodeError {

@@ -1,8 +1,10 @@
 //! Modified https://github.com/lucaspoffo/renet
+pub mod client;
 mod crypto;
 pub mod error;
 pub mod packet;
 mod serialize;
+mod stats;
 pub mod token;
 
 const VERSION_INFO: &[u8; 13] = b"NETCODE 1.02\0";
@@ -11,6 +13,8 @@ const VERSION_INFO: &[u8; 13] = b"NETCODE 1.02\0";
 const MAX_PACKET_BYTES: usize = 1400;
 /// The maximum number of bytes that a payload can have when generating a payload packet
 const MAX_PAYLOAD_BYTES: usize = 1300;
+const KEY_BYTES: usize = 32;
+const USER_DATA_BYTES: usize = 256;
 
 const MAC_BYTES: usize = 16;
 const CONNECT_TOKEN_XNONCE_BYTES: usize = 24;

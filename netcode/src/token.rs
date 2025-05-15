@@ -6,7 +6,7 @@ use std::{
     time::Duration,
 };
 
-use super::{
+use crate::{
     ADDITIONAL_DATA_SIZE, CONNECT_TOKEN_PRIVATE_BYTES, CONNECT_TOKEN_XNONCE_BYTES, KEY_BYTES,
     NETCODE_ADDRESS_IPV4, NETCODE_ADDRESS_IPV6, NETCODE_ADDRESS_NONE, NetcodeError,
     USER_DATA_BYTES, VERSION_INFO,
@@ -28,11 +28,11 @@ pub struct ConnectToken {
     pub protocol_id: u64,
     pub create_timestamp: u64,
     pub expire_timestamp: u64,
-    pub xnonce: [u8; NETCODE_CONNECT_TOKEN_XNONCE_BYTES],
+    pub xnonce: [u8; CONNECT_TOKEN_XNONCE_BYTES],
     pub server_addresses: [Option<SocketAddr>; 32],
-    pub client_to_server_key: [u8; NETCODE_KEY_BYTES],
-    pub server_to_client_key: [u8; NETCODE_KEY_BYTES],
-    pub private_data: [u8; NETCODE_CONNECT_TOKEN_PRIVATE_BYTES],
+    pub client_to_server_key: [u8; KEY_BYTES],
+    pub server_to_client_key: [u8; KEY_BYTES],
+    pub private_data: [u8; CONNECT_TOKEN_PRIVATE_BYTES],
     pub timeout_seconds: i32,
 }
 
@@ -41,9 +41,9 @@ pub(crate) struct PrivateConnectToken {
     pub client_id: u64,       // globally unique identifier for an authenticated client
     pub timeout_seconds: i32, // timeout in seconds. negative values disable timeout (dev only)
     pub server_addresses: [Option<SocketAddr>; 32],
-    pub client_to_server_key: [u8; NETCODE_KEY_BYTES],
-    pub server_to_client_key: [u8; NETCODE_KEY_BYTES],
-    pub user_data: [u8; NETCODE_USER_DATA_BYTES], // user defined data specific to this protocol id
+    pub client_to_server_key: [u8; KEY_BYTES],
+    pub server_to_client_key: [u8; KEY_BYTES],
+    pub user_data: [u8; USER_DATA_BYTES], // user defined data specific to this protocol id
 }
 
 #[derive(Debug)]
@@ -95,14 +95,14 @@ impl ConnectToken {
         client_id: u64,
         timeout_seconds: i32,
         server_addresses: Vec<SocketAddr>,
-        user_data: Option<&[u8; NETCODE_USER_DATA_BYTES]>,
-        private_key: &[u8; NETCODE_KEY_BYTES],
+        user_data: Option<&[u8; USER_DATA_BYTES]>,
+        private_key: &[u8; KEY_BYTES],
     ) -> Result<Self, TokenGenerationError> {
         let expire_timestamp = current_time.as_secs() + expire_seconds;
 
         let private_connect_token =
             PrivateConnectToken::generate(client_id, timeout_seconds, server_addresses, user_data)?;
-        let mut private_data = [0u8; NETCODE_CONNECT_TOKEN_PRIVATE_BYTES];
+        let mut private_data = [0u8; CONNECT_TOKEN_PRIVATE_BYTES];
         let xnonce = generate_random_bytes();
         private_connect_token.encode(
             &mut private_data,
@@ -114,7 +114,7 @@ impl ConnectToken {
 
         Ok(Self {
             client_id,
-            version_info: *NETCODE_VERSION_INFO,
+            version_info: *VERSION_INFO,
             protocol_id,
             private_data,
             create_timestamp: current_time.as_secs(),

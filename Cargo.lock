@@ -1221,7 +1221,8 @@ dependencies = [
  "bevy_ecs",
  "chacha20poly1305",
  "config",
- "renetcode",
+ "renet",
+ "renet_netcode",
  "secrecy",
  "serde 1.0.219",
  "serde-aux",
@@ -1247,6 +1248,18 @@ dependencies = [
  "security-framework",
  "security-framework-sys",
  "tempfile",
+]
+
+[[package]]
+name = "netcode"
+version = "0.1.0"
+dependencies = [
+ "chacha20poly1305",
+ "octets",
+ "serde 1.0.219",
+ "serde-aux",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -1350,6 +1363,12 @@ checksum = "62948e14d923ea95ea2c7c86c71013138b66525b86bdc08d2dcc262bdb497b87"
 dependencies = [
  "memchr",
 ]
+
+[[package]]
+name = "octets"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "109983a091271ee8916076731ba5fdc9ee22fea871bc7c6ceab9bfd423eb1d99"
 
 [[package]]
 name = "once_cell"
@@ -1661,6 +1680,28 @@ name = "regex-syntax"
 version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2b15c43186be67a4fd63bee50d0303afffcef381492ebe2c5d87f324e1b8815c"
+
+[[package]]
+name = "renet"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8b4ff6af5dc5497f1155a2856c2a8db3cf4f94c0e2ed83614e3cef2fde48c0f9"
+dependencies = [
+ "bytes",
+ "log",
+ "octets",
+]
+
+[[package]]
+name = "renet_netcode"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3e34e6acd4d01155558d24609c1d0e8f8eafaf58bf805ecf1ecd7ac613d6528a"
+dependencies = [
+ "log",
+ "renet",
+ "renetcode",
+]
 
 [[package]]
 name = "renetcode"

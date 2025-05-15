@@ -1,5 +1,10 @@
-use super::error::NetcodeError;
-use super::{CHALLENGE_TOKEN_BYTES, CONNECT_TOKEN_PRIVATE_BYTES, CONNECT_TOKEN_XNONCE_BYTES};
+use std::fmt;
+
+use crate::error::NetcodeError;
+use crate::{
+    CHALLENGE_TOKEN_BYTES, CONNECT_TOKEN_PRIVATE_BYTES, CONNECT_TOKEN_XNONCE_BYTES, KEY_BYTES,
+    MAC_BYTES, USER_DATA_BYTES,
+};
 
 #[derive(Debug)]
 #[repr(u8)]
@@ -90,7 +95,7 @@ impl<'a> Packet<'a> {
     pub fn connection_request_from_token(connect_token: &ConnectToken) -> Self {
         Packet::ConnectionRequest {
             xnonce: connect_token.xnonce,
-            version_info: *super::VERSION_INFO,
+            version_info: *crate::VERSION_INFO,
             protocol_id: connect_token.protocol_id,
             expire_timestamp: connect_token.expire_timestamp,
             data: connect_token.private_data,
@@ -99,12 +104,12 @@ impl<'a> Packet<'a> {
 
     pub fn generate_challenge(
         client_id: u64,
-        user_data: &[u8; NETCODE_USER_DATA_BYTES],
+        user_data: &[u8; USER_DATA_BYTES],
         challenge_sequence: u64,
-        challenge_key: &[u8; NETCODE_KEY_BYTES],
+        challenge_key: &[u8; KEY_BYTES],
     ) -> Result<Self, NetcodeError> {
         let token = ChallengeToken::new(client_id, user_data);
-        let mut buffer = [0u8; NETCODE_CHALLENGE_TOKEN_BYTES];
+        let mut buffer = [0u8; CHALLENGE_TOKEN_BYTES];
         token.write(&mut Cursor::new(&mut buffer[..]))?;
         encrypt_in_place(&mut buffer, challenge_sequence, challenge_key, b"")?;
 
@@ -241,7 +246,7 @@ impl<'a> Packet<'a> {
                 let additional_data = get_additional_data(prefix_byte, protocol_id);
                 (start, writer.position() as usize, additional_data)
             };
-            if buffer.len() < end + NETCODE_MAC_BYTES {
+            if buffer.len() < end + MAC_BYTES {
                 return Err(NetcodeError::IoError(io::Error::new(
                     io::ErrorKind::WriteZero,
                     "buffer too small to encode with encryption tag",
@@ -249,12 +254,12 @@ impl<'a> Packet<'a> {
             }
 
             encrypt_in_place(
-                &mut buffer[start..end + NETCODE_MAC_BYTES],
+                &mut buffer[start..end + MAC_BYTES],
                 sequence,
                 private_key,
                 &aad,
             )?;
-            Ok(end + NETCODE_MAC_BYTES)
+            Ok(end + MAC_BYTES)
         } else {
             Err(NetcodeError::UnavailablePrivateKey)
         }
@@ -266,7 +271,7 @@ impl<'a> Packet<'a> {
         private_key: Option<&[u8; 32]>,
         replay_protection: Option<&mut ReplayProtection>,
     ) -> Result<(u64, Self), NetcodeError> {
-        if buffer.len() < 2 + NETCODE_MAC_BYTES {
+        if buffer.len() < 2 + MAC_BYTES {
             return Err(NetcodeError::PacketTooSmall);
         }
 
@@ -304,13 +309,47 @@ impl<'a> Packet<'a> {
                 }
             }
 
-            let packet = Packet::read(
-                packet_type,
-                &buffer[read_pos..buffer.len() - NETCODE_MAC_BYTES],
-            )?;
+            let packet = Packet::read(packet_type, &buffer[read_pos..buffer.len() - MAC_BYTES])?;
             Ok((sequence, packet))
         } else {
             Err(NetcodeError::UnavailablePrivateKey)
         }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SerializationError {
+    BufferTooShort,
+    InvalidNumSlices,
+    SliceSizeAboveLimit,
+    EmptySlice,
+    InvalidAckRange,
+    InvalidPacketType,
+}
+
+impl std::error::Error for SerializationError {}
+
+impl fmt::Display for SerializationError {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        use SerializationError::*;
+
+        match *self {
+            BufferTooShort => write!(fmt, "buffer too short"),
+            InvalidNumSlices => write!(fmt, "invalid number of slices"),
+            InvalidAckRange => write!(fmt, "invalid ack range"),
+            InvalidPacketType => write!(fmt, "invalid packet type"),
+            SliceSizeAboveLimit => write!(
+                fmt,
+                "invalid slice size, it's above the limit of {} bytes",
+                SLICE_SIZE
+            ),
+            EmptySlice => write!(fmt, "invalid slice, slices cannot be empty"),
+        }
+    }
+}
+
+impl From<octets::BufferTooShortError> for SerializationError {
+    fn from(_: octets::BufferTooShortError) -> Self {
+        SerializationError::BufferTooShort
     }
 }
