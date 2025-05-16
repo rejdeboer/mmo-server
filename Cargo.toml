@@ -4,4 +4,4 @@ members = [
 	"mmo-server",
 ]
 
-resolver = 2
+resolver = "3"
