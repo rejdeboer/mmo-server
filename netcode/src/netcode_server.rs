@@ -157,18 +157,6 @@ impl NetcodeServer {
         }
     }
 
-    #[doc(hidden)]
-    pub fn __test() -> Self {
-        let config = ServerConfig {
-            current_time: Duration::ZERO,
-            max_clients: 32,
-            protocol_id: 0,
-            public_addresses: vec!["127.0.0.1:0".parse().unwrap()],
-            authentication: ServerAuthentication::Unsecure,
-        };
-        Self::new(config)
-    }
-
     pub fn addresses(&self) -> Vec<SocketAddr> {
         self.public_addresses.clone()
     }
@@ -183,21 +171,18 @@ impl NetcodeServer {
         let mut empty_entry = false;
         let mut matching_entry = None;
         for (i, entry) in self.connect_token_entries.iter().enumerate() {
-            match entry {
-                Some(e) => {
-                    if e.mac == new_entry.mac {
-                        matching_entry = Some(e);
-                    }
-                    if !empty_entry && e.time < min {
-                        oldest_entry = i;
-                        min = e.time;
-                    }
+            if let Some(e) = entry {
+                if e.mac == new_entry.mac {
+                    matching_entry = Some(e);
                 }
-                None => {
-                    if !empty_entry {
-                        empty_entry = true;
-                        oldest_entry = i;
-                    }
+                if !empty_entry && e.time < min {
+                    oldest_entry = i;
+                    min = e.time;
+                }
+            } else {
+                if !empty_entry {
+                    empty_entry = true;
+                    oldest_entry = i;
                 }
             }
         }
