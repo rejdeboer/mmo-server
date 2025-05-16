@@ -539,7 +539,7 @@ impl PlaceholderClientTransport {
 
 #[cfg(test)]
 mod tests {
-    use crate::{NETCODE_MAX_PACKET_BYTES, crypto::generate_random_bytes};
+    use crate::{MAX_PACKET_BYTES, crypto::generate_random_bytes};
 
     use super::*;
 

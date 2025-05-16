@@ -194,3 +194,14 @@ impl fmt::Display for ChannelError {
 }
 
 impl std::error::Error for ChannelError {}
+
+#[derive(Debug)]
+pub struct ClientNotFound;
+
+impl std::error::Error for ClientNotFound {}
+
+impl fmt::Display for ClientNotFound {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        write!(fmt, "client with given id was not found")
+    }
+}

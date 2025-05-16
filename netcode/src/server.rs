@@ -1,7 +1,7 @@
 use crate::ClientId;
+use crate::channel_packet::Payload;
+use crate::client::{ConnectionConfig, NetcodeClient, NetworkInfo};
 use crate::error::{ClientNotFound, DisconnectReason};
-use crate::packet::Payload;
-use crate::remote_connection::{ConnectionConfig, NetworkInfo, RenetClient};
 use std::collections::{HashMap, VecDeque};
 use std::time::Duration;
 
@@ -21,7 +21,7 @@ pub enum ServerEvent {
 
 #[derive(Debug)]
 pub struct RenetServer {
-    connections: HashMap<ClientId, RenetClient>,
+    connections: HashMap<ClientId, NetcodeClient>,
     connection_config: ConnectionConfig,
     events: VecDeque<ServerEvent>,
 }
@@ -44,7 +44,7 @@ impl RenetServer {
             return;
         }
 
-        let mut connection = RenetClient::new_from_server(self.connection_config.clone());
+        let mut connection = NetcodeClient::new_from_server(self.connection_config.clone());
         // Consider newly added connections as connected
         connection.set_connected();
         self.connections.insert(client_id, connection);
@@ -219,7 +219,7 @@ impl RenetServer {
     ) {
         match self.connections.get_mut(&client_id) {
             Some(connection) => connection.send_message(channel_id, message),
-            None => log::error!("Tried to send a message to invalid client {:?}", client_id),
+            None => tracing::error!("Tried to send a message to invalid client {:?}", client_id),
         }
     }
 
@@ -319,8 +319,8 @@ impl RenetServer {
 
     /// Creates a local [RenetClient], use this for testing.
     /// Use [`Self::process_local_client`] to update the local connection.
-    pub fn new_local_client(&mut self, client_id: ClientId) -> RenetClient {
-        let mut client = RenetClient::new_from_server(self.connection_config.clone());
+    pub fn new_local_client(&mut self, client_id: ClientId) -> NetcodeClient {
+        let mut client = NetcodeClient::new_from_server(self.connection_config.clone());
         client.set_connected();
 
         self.add_connection(client_id);
@@ -329,7 +329,7 @@ impl RenetServer {
     }
 
     /// Disconnects a local [RenetClient], created with [`Self::new_local_client`].
-    pub fn disconnect_local_client(&mut self, client_id: ClientId, client: &mut RenetClient) {
+    pub fn disconnect_local_client(&mut self, client_id: ClientId, client: &mut NetcodeClient) {
         if client.is_disconnected() {
             return;
         }
@@ -348,7 +348,7 @@ impl RenetServer {
     pub fn process_local_client(
         &mut self,
         client_id: ClientId,
-        client: &mut RenetClient,
+        client: &mut NetcodeClient,
     ) -> Result<(), ClientNotFound> {
         for packet in self.get_packets_to_send(client_id)? {
             client.process_packet(&packet);

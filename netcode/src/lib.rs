@@ -5,10 +5,11 @@ pub mod client;
 mod crypto;
 pub mod error;
 pub mod netcode_client;
+pub mod netcode_server;
 pub mod packet;
 pub mod replay_protection;
 mod serialize;
-// pub mod server;
+pub mod server;
 pub mod stats;
 pub mod token;
 
@@ -22,6 +23,9 @@ const VERSION_INFO: &[u8; 13] = b"NETCODE 1.02\0";
 const MAX_PACKET_BYTES: usize = 1400;
 /// The maximum number of bytes that a payload can have when generating a payload packet
 const MAX_PAYLOAD_BYTES: usize = 1300;
+
+const MAX_CLIENTS: usize = 1024;
+const MAX_PENDING_CLIENTS: usize = MAX_CLIENTS * 4;
 
 const KEY_BYTES: usize = 32;
 const USER_DATA_BYTES: usize = 256;
