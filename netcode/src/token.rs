@@ -8,9 +8,10 @@ use std::{
 
 use crate::{
     ADDITIONAL_DATA_SIZE, CONNECT_TOKEN_PRIVATE_BYTES, CONNECT_TOKEN_XNONCE_BYTES, KEY_BYTES,
-    NETCODE_ADDRESS_IPV4, NETCODE_ADDRESS_IPV6, NETCODE_ADDRESS_NONE, NetcodeError,
-    USER_DATA_BYTES, VERSION_INFO,
+    NETCODE_ADDRESS_IPV4, NETCODE_ADDRESS_IPV6, NETCODE_ADDRESS_NONE, USER_DATA_BYTES,
+    VERSION_INFO,
     crypto::{dencrypted_in_place_xnonce, encrypt_in_place_xnonce, generate_random_bytes},
+    error::NetcodeError,
     serialize::*,
 };
 use chacha20poly1305::aead::Error as CryptoError;
@@ -146,7 +147,7 @@ impl ConnectToken {
     pub fn read(src: &mut impl io::Read) -> Result<Self, NetcodeError> {
         let client_id = read_u64(src)?;
         let version_info: [u8; 13] = read_bytes(src)?;
-        if &version_info != NETCODE_VERSION_INFO {
+        if &version_info != VERSION_INFO {
             return Err(NetcodeError::InvalidVersion);
         }
 
@@ -155,11 +156,11 @@ impl ConnectToken {
         let expire_timestamp = read_u64(src)?;
         let xnonce = read_bytes(src)?;
 
-        let private_data: [u8; NETCODE_CONNECT_TOKEN_PRIVATE_BYTES] = read_bytes(src)?;
+        let private_data: [u8; CONNECT_TOKEN_PRIVATE_BYTES] = read_bytes(src)?;
         let timeout_seconds = read_i32(src)?;
         let server_addresses = read_server_addresses(src)?;
-        let client_to_server_key: [u8; NETCODE_KEY_BYTES] = read_bytes(src)?;
-        let server_to_client_key: [u8; NETCODE_KEY_BYTES] = read_bytes(src)?;
+        let client_to_server_key: [u8; KEY_BYTES] = read_bytes(src)?;
+        let server_to_client_key: [u8; KEY_BYTES] = read_bytes(src)?;
 
         Ok(Self {
             client_id,
@@ -182,7 +183,7 @@ impl PrivateConnectToken {
         client_id: u64,
         timeout_seconds: i32,
         server_addresses: Vec<SocketAddr>,
-        user_data: Option<&[u8; NETCODE_USER_DATA_BYTES]>,
+        user_data: Option<&[u8; USER_DATA_BYTES]>,
     ) -> Result<Self, TokenGenerationError> {
         if server_addresses.len() > 32 {
             return Err(TokenGenerationError::MaxHostCount);
@@ -201,7 +202,7 @@ impl PrivateConnectToken {
 
         let user_data = match user_data {
             Some(data) => *data,
-            None => generate_random_bytes(),
+            _ => generate_random_bytes(),
         };
 
         Ok(Self {
@@ -250,11 +251,11 @@ impl PrivateConnectToken {
 
     pub(crate) fn encode(
         &self,
-        buffer: &mut [u8; NETCODE_CONNECT_TOKEN_PRIVATE_BYTES],
+        buffer: &mut [u8; CONNECT_TOKEN_PRIVATE_BYTES],
         protocol_id: u64,
         expire_timestamp: u64,
-        xnonce: &[u8; NETCODE_CONNECT_TOKEN_XNONCE_BYTES],
-        private_key: &[u8; NETCODE_KEY_BYTES],
+        xnonce: &[u8; CONNECT_TOKEN_XNONCE_BYTES],
+        private_key: &[u8; KEY_BYTES],
     ) -> Result<(), TokenGenerationError> {
         let aad = get_additional_data(protocol_id, expire_timestamp);
         self.write(&mut Cursor::new(&mut buffer[..]))?;
@@ -265,15 +266,15 @@ impl PrivateConnectToken {
     }
 
     pub(crate) fn decode(
-        buffer: &[u8; NETCODE_CONNECT_TOKEN_PRIVATE_BYTES],
+        buffer: &[u8; CONNECT_TOKEN_PRIVATE_BYTES],
         protocol_id: u64,
         expire_timestamp: u64,
-        xnonce: &[u8; NETCODE_CONNECT_TOKEN_XNONCE_BYTES],
-        private_key: &[u8; NETCODE_KEY_BYTES],
+        xnonce: &[u8; CONNECT_TOKEN_XNONCE_BYTES],
+        private_key: &[u8; KEY_BYTES],
     ) -> Result<Self, TokenGenerationError> {
         let aad = get_additional_data(protocol_id, expire_timestamp);
 
-        let mut temp_buffer = [0u8; NETCODE_CONNECT_TOKEN_PRIVATE_BYTES];
+        let mut temp_buffer = [0u8; CONNECT_TOKEN_PRIVATE_BYTES];
         temp_buffer.copy_from_slice(buffer);
 
         dencrypted_in_place_xnonce(&mut temp_buffer, xnonce, private_key, &aad)?;
@@ -351,12 +352,9 @@ fn read_server_addresses(src: &mut impl io::Read) -> Result<[Option<SocketAddr>;
     Ok(server_addresses)
 }
 
-fn get_additional_data(
-    protocol_id: u64,
-    expire_timestamp: u64,
-) -> [u8; NETCODE_ADDITIONAL_DATA_SIZE] {
-    let mut buffer = [0; NETCODE_ADDITIONAL_DATA_SIZE];
-    buffer[..13].copy_from_slice(NETCODE_VERSION_INFO);
+fn get_additional_data(protocol_id: u64, expire_timestamp: u64) -> [u8; ADDITIONAL_DATA_SIZE] {
+    let mut buffer = [0; ADDITIONAL_DATA_SIZE];
+    buffer[..13].copy_from_slice(VERSION_INFO);
     buffer[13..21].copy_from_slice(&protocol_id.to_le_bytes());
     buffer[21..29].copy_from_slice(&expire_timestamp.to_le_bytes());
 
@@ -394,7 +392,7 @@ mod tests {
         let key = b"an example very very secret key."; // 32-bytes
         let protocol_id = 12;
         let expire_timestamp = 0;
-        let mut buffer = [0u8; NETCODE_CONNECT_TOKEN_PRIVATE_BYTES];
+        let mut buffer = [0u8; CONNECT_TOKEN_PRIVATE_BYTES];
         let xnonce = generate_random_bytes();
         token
             .encode(&mut buffer, protocol_id, expire_timestamp, &xnonce, key)

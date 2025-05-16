@@ -1,9 +1,13 @@
-use std::fmt;
+use std::io::{self, Cursor, Write};
 
+use crate::crypto::{dencrypted_in_place, encrypt_in_place};
 use crate::error::NetcodeError;
+use crate::replay_protection::ReplayProtection;
+use crate::serialize::{read_bytes, read_u64};
+use crate::token::ConnectToken;
 use crate::{
     CHALLENGE_TOKEN_BYTES, CONNECT_TOKEN_PRIVATE_BYTES, CONNECT_TOKEN_XNONCE_BYTES, KEY_BYTES,
-    MAC_BYTES, USER_DATA_BYTES,
+    MAC_BYTES, USER_DATA_BYTES, VERSION_INFO,
 };
 
 #[derive(Debug)]
@@ -317,39 +321,230 @@ impl<'a> Packet<'a> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SerializationError {
-    BufferTooShort,
-    InvalidNumSlices,
-    SliceSizeAboveLimit,
-    EmptySlice,
-    InvalidAckRange,
-    InvalidPacketType,
-}
-
-impl std::error::Error for SerializationError {}
-
-impl fmt::Display for SerializationError {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        use SerializationError::*;
-
-        match *self {
-            BufferTooShort => write!(fmt, "buffer too short"),
-            InvalidNumSlices => write!(fmt, "invalid number of slices"),
-            InvalidAckRange => write!(fmt, "invalid ack range"),
-            InvalidPacketType => write!(fmt, "invalid packet type"),
-            SliceSizeAboveLimit => write!(
-                fmt,
-                "invalid slice size, it's above the limit of {} bytes",
-                SLICE_SIZE
-            ),
-            EmptySlice => write!(fmt, "invalid slice, slices cannot be empty"),
+impl ChallengeToken {
+    pub fn new(client_id: u64, user_data: &[u8; USER_DATA_BYTES]) -> Self {
+        Self {
+            client_id,
+            user_data: *user_data,
         }
+    }
+
+    fn read(src: &mut impl io::Read) -> Result<Self, io::Error> {
+        let client_id = read_u64(src)?;
+        let user_data: [u8; USER_DATA_BYTES] = read_bytes(src)?;
+
+        Ok(Self {
+            client_id,
+            user_data,
+        })
+    }
+
+    fn write(&self, out: &mut impl io::Write) -> Result<(), io::Error> {
+        out.write_all(&self.client_id.to_le_bytes())?;
+        out.write_all(&self.user_data)?;
+
+        Ok(())
+    }
+
+    pub fn decode(
+        token_data: [u8; CHALLENGE_TOKEN_BYTES],
+        token_sequence: u64,
+        challenge_key: &[u8; KEY_BYTES],
+    ) -> Result<ChallengeToken, NetcodeError> {
+        let mut decoded = [0u8; CHALLENGE_TOKEN_BYTES];
+        decoded.copy_from_slice(&token_data);
+        dencrypted_in_place(&mut decoded, token_sequence, challenge_key, b"")?;
+
+        Ok(ChallengeToken::read(&mut Cursor::new(&mut decoded))?)
     }
 }
 
-impl From<octets::BufferTooShortError> for SerializationError {
-    fn from(_: octets::BufferTooShortError) -> Self {
-        SerializationError::BufferTooShort
+fn get_additional_data(prefix: u8, protocol_id: u64) -> [u8; 13 + 8 + 1] {
+    let mut buffer = [0; 13 + 8 + 1];
+    buffer[..13].copy_from_slice(VERSION_INFO);
+    buffer[13..21].copy_from_slice(&protocol_id.to_le_bytes());
+    buffer[21] = prefix;
+
+    buffer
+}
+
+fn decode_prefix(value: u8) -> (u8, usize) {
+    ((value & 0xF), (value >> 4) as usize)
+}
+
+fn encode_prefix(value: u8, sequence: u64) -> u8 {
+    value | ((sequence_bytes_required(sequence) as u8) << 4)
+}
+
+fn sequence_bytes_required(sequence: u64) -> usize {
+    let mut mask: u64 = 0xFF00_0000_0000_0000;
+    for i in 0..8 {
+        if (sequence & mask) != 0x00 {
+            return 8 - i;
+        }
+
+        mask >>= 8;
+    }
+
+    0
+}
+
+fn write_sequence(out: &mut impl io::Write, seq: u64) -> Result<usize, io::Error> {
+    let len = sequence_bytes_required(seq);
+    let sequence_scratch = seq.to_le_bytes();
+    out.write(&sequence_scratch[..len])
+}
+
+fn read_sequence(source: &mut impl io::Read, len: usize) -> Result<u64, io::Error> {
+    let mut seq_scratch = [0; 8];
+    source.read_exact(&mut seq_scratch[0..len])?;
+    Ok(u64::from_le_bytes(seq_scratch))
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        NETCODE_MAX_PACKET_BYTES, NETCODE_MAX_PAYLOAD_BYTES, crypto::generate_random_bytes,
+    };
+
+    use super::*;
+
+    #[test]
+    fn connection_request_serialization() {
+        let connection_request = Packet::ConnectionRequest {
+            xnonce: generate_random_bytes(),
+            version_info: [0; 13], // "NETCODE 1.02" ASCII with null terminator.
+            protocol_id: 1,
+            expire_timestamp: 3,
+            data: [5; 1024],
+        };
+        let mut buffer = Vec::new();
+        connection_request.write(&mut buffer).unwrap();
+        let deserialized = Packet::read(PacketType::ConnectionRequest, &buffer).unwrap();
+
+        assert_eq!(deserialized, connection_request);
+    }
+
+    #[test]
+    fn connection_challenge_serialization() {
+        let connection_challenge = Packet::Challenge {
+            token_sequence: 0,
+            token_data: [1u8; 300],
+        };
+
+        let mut buffer = Vec::new();
+        connection_challenge.write(&mut buffer).unwrap();
+        let deserialized = Packet::read(PacketType::Challenge, buffer.as_slice()).unwrap();
+
+        assert_eq!(deserialized, connection_challenge);
+    }
+
+    #[test]
+    fn connection_keep_alive_serialization() {
+        let connection_keep_alive = Packet::KeepAlive {
+            max_clients: 2,
+            client_index: 1,
+        };
+
+        let mut buffer = Vec::new();
+        connection_keep_alive.write(&mut buffer).unwrap();
+        let deserialized = Packet::read(PacketType::KeepAlive, buffer.as_slice()).unwrap();
+
+        assert_eq!(deserialized, connection_keep_alive);
+    }
+
+    #[test]
+    fn prefix_sequence() {
+        let packet_type = Packet::Disconnect.id();
+        let sequence = 99999;
+
+        let mut buffer = vec![];
+        write_sequence(&mut buffer, sequence).unwrap();
+
+        let prefix = encode_prefix(packet_type, sequence);
+        let (d_packet_type, sequence_len) = decode_prefix(prefix);
+        assert_eq!(packet_type, d_packet_type);
+        assert_eq!(buffer.len(), sequence_len);
+
+        let d_sequence = read_sequence(&mut buffer.as_slice(), sequence_len).unwrap();
+
+        assert_eq!(sequence, d_sequence);
+    }
+
+    #[test]
+    fn encrypt_decrypt_disconnect_packet() {
+        let mut buffer = [0u8; NETCODE_MAX_PACKET_BYTES];
+        let key = b"an example very very secret key."; // 32-bytes
+        let packet = Packet::Disconnect;
+        let protocol_id = 12;
+        let sequence = 1;
+        let len = packet
+            .encode(&mut buffer, protocol_id, Some((sequence, key)))
+            .unwrap();
+        let (d_sequence, d_packet) =
+            Packet::decode(&mut buffer[..len], protocol_id, Some(key), None).unwrap();
+        assert_eq!(sequence, d_sequence);
+        assert_eq!(packet, d_packet);
+    }
+
+    #[test]
+    fn encrypt_decrypt_denied_packet() {
+        let mut buffer = [0u8; NETCODE_MAX_PACKET_BYTES];
+        let key = b"an example very very secret key."; // 32-bytes
+        let packet = Packet::ConnectionDenied;
+        let protocol_id = 12;
+        let sequence = 2;
+        let len = packet
+            .encode(&mut buffer, protocol_id, Some((sequence, key)))
+            .unwrap();
+        let (d_sequence, d_packet) =
+            Packet::decode(&mut buffer[..len], protocol_id, Some(key), None).unwrap();
+        assert_eq!(sequence, d_sequence);
+        assert_eq!(packet, d_packet);
+    }
+
+    #[test]
+    fn encrypt_decrypt_payload_packet() {
+        let mut buffer = [0u8; NETCODE_MAX_PACKET_BYTES];
+        let payload = vec![7u8; NETCODE_MAX_PAYLOAD_BYTES];
+        let key = b"an example very very secret key."; // 32-bytes
+        let packet = Packet::Payload(&payload);
+        let protocol_id = 12;
+        let sequence = 2;
+        let len = packet
+            .encode(&mut buffer, protocol_id, Some((sequence, key)))
+            .unwrap();
+        let (d_sequence, d_packet) =
+            Packet::decode(&mut buffer[..len], protocol_id, Some(key), None).unwrap();
+        assert_eq!(sequence, d_sequence);
+        match d_packet {
+            Packet::Payload(ref p) => assert_eq!(&payload, p),
+            _ => unreachable!(),
+        }
+        assert_eq!(packet, d_packet);
+    }
+
+    #[test]
+    fn encrypt_decrypt_challenge_token() {
+        let client_id = 0;
+        let user_data = generate_random_bytes();
+        let challenge_key = generate_random_bytes();
+        let challenge_sequence = 1;
+        let token = ChallengeToken::new(client_id, &user_data);
+        let packet =
+            Packet::generate_challenge(client_id, &user_data, challenge_sequence, &challenge_key)
+                .unwrap();
+
+        match packet {
+            Packet::Challenge {
+                token_data,
+                token_sequence,
+            } => {
+                let decoded =
+                    ChallengeToken::decode(token_data, token_sequence, &challenge_key).unwrap();
+                assert_eq!(decoded, token);
+            }
+            _ => unreachable!(),
+        }
     }
 }

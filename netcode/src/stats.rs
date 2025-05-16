@@ -5,7 +5,7 @@ const WINDOW: Duration = Duration::from_millis(6000);
 const SIZE: usize = (WINDOW.as_millis() / RESOLUTION.as_millis()) as usize;
 
 #[derive(Debug, Default)]
-pub struct ClientStats {
+pub struct ConnectionStats {
     packets_sent: [u64; SIZE],
     packets_acked: [u64; SIZE],
     bytes_sent: [u64; SIZE],
@@ -13,7 +13,7 @@ pub struct ClientStats {
     current_index: usize,
 }
 
-impl ClientStats {
+impl ConnectionStats {
     pub fn new() -> Self {
         Self {
             packets_sent: [0; SIZE],
@@ -118,7 +118,7 @@ mod tests {
     #[test]
     fn bytes_per_sec() {
         let mut current_time = Duration::ZERO;
-        let mut window = ClientStats::default();
+        let mut window = ConnectionStats::default();
 
         for _ in 0..10 {
             window.update(current_time);
@@ -144,7 +144,7 @@ mod tests {
     #[test]
     fn packet_loss() {
         let mut current_time = Duration::ZERO;
-        let mut window = ClientStats::default();
+        let mut window = ConnectionStats::default();
 
         for _ in 0..20 {
             window.update(current_time);
