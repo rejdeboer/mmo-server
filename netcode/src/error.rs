@@ -64,7 +64,7 @@ pub enum NetcodeError {
     /// The connect token has expired.
     Expired,
     /// The client is disconnected.
-    Disconnected(DisconnectReason),
+    Disconnected(crate::netcode_client::DisconnectReason),
     /// An error ocurred while encrypting or decrypting.
     CryptoError,
     /// The server address is not in the connect token.
@@ -96,7 +96,7 @@ impl fmt::Display for NetcodeError {
             ),
             Expired => write!(fmt, "connection expired"),
             DuplicatedSequence => write!(fmt, "sequence already received"),
-            // Disconnected(reason) => write!(fmt, "disconnected: {}", reason),
+            Disconnected(reason) => write!(fmt, "disconnected: {}", reason),
             NoMoreServers => write!(fmt, "client has no more servers to connect"),
             CryptoError => write!(fmt, "error while encoding or decoding"),
             NotInHostList => write!(fmt, "token does not contain the server address"),

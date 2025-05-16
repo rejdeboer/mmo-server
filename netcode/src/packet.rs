@@ -3,7 +3,7 @@ use std::io::{self, Cursor, Write};
 use crate::crypto::{dencrypted_in_place, encrypt_in_place};
 use crate::error::NetcodeError;
 use crate::replay_protection::ReplayProtection;
-use crate::serialize::{read_bytes, read_u64};
+use crate::serialize::{read_bytes, read_u32, read_u64};
 use crate::token::ConnectToken;
 use crate::{
     CHALLENGE_TOKEN_BYTES, CONNECT_TOKEN_PRIVATE_BYTES, CONNECT_TOKEN_XNONCE_BYTES, KEY_BYTES,
@@ -403,9 +403,7 @@ fn read_sequence(source: &mut impl io::Read, len: usize) -> Result<u64, io::Erro
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        NETCODE_MAX_PACKET_BYTES, NETCODE_MAX_PAYLOAD_BYTES, crypto::generate_random_bytes,
-    };
+    use crate::{MAX_PACKET_BYTES, MAX_PAYLOAD_BYTES, crypto::generate_random_bytes};
 
     use super::*;
 
@@ -473,7 +471,7 @@ mod tests {
 
     #[test]
     fn encrypt_decrypt_disconnect_packet() {
-        let mut buffer = [0u8; NETCODE_MAX_PACKET_BYTES];
+        let mut buffer = [0u8; MAX_PACKET_BYTES];
         let key = b"an example very very secret key."; // 32-bytes
         let packet = Packet::Disconnect;
         let protocol_id = 12;
@@ -489,7 +487,7 @@ mod tests {
 
     #[test]
     fn encrypt_decrypt_denied_packet() {
-        let mut buffer = [0u8; NETCODE_MAX_PACKET_BYTES];
+        let mut buffer = [0u8; MAX_PACKET_BYTES];
         let key = b"an example very very secret key."; // 32-bytes
         let packet = Packet::ConnectionDenied;
         let protocol_id = 12;
@@ -505,8 +503,8 @@ mod tests {
 
     #[test]
     fn encrypt_decrypt_payload_packet() {
-        let mut buffer = [0u8; NETCODE_MAX_PACKET_BYTES];
-        let payload = vec![7u8; NETCODE_MAX_PAYLOAD_BYTES];
+        let mut buffer = [0u8; MAX_PACKET_BYTES];
+        let payload = vec![7u8; MAX_PAYLOAD_BYTES];
         let key = b"an example very very secret key."; // 32-bytes
         let packet = Packet::Payload(&payload);
         let protocol_id = 12;

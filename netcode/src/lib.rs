@@ -8,7 +8,7 @@ pub mod netcode_client;
 pub mod packet;
 pub mod replay_protection;
 mod serialize;
-pub mod server;
+// pub mod server;
 pub mod stats;
 pub mod token;
 

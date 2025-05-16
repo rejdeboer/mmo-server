@@ -7,11 +7,11 @@ use crate::{
     CHALLENGE_TOKEN_BYTES, KEY_BYTES, MAX_PACKET_BYTES, USER_DATA_BYTES, packet::Packet,
     replay_protection::ReplayProtection, token::ConnectToken,
 };
-use crate::{ClientId, SEND_RATE};
+use crate::{ClientId, MAX_PAYLOAD_BYTES, SEND_RATE};
 
 /// The reason why a client is in error state
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum DisconnectReason {
+pub enum DisconnectReason {
     ConnectTokenExpired,
     ConnectionTimedOut,
     ConnectionResponseTimedOut,
@@ -469,7 +469,7 @@ impl PlaceholderClientTransport {
     /// Should be called every tick
     pub fn send_packets(
         &mut self,
-        connection: &mut PlaceholderClient,
+        connection: &mut NetcodeClient,
     ) -> Result<(), NetcodeTransportError> {
         if let Some(reason) = self.netcode_client.disconnect_reason() {
             return Err(NetcodeError::Disconnected(reason).into());
@@ -545,7 +545,7 @@ mod tests {
 
     #[test]
     fn client_connection() {
-        let mut buffer = [0u8; NETCODE_MAX_PACKET_BYTES];
+        let mut buffer = [0u8; MAX_PACKET_BYTES];
         let server_addresses: Vec<SocketAddr> = vec![
             "127.0.0.1:8080".parse().unwrap(),
             "127.0.0.2:3000".parse().unwrap(),
