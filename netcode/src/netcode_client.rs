@@ -49,6 +49,7 @@ pub enum ClientAuthentication {
 }
 
 // TODO: This client should be abstracted away
+// Can probably be merged with the existing `Connection` struct
 /// A client that can generate encrypted packets that be sent to the connected server, or consume
 /// encrypted packets from the server.
 /// The client is agnostic from the transport layer, only consuming and generating bytes
