@@ -80,6 +80,7 @@ pub enum RenetConnectionStatus {
     Disconnected { reason: DisconnectReason },
 }
 
+// NOTE: Can probably be merged with the existing `Connection` struct
 #[derive(Debug)]
 pub struct NetcodeClient {
     packet_sequence: u64,
