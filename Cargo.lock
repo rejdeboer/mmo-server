@@ -425,6 +425,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_renet"
+version = "1.0.0"
+source = "git+https://github.com/lucaspoffo/renet#d2c5074bc232781889c26acfe68d8622b8ebd88e"
+dependencies = [
+ "bevy_app",
+ "bevy_ecs",
+ "bevy_time",
+ "renet",
+ "renet_netcode",
+]
+
+[[package]]
 name = "bevy_state"
 version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -482,7 +494,9 @@ dependencies = [
  "bevy_ecs",
  "bevy_platform",
  "bevy_reflect",
+ "crossbeam-channel",
  "log",
+ "serde 1.0.219",
 ]
 
 [[package]]
@@ -760,6 +774,15 @@ name = "critical-section"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "790eea4361631c5e7d22598ecd5723ff611904e3344ce8720784c93e3d83d40b"
+
+[[package]]
+name = "crossbeam-channel"
+version = "0.5.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "82b8f8f868b36967f9606790d1903570de9ceaf870a7bf9fbbd3016d636a2cb2"
+dependencies = [
+ "crossbeam-utils",
+]
 
 [[package]]
 name = "crossbeam-queue"
@@ -1538,9 +1561,8 @@ name = "mmo-server"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "bevy_renet",
  "config",
- "renet",
- "renet_netcode",
  "secrecy",
  "serde 1.0.219",
  "serde-aux",
@@ -2055,9 +2077,9 @@ checksum = "2b15c43186be67a4fd63bee50d0303afffcef381492ebe2c5d87f324e1b8815c"
 [[package]]
 name = "renet"
 version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8b4ff6af5dc5497f1155a2856c2a8db3cf4f94c0e2ed83614e3cef2fde48c0f9"
+source = "git+https://github.com/lucaspoffo/renet#d2c5074bc232781889c26acfe68d8622b8ebd88e"
 dependencies = [
+ "bevy_ecs",
  "bytes",
  "log",
  "octets",
@@ -2066,9 +2088,9 @@ dependencies = [
 [[package]]
 name = "renet_netcode"
 version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3e34e6acd4d01155558d24609c1d0e8f8eafaf58bf805ecf1ecd7ac613d6528a"
+source = "git+https://github.com/lucaspoffo/renet#d2c5074bc232781889c26acfe68d8622b8ebd88e"
 dependencies = [
+ "bevy_ecs",
  "log",
  "renet",
  "renetcode",
@@ -2077,8 +2099,7 @@ dependencies = [
 [[package]]
 name = "renetcode"
 version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "118d456f815f7fd5bd12713a9e69a0b0f8b45806bd515e05bb60146f1867310d"
+source = "git+https://github.com/lucaspoffo/renet#d2c5074bc232781889c26acfe68d8622b8ebd88e"
 dependencies = [
  "chacha20poly1305",
  "log",
