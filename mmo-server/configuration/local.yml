@@ -1,5 +1,5 @@
 database:
   require_ssl: false
-application:
+server:
   host: 127.0.0.1
   signing_key: secret
