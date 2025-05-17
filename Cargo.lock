@@ -183,6 +183,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy-tokio-tasks"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e8bc6d56d7d8e0ff9391db5aae435b61e056e4b674514de56cd47cf8911f697a"
+dependencies = [
+ "bevy_app",
+ "bevy_ecs",
+ "tokio",
+]
+
+[[package]]
 name = "bevy_app"
 version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1561,6 +1572,7 @@ name = "mmo-server"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "bevy-tokio-tasks",
  "bevy_renet",
  "config",
  "secrecy",

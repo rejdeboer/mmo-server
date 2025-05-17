@@ -1,3 +1,4 @@
+use bevy::ecs::resource::Resource;
 use secrecy::{ExposeSecret, SecretString};
 use serde_aux::field_attributes::deserialize_number_from_string;
 use sqlx::{
@@ -10,7 +11,7 @@ pub enum Environment {
     Production,
 }
 
-#[derive(serde::Deserialize, Clone)]
+#[derive(serde::Deserialize, Clone, Resource)]
 pub struct Settings {
     pub server: ServerSettings,
     pub database: DatabaseSettings,

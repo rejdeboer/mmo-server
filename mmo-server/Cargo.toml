@@ -7,6 +7,7 @@ edition = "2024"
 path = "src/lib.rs"
 
 [dependencies]
+bevy-tokio-tasks = "0.16.0"
 bevy_renet = { git = "https://github.com/lucaspoffo/renet" }
 config = "0.11"
 secrecy = { version = "0.10.3", features = ["serde"] }

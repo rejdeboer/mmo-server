@@ -1,18 +1,22 @@
-use bevy::MinimalPlugins;
-use bevy::app::App;
+use bevy::prelude::*;
 use bevy_renet::RenetServerPlugin;
 use bevy_renet::netcode::{NetcodeServerTransport, ServerAuthentication, ServerConfig};
 use bevy_renet::renet::{ConnectionConfig, RenetServer};
+use bevy_tokio_tasks::{TokioTasksPlugin, TokioTasksRuntime};
 use sqlx::{PgPool, postgres::PgPoolOptions};
 use std::net::{IpAddr, SocketAddr, UdpSocket};
 use std::time::SystemTime;
 
-use crate::configuration::{DatabaseSettings, Settings};
+use crate::configuration::Settings;
+
+#[derive(Resource, Clone)]
+struct DatabasePool(PgPool);
 
 pub fn build(settings: Settings) -> Result<App, std::io::Error> {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins);
     app.add_plugins(RenetServerPlugin);
+    app.add_plugins(TokioTasksPlugin::default());
 
     let ip_addr = IpAddr::V4(
         settings
@@ -41,15 +45,21 @@ pub fn build(settings: Settings) -> Result<App, std::io::Error> {
         socket,
     )?;
 
-    let _connection_pool = get_connection_pool(&settings.database);
-
     app.insert_resource(netcode_server);
     app.insert_resource(netcode_transport);
-    // app.insert_resource(connection_pool);
+    app.insert_resource(settings);
+    app.add_systems(Startup, setup_database_pool);
 
     return Ok(app);
 }
 
-pub fn get_connection_pool(settings: &DatabaseSettings) -> PgPool {
-    PgPoolOptions::new().connect_lazy_with(settings.with_db())
+pub fn setup_database_pool(
+    mut commands: Commands,
+    runtime: Res<TokioTasksRuntime>,
+    settings: Res<Settings>,
+) {
+    let pool = runtime.runtime().block_on(async move {
+        PgPoolOptions::new().connect_lazy_with(settings.database.with_db())
+    });
+    commands.insert_resource(DatabasePool(pool));
 }
