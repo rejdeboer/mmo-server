@@ -19,7 +19,7 @@ pub fn update_system(
                 bevy::log::info!("player {} connected", client_id);
             }
             ServerEvent::ClientDisconnected { client_id, reason } => {
-                bevy::log::info!("player {} disconnected because {}", client_id, reason);
+                bevy::log::info!("player {} disconnected: {}", client_id, reason);
             }
         }
     }
