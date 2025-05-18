@@ -1,7 +1,4 @@
 [workspace]
-members = [
-	"netcode",
-	"mmo-server",
-]
+members = ["netcode", "mmo-server"]
 
 resolver = "3"

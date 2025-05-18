@@ -14,15 +14,12 @@ config = "0.11"
 secrecy = { version = "0.10.3", features = ["serde"] }
 serde = { version = "1.0.219", features = ["derive"] }
 serde-aux = "4.7.0"
-tokio = { version = "1", features = ["full"] } 
+tokio = { version = "1", features = ["full"] }
 
 [dependencies.bevy]
-version = "0.16.0" 
+version = "0.16.0"
 default-features = false
-features = [
-    "bevy_state",
-    "bevy_log",
-]
+features = ["bevy_state", "bevy_log"]
 
 [dependencies.sqlx]
 version = "0.7.4"
@@ -33,5 +30,5 @@ features = [
 	"postgres",
 	"uuid",
 	"chrono",
-	"migrate"
+	"migrate",
 ]
