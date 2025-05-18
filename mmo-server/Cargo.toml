@@ -15,6 +15,9 @@ secrecy = { version = "0.10.3", features = ["serde"] }
 serde = { version = "1.0.219", features = ["derive"] }
 serde-aux = "4.7.0"
 tokio = { version = "1", features = ["full"] }
+tracing = "0.1.40"
+tracing-log = "0.2.0"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [dependencies.bevy]
 version = "0.16.0"
@@ -22,7 +25,7 @@ default-features = false
 features = ["bevy_state", "bevy_log"]
 
 [dependencies.sqlx]
-version = "0.7.4"
+version = "0.8.5"
 default-features = false
 features = [
 	"runtime-tokio-native-tls",
