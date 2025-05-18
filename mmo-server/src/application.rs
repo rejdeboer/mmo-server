@@ -28,6 +28,7 @@ pub fn build(settings: Settings) -> Result<App, std::io::Error> {
     let server_addr: SocketAddr = SocketAddr::new(ip_addr, settings.server.port);
     let socket = UdpSocket::bind(server_addr)?;
     let mut public_addresses: Vec<SocketAddr> = Vec::new();
+    bevy::log::info!("listening on {}", server_addr);
     public_addresses.push(server_addr);
 
     let netcode_server = RenetServer::new(ConnectionConfig::default());

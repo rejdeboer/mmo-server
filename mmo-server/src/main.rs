@@ -9,6 +9,7 @@ fn main() -> std::io::Result<()> {
     let settings = configuration::get_configuration().expect("config fetched");
 
     let mut app = application::build(settings)?;
+    bevy::log::info!("starting application");
     app.run();
     Ok(())
 }
