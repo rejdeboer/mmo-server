@@ -1601,9 +1601,6 @@ dependencies = [
  "serde-aux",
  "sqlx",
  "tokio",
- "tracing",
- "tracing-log",
- "tracing-subscriber",
 ]
 
 [[package]]
