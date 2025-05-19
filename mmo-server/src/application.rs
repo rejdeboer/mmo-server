@@ -10,7 +10,7 @@ use std::time::{Instant, SystemTime};
 use crate::configuration::Settings;
 
 #[derive(Resource, Clone)]
-struct DatabasePool(PgPool);
+pub struct DatabasePool(pub PgPool);
 
 pub fn build(settings: Settings) -> Result<App, std::io::Error> {
     let mut app = App::new();

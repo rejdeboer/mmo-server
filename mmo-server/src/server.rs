@@ -1,12 +1,14 @@
 use std::time::Instant;
 
-use bevy::prelude::*;
+use bevy::{prelude::*, tasks::Task};
 use bevy_renet::renet::{ClientId, DefaultChannel, RenetServer, ServerEvent};
+use bevy_tokio_tasks::TokioTasksRuntime;
+use sqlx::{Pool, Postgres};
+
+use crate::{application::DatabasePool, configuration::Settings};
 
 #[derive(Debug, Component)]
-pub struct Player {
-    pub id: ClientId,
-}
+pub struct ClientIdComponent(pub ClientId);
 
 #[derive(Component)]
 pub struct PendingConnection {
@@ -14,17 +16,32 @@ pub struct PendingConnection {
     initiated_at: Instant,
 }
 
+#[derive(Component)]
+pub struct HandshakeValidationTask(Task<Result<CharacterData, sqlx::Error>>);
+
 #[derive(bincode::Decode, Debug)]
 struct ClientHandshake {
     token: String,
-    character_id: u32,
+    character_id: i32,
 }
 
 #[derive(Event, Debug)]
 pub struct ProcessClientHandshake {
     client_id: ClientId,
     token: String,
-    character_id: u32,
+    character_id: i32,
+}
+
+#[derive(Debug, Clone, sqlx::FromRow)]
+struct CharacterData {
+    id: i32,
+    account_id: i32,
+    name: String,
+    position_x: f64,
+    position_y: f64,
+    position_z: f64,
+    level: i32,
+    experience: i64,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -32,7 +49,7 @@ pub fn update_system(
     mut events: EventReader<ServerEvent>,
     mut commands: Commands,
     mut server: ResMut<RenetServer>,
-    players: Query<(Entity, &Player, &Transform)>,
+    players: Query<(Entity, &ClientId, &Transform)>,
 ) {
     for event in events.read() {
         match event {
@@ -81,7 +98,7 @@ pub fn receive_initial_handshake_messages(
                 }
                 Err(e) => {
                     bevy::log::error!(
-                        "failed to deserialize handshake from client {}: {}. disconnecting.",
+                        "failed to deserialize handshake from client {}: {}; disconnecting",
                         client_id,
                         e
                     );
@@ -92,4 +109,54 @@ pub fn receive_initial_handshake_messages(
             break;
         }
     }
+}
+
+pub fn process_handshake_messages(
+    mut server: ResMut<RenetServer>,
+    mut handshake_reader: EventReader<ProcessClientHandshake>,
+    runtime: Res<TokioTasksRuntime>,
+    pool: Res<DatabasePool>,
+    settings: Res<Settings>,
+) {
+    let is_secure = settings.server.is_secure;
+    for event in handshake_reader.read() {
+        let db_pool = pool.0.clone();
+        let character_id = event.character_id;
+        let client_id = event.client_id;
+        runtime.spawn_background_task(async move |mut ctx| {
+            if !is_secure {
+                let character = load_character_data(db_pool, character_id).await.unwrap();
+                ctx.run_on_main_thread(move |ctx| {
+                    ctx.world.spawn((
+                        ClientIdComponent(client_id),
+                        Transform::from_xyz(
+                            character.position_x as f32,
+                            character.position_y as f32,
+                            character.position_z as f32,
+                        ),
+                    ));
+                });
+            }
+            // TODO: Secure handshake validation using Redis
+            unimplemented!()
+        });
+    }
+}
+
+async fn load_character_data(
+    pool: Pool<Postgres>,
+    character_id: i32,
+) -> Result<CharacterData, sqlx::Error> {
+    sqlx::query_as!(
+        CharacterData,
+        r#"
+        SELECT id, account_id, name, level, experience,
+            position_x, position_y, position_z
+        FROM characters
+        WHERE id = $1 
+        "#,
+        character_id,
+    )
+    .fetch_one(&pool)
+    .await
 }
