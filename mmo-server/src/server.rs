@@ -48,7 +48,6 @@ struct CharacterData {
 pub fn update_system(
     mut events: EventReader<ServerEvent>,
     mut commands: Commands,
-    mut server: ResMut<RenetServer>,
     pending_connections_query: Query<(Entity, &PendingConnection)>,
     players: Query<(Entity, &ClientIdComponent, &Transform)>,
 ) {
@@ -152,7 +151,8 @@ pub fn process_handshake_messages(
                             character.position_z as f32,
                         ),
                     ));
-                });
+                })
+                .await;
             }
             // TODO: Secure handshake validation using Redis
             unimplemented!()
