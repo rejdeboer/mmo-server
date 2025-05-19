@@ -49,7 +49,18 @@ pub fn build(settings: Settings) -> Result<App, std::io::Error> {
     app.insert_resource(netcode_server);
     app.insert_resource(netcode_transport);
     app.insert_resource(settings);
+
+    app.add_event::<crate::server::ProcessClientHandshake>();
+
     app.add_systems(Startup, setup_database_pool);
+    app.add_systems(
+        Update,
+        (
+            crate::server::handle_connection_events,
+            crate::server::receive_initial_handshake_messages,
+            crate::server::process_handshake_messages,
+        ),
+    );
 
     return Ok(app);
 }
