@@ -35,7 +35,6 @@ pub struct ProcessClientHandshake {
 #[derive(Debug, Clone, sqlx::FromRow)]
 struct CharacterData {
     id: i32,
-    account_id: i32,
     name: String,
     position_x: f64,
     position_y: f64,
@@ -44,8 +43,7 @@ struct CharacterData {
     experience: i64,
 }
 
-#[allow(clippy::too_many_arguments)]
-pub fn update_system(
+pub fn handle_connection_events(
     mut events: EventReader<ServerEvent>,
     mut commands: Commands,
     pending_connections_query: Query<(Entity, &PendingConnection)>,
@@ -167,7 +165,7 @@ async fn load_character_data(
     sqlx::query_as!(
         CharacterData,
         r#"
-        SELECT id, account_id, name, level, experience,
+        SELECT id, name, level, experience,
             position_x, position_y, position_z
         FROM characters
         WHERE id = $1 
