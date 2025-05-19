@@ -1,16 +1,22 @@
 use bevy::prelude::*;
 use bevy_renet::RenetServerPlugin;
 use bevy_renet::netcode::{NetcodeServerTransport, ServerAuthentication, ServerConfig};
-use bevy_renet::renet::{ConnectionConfig, RenetServer};
+use bevy_renet::renet::{ClientId, ConnectionConfig, RenetServer};
 use bevy_tokio_tasks::{TokioTasksPlugin, TokioTasksRuntime};
 use sqlx::{PgPool, postgres::PgPoolOptions};
 use std::net::{IpAddr, SocketAddr, UdpSocket};
-use std::time::SystemTime;
+use std::time::{Instant, SystemTime};
 
 use crate::configuration::Settings;
 
 #[derive(Resource, Clone)]
 struct DatabasePool(PgPool);
+
+#[derive(serde::Deserialize, serde::Serialize, Debug)]
+struct EnterGamePayload {
+    token: String,
+    character_id: u32,
+}
 
 pub fn build(settings: Settings) -> Result<App, std::io::Error> {
     let mut app = App::new();
