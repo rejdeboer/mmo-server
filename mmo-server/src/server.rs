@@ -49,7 +49,8 @@ pub fn update_system(
     mut events: EventReader<ServerEvent>,
     mut commands: Commands,
     mut server: ResMut<RenetServer>,
-    players: Query<(Entity, &ClientId, &Transform)>,
+    pending_connections_query: Query<(Entity, &PendingConnection)>,
+    players: Query<(Entity, &ClientIdComponent, &Transform)>,
 ) {
     for event in events.read() {
         match event {
@@ -62,6 +63,22 @@ pub fn update_system(
             }
             ServerEvent::ClientDisconnected { client_id, reason } => {
                 bevy::log::info!("player {} disconnected: {}", client_id, reason);
+                let client_id = *client_id;
+
+                for (entity, pending_conn) in pending_connections_query.iter() {
+                    if pending_conn.client_id == client_id {
+                        commands.entity(entity).despawn();
+                        return;
+                    }
+                }
+
+                // TODO: Save character data
+                for (entity, player_client_id, _transform) in players.iter() {
+                    if player_client_id.0 == client_id {
+                        commands.entity(entity).despawn();
+                        return;
+                    }
+                }
             }
         }
     }
