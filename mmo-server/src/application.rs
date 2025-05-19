@@ -12,12 +12,6 @@ use crate::configuration::Settings;
 #[derive(Resource, Clone)]
 struct DatabasePool(PgPool);
 
-#[derive(serde::Deserialize, serde::Serialize, Debug)]
-struct EnterGamePayload {
-    token: String,
-    character_id: u32,
-}
-
 pub fn build(settings: Settings) -> Result<App, std::io::Error> {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins);
