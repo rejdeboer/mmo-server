@@ -1,18 +1,18 @@
 use bevy::prelude::*;
 use bevy_renet::RenetServerPlugin;
 use bevy_renet::netcode::{NetcodeServerTransport, ServerAuthentication, ServerConfig};
-use bevy_renet::renet::{ClientId, ConnectionConfig, RenetServer};
+use bevy_renet::renet::{ConnectionConfig, RenetServer};
 use bevy_tokio_tasks::{TokioTasksPlugin, TokioTasksRuntime};
 use sqlx::{PgPool, postgres::PgPoolOptions};
 use std::net::{IpAddr, SocketAddr, UdpSocket};
-use std::time::{Instant, SystemTime};
+use std::time::SystemTime;
 
 use crate::configuration::Settings;
 
 #[derive(Resource, Clone)]
 pub struct DatabasePool(pub PgPool);
 
-pub fn build(settings: Settings) -> Result<App, std::io::Error> {
+pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins);
     app.add_plugins(RenetServerPlugin);
@@ -30,6 +30,8 @@ pub fn build(settings: Settings) -> Result<App, std::io::Error> {
     let mut public_addresses: Vec<SocketAddr> = Vec::new();
     bevy::log::info!("listening on {}", server_addr);
     public_addresses.push(server_addr);
+
+    let port = socket.local_addr()?.port();
 
     let netcode_server = RenetServer::new(ConnectionConfig::default());
     let netcode_transport = NetcodeServerTransport::new(
@@ -62,16 +64,20 @@ pub fn build(settings: Settings) -> Result<App, std::io::Error> {
         ),
     );
 
-    return Ok(app);
+    return Ok((app, port));
 }
 
-pub fn setup_database_pool(
+pub fn get_connection_pool(settings: &Settings) -> PgPool {
+    PgPoolOptions::new().connect_lazy_with(settings.database.with_db())
+}
+
+fn setup_database_pool(
     mut commands: Commands,
     runtime: Res<TokioTasksRuntime>,
     settings: Res<Settings>,
 ) {
-    let pool = runtime.runtime().block_on(async move {
-        PgPoolOptions::new().connect_lazy_with(settings.database.with_db())
-    });
+    let pool = runtime
+        .runtime()
+        .block_on(async move { get_connection_pool(&settings) });
     commands.insert_resource(DatabasePool(pool));
 }
