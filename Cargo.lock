@@ -1576,6 +1576,8 @@ dependencies = [
  "bevy_renet",
  "bincode",
  "config",
+ "once_cell",
+ "rand",
  "secrecy",
  "serde 1.0.219",
  "serde-aux",

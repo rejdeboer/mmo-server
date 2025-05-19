@@ -40,7 +40,7 @@ pub fn build(settings: Settings) -> Result<App, std::io::Error> {
             max_clients: 100,
             protocol_id: 0,
             public_addresses,
-            // TODO: Implement secure server
+            // TODO: Implement secure server using `settings.server.is_secure`
             authentication: ServerAuthentication::Unsecure,
         },
         socket,

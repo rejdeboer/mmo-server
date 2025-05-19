@@ -1,2 +1,4 @@
 database:
   require_ssl: true
+server:
+  is_secure: true

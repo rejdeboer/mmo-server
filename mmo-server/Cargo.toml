@@ -35,3 +35,7 @@ features = [
 	"chrono",
 	"migrate",
 ]
+
+[dev-dependencies]
+once_cell = "1"
+rand = "0.8"
