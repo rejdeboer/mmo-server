@@ -1,7 +1,10 @@
 use std::time::Instant;
 
 use bevy::{prelude::*, tasks::Task};
-use bevy_renet::renet::{ClientId, DefaultChannel, RenetServer, ServerEvent};
+use bevy_renet::{
+    netcode::NetcodeServerTransport,
+    renet::{ClientId, DefaultChannel, RenetServer, ServerEvent},
+};
 use bevy_tokio_tasks::TokioTasksRuntime;
 use sqlx::{Pool, Postgres};
 
@@ -25,6 +28,11 @@ struct EnterGameRequest {
     character_id: i32,
 }
 
+#[derive(bincode::Encode, Debug)]
+struct EnterGameResponse {
+    character_data: CharacterData,
+}
+
 #[derive(Event, Debug)]
 pub struct EnterGameEvent {
     client_id: ClientId,
@@ -32,7 +40,7 @@ pub struct EnterGameEvent {
     character_id: i32,
 }
 
-#[derive(Debug, Clone, sqlx::FromRow)]
+#[derive(bincode::Encode, Debug, Clone, sqlx::FromRow)]
 struct CharacterData {
     id: i32,
     name: String,
@@ -41,6 +49,13 @@ struct CharacterData {
     position_z: f64,
     level: i32,
     experience: i64,
+}
+
+pub fn send_packets(
+    mut server: ResMut<RenetServer>,
+    mut transport: ResMut<NetcodeServerTransport>,
+) {
+    transport.send_packets(&mut server);
 }
 
 pub fn handle_connection_events(
@@ -81,7 +96,7 @@ pub fn handle_connection_events(
     }
 }
 
-pub fn receive_initial_handshake_messages(
+pub fn receive_enter_game_requests(
     mut server: ResMut<RenetServer>,
     pending_connections_query: Query<(Entity, &PendingConnection)>,
     mut event_writer: EventWriter<EnterGameEvent>,
@@ -125,15 +140,14 @@ pub fn receive_initial_handshake_messages(
     }
 }
 
-pub fn process_handshake_messages(
-    mut server: ResMut<RenetServer>,
-    mut handshake_reader: EventReader<EnterGameEvent>,
+pub fn process_enter_game_requests(
+    mut event_reader: EventReader<EnterGameEvent>,
     runtime: Res<TokioTasksRuntime>,
     pool: Res<DatabasePool>,
     settings: Res<Settings>,
 ) {
     let is_secure = settings.server.is_secure;
-    for event in handshake_reader.read() {
+    for event in event_reader.read() {
         let db_pool = pool.0.clone();
         let character_id = event.character_id;
         let client_id = event.client_id;
@@ -149,6 +163,15 @@ pub fn process_handshake_messages(
                             character.position_z as f32,
                         ),
                     ));
+                    let response = EnterGameResponse {
+                        character_data: character,
+                    };
+                    let mut server = ctx.world.get_resource_mut::<RenetServer>().unwrap();
+                    server.send_message(
+                        client_id,
+                        DefaultChannel::ReliableOrdered,
+                        bincode::encode_to_vec(response, bincode::config::standard()).unwrap(),
+                    );
                 })
                 .await;
             }

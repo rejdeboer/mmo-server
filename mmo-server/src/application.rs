@@ -59,8 +59,9 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
         Update,
         (
             crate::server::handle_connection_events,
-            crate::server::receive_initial_handshake_messages,
-            crate::server::process_handshake_messages,
+            crate::server::receive_enter_game_requests,
+            crate::server::process_enter_game_requests,
+            crate::server::send_packets,
         ),
     );
 
