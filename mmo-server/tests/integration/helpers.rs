@@ -6,8 +6,7 @@ use bevy_renet::netcode::{ClientAuthentication, NetcodeClientTransport};
 use bevy_renet::renet::{ConnectionConfig, RenetClient};
 use bevy_tokio_tasks::TokioTasksRuntime;
 use fake::Fake;
-use fake::faker::internet::ar_sa::Password;
-use fake::faker::internet::en::{SafeEmail, Username};
+use fake::faker::internet::en::{Password, SafeEmail, Username};
 use mmo_server::application::{self};
 use mmo_server::configuration::{Settings, get_configuration};
 use mmo_server::telemetry::{get_subscriber, init_subscriber};
@@ -21,11 +20,15 @@ static TRACING: Lazy<()> = Lazy::new(|| {
 
 pub struct TestApp {
     pub app: App,
+    pub test_character_id: i32,
     pub host: String,
     pub port: u16,
     tick_interval: Duration,
     timeout: Duration,
 }
+
+#[derive(Resource)]
+pub struct TestCharacterId(pub i32);
 
 impl TestApp {
     pub fn tick_interval(mut self, tick_interval: Duration) {
@@ -98,8 +101,18 @@ pub fn spawn_app() -> TestApp {
     let (mut application, port) = application::build(settings.clone()).expect("application built");
     application.add_systems(Startup, configure_database);
 
+    // NOTE: Run startup systems
+    application.update();
+
+    let test_character_id = application
+        .world()
+        .get_resource::<TestCharacterId>()
+        .unwrap()
+        .0;
+
     let test_app = TestApp {
         app: application,
+        test_character_id,
         host: settings.server.host,
         port,
         tick_interval: Duration::from_millis(10),
@@ -109,8 +122,12 @@ pub fn spawn_app() -> TestApp {
     test_app
 }
 
-fn configure_database(runtime: Res<TokioTasksRuntime>, settings: Res<Settings>) {
-    runtime.runtime().block_on(async move {
+fn configure_database(
+    mut commands: Commands,
+    runtime: Res<TokioTasksRuntime>,
+    settings: Res<Settings>,
+) {
+    let character_id = runtime.runtime().block_on(async move {
         let mut connection = PgConnection::connect_with(&settings.database.without_db())
             .await
             .expect("connected to postgres");
@@ -128,8 +145,11 @@ fn configure_database(runtime: Res<TokioTasksRuntime>, settings: Res<Settings>) 
             .expect("migration successful");
 
         let account_id = add_test_account(&connection_pool).await;
-        add_test_character(&connection_pool, account_id).await;
-    })
+        let character_id = add_test_character(&connection_pool, account_id).await;
+        character_id
+    });
+
+    commands.insert_resource(TestCharacterId(character_id));
 }
 
 async fn add_test_account(pool: &PgPool) -> i32 {
@@ -147,20 +167,24 @@ async fn add_test_account(pool: &PgPool) -> i32 {
     )
     .fetch_one(pool)
     .await
-    .expect("test character created");
+    .expect("test account created");
 
     row.id
 }
 
-async fn add_test_character(pool: &PgPool, account_id: i32) {
+async fn add_test_character(pool: &PgPool, account_id: i32) -> i32 {
     let username: String = Username().fake();
-    sqlx::query!(
+
+    let row = sqlx::query!(
         "INSERT INTO characters (name, account_id)
-        VALUES ($1, $2)",
+        VALUES ($1, $2)
+        RETURNING id",
         &username,
         account_id,
     )
-    .execute(pool)
+    .fetch_one(pool)
     .await
     .expect("test character created");
+
+    row.id
 }
