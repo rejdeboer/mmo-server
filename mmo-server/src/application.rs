@@ -28,12 +28,12 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     let server_addr: SocketAddr = SocketAddr::new(ip_addr, settings.server.port);
     let socket = UdpSocket::bind(server_addr)?;
     let mut public_addresses: Vec<SocketAddr> = Vec::new();
-    bevy::log::info!("listening on {}", server_addr);
     public_addresses.push(server_addr);
 
     let port = socket.local_addr()?.port();
 
     let netcode_server = RenetServer::new(ConnectionConfig::default());
+    bevy::log::info!("listening on {}", socket.local_addr()?);
     let netcode_transport = NetcodeServerTransport::new(
         ServerConfig {
             current_time: SystemTime::now()
@@ -52,7 +52,7 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     app.insert_resource(netcode_transport);
     app.insert_resource(settings);
 
-    app.add_event::<crate::server::ProcessClientHandshake>();
+    app.add_event::<crate::server::EnterGameEvent>();
 
     app.add_systems(Startup, setup_database_pool);
     app.add_systems(

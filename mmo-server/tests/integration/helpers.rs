@@ -20,6 +20,7 @@ static TRACING: Lazy<()> = Lazy::new(|| {
 
 pub struct TestApp {
     pub app: App,
+    // TODO: This will probably become a vector
     pub test_character_id: i32,
     pub host: String,
     pub port: u16,
@@ -60,7 +61,7 @@ impl TestApp {
         (client, transport)
     }
 
-    pub fn run_app_until_condition_or_timeout(
+    pub fn run_until_condition_or_timeout(
         mut self,
         condition_check: impl Fn(&mut World) -> bool,
     ) -> Result<(), String> {

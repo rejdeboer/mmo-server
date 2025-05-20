@@ -17,16 +17,16 @@ pub struct PendingConnection {
 }
 
 #[derive(Component)]
-pub struct HandshakeValidationTask(Task<Result<CharacterData, sqlx::Error>>);
+pub struct EnterGameValidationTask(Task<Result<CharacterData, sqlx::Error>>);
 
 #[derive(bincode::Decode, Debug)]
-struct ClientHandshake {
+struct EnterGameRequest {
     token: String,
     character_id: i32,
 }
 
 #[derive(Event, Debug)]
-pub struct ProcessClientHandshake {
+pub struct EnterGameEvent {
     client_id: ClientId,
     token: String,
     character_id: i32,
@@ -84,7 +84,7 @@ pub fn handle_connection_events(
 pub fn receive_initial_handshake_messages(
     mut server: ResMut<RenetServer>,
     pending_connections_query: Query<(Entity, &PendingConnection)>,
-    mut event_writer: EventWriter<ProcessClientHandshake>,
+    mut event_writer: EventWriter<EnterGameEvent>,
     mut commands: Commands,
 ) {
     for (entity, pending_conn) in pending_connections_query.iter() {
@@ -92,7 +92,7 @@ pub fn receive_initial_handshake_messages(
         while let Some(message_bytes) =
             server.receive_message(client_id, DefaultChannel::ReliableOrdered)
         {
-            match bincode::decode_from_slice::<ClientHandshake, _>(
+            match bincode::decode_from_slice::<EnterGameRequest, _>(
                 &message_bytes,
                 bincode::config::standard(),
             ) {
@@ -103,7 +103,7 @@ pub fn receive_initial_handshake_messages(
                         decoded.character_id,
                         decoded.token
                     );
-                    event_writer.write(ProcessClientHandshake {
+                    event_writer.write(EnterGameEvent {
                         client_id,
                         character_id: decoded.character_id,
                         token: decoded.token,
@@ -127,7 +127,7 @@ pub fn receive_initial_handshake_messages(
 
 pub fn process_handshake_messages(
     mut server: ResMut<RenetServer>,
-    mut handshake_reader: EventReader<ProcessClientHandshake>,
+    mut handshake_reader: EventReader<EnterGameEvent>,
     runtime: Res<TokioTasksRuntime>,
     pool: Res<DatabasePool>,
     settings: Res<Settings>,

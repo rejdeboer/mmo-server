@@ -8,5 +8,5 @@ fn testing() {
 
     let condition = |world: &mut World| -> bool { true };
 
-    app.run_app_until_condition_or_timeout(condition);
+    app.run_until_condition_or_timeout(condition);
 }
