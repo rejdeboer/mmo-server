@@ -1,5 +1,5 @@
 use std::net::{IpAddr, SocketAddr, UdpSocket};
-use std::time::SystemTime;
+use std::time::{Duration, Instant, SystemTime};
 
 use bevy::prelude::*;
 use bevy_renet::netcode::{ClientAuthentication, NetcodeClientTransport};
@@ -22,10 +22,20 @@ pub struct TestApp {
     pub host: String,
     pub port: u16,
     pub db_pool: PgPool,
+    tick_interval: Duration,
+    timeout: Duration,
 }
 
 impl TestApp {
-    pub async fn create_client(&self) -> (RenetClient, NetcodeClientTransport) {
+    pub fn tick_interval(mut self, tick_interval: Duration) {
+        self.tick_interval = tick_interval;
+    }
+
+    pub fn timeout(mut self, timeout: Duration) {
+        self.timeout = timeout;
+    }
+
+    pub fn create_client(&self) -> (RenetClient, NetcodeClientTransport) {
         let client = RenetClient::new(ConnectionConfig::default());
         let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
 
@@ -44,6 +54,32 @@ impl TestApp {
         let transport = NetcodeClientTransport::new(current_time, authentication, socket).unwrap();
 
         (client, transport)
+    }
+
+    pub fn run_app_until_condition_or_timeout(
+        mut self,
+        condition_check: impl Fn(&mut World) -> bool,
+    ) -> Result<(), String> {
+        let start_time = Instant::now();
+        let mut last_tick_time = Instant::now();
+        let mut condition_met = false;
+
+        while start_time.elapsed() < self.timeout {
+            if last_tick_time.elapsed() >= self.tick_interval {
+                self.app.update();
+                last_tick_time = Instant::now();
+                if condition_check(self.app.world_mut()) {
+                    condition_met = true;
+                    break;
+                }
+            }
+            std::thread::sleep(Duration::from_millis(1)); // Prevent test busy loop
+        }
+        if condition_met {
+            Ok(())
+        } else {
+            Err(format!("Test timed out after {:?}", self.timeout))
+        }
     }
 }
 
@@ -66,6 +102,8 @@ pub async fn spawn_app() -> TestApp {
         db_pool: get_connection_pool(&settings),
         host: settings.server.host,
         port,
+        tick_interval: Duration::from_millis(10),
+        timeout: Duration::from_secs(1),
     };
 
     let test_account_id = add_test_account(&test_app.db_pool).await;
