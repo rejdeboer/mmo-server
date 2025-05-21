@@ -2,6 +2,7 @@ use std::net::{IpAddr, SocketAddr, UdpSocket};
 use std::time::{Duration, Instant, SystemTime};
 
 use bevy::prelude::*;
+use bevy::reflect::List;
 use bevy_renet::netcode::{ClientAuthentication, NetcodeClientTransport};
 use bevy_renet::renet::{ConnectionConfig, RenetClient};
 use bevy_tokio_tasks::TokioTasksRuntime;
@@ -20,16 +21,23 @@ static TRACING: Lazy<()> = Lazy::new(|| {
 
 pub struct TestApp {
     pub app: App,
-    // TODO: This will probably become a vector
-    pub test_character_id: i32,
+    pub test_character_ids: Vec<i32>,
     pub host: String,
     pub port: u16,
     tick_interval: Duration,
     timeout: Duration,
 }
 
+pub struct TestClient {
+    pub client: RenetClient,
+    pub transport: NetcodeClientTransport,
+}
+
 #[derive(Resource)]
-pub struct TestCharacterId(pub i32);
+struct TestCharacterCount(pub usize);
+
+#[derive(Resource)]
+pub struct TestCharacterIds(pub Vec<i32>);
 
 impl TestApp {
     pub fn tick_interval(mut self, tick_interval: Duration) {
@@ -100,20 +108,22 @@ pub fn spawn_app() -> TestApp {
     };
 
     let (mut application, port) = application::build(settings.clone()).expect("application built");
-    application.add_systems(Startup, configure_database);
+    application.insert_resource(TestCharacterCount(1));
+    application.add_systems(Startup, init_db);
 
     // NOTE: Run startup systems
     application.update();
 
-    let test_character_id = application
+    let test_character_ids = application
         .world()
-        .get_resource::<TestCharacterId>()
+        .get_resource::<TestCharacterIds>()
         .unwrap()
-        .0;
+        .0
+        .clone();
 
     let test_app = TestApp {
         app: application,
-        test_character_id,
+        test_character_ids,
         host: settings.server.host,
         port,
         tick_interval: Duration::from_millis(10),
@@ -123,12 +133,13 @@ pub fn spawn_app() -> TestApp {
     test_app
 }
 
-fn configure_database(
+fn init_db(
     mut commands: Commands,
     runtime: Res<TokioTasksRuntime>,
     settings: Res<Settings>,
+    character_count: Res<TestCharacterCount>,
 ) {
-    let character_id = runtime.runtime().block_on(async move {
+    let character_ids = runtime.runtime().block_on(async move {
         let mut connection = PgConnection::connect_with(&settings.database.without_db())
             .await
             .expect("connected to postgres");
@@ -145,12 +156,16 @@ fn configure_database(
             .await
             .expect("migration successful");
 
-        let account_id = add_test_account(&connection_pool).await;
-        let character_id = add_test_character(&connection_pool, account_id).await;
-        character_id
+        let mut character_ids = Vec::with_capacity(character_count.0);
+        for _ in 0..character_count.0 {
+            let account_id = add_test_account(&connection_pool).await;
+            let character_id = add_test_character(&connection_pool, account_id).await;
+            character_ids.push(character_id);
+        }
+        character_ids
     });
 
-    commands.insert_resource(TestCharacterId(character_id));
+    commands.insert_resource(TestCharacterIds(character_ids));
 }
 
 async fn add_test_account(pool: &PgPool) -> i32 {

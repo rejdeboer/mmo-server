@@ -175,6 +175,7 @@ pub fn process_enter_game_requests(
                         character_data: character,
                     };
                     let mut server = ctx.world.get_resource_mut::<RenetServer>().unwrap();
+                    bevy::log::info!("approving enter game request by client {}", client_id);
                     server.send_message(
                         client_id,
                         DefaultChannel::ReliableOrdered,
