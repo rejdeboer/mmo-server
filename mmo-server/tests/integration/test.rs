@@ -1,15 +1,15 @@
 use crate::helpers::spawn_app;
 use bevy::prelude::*;
 use bevy_renet::renet::DefaultChannel;
-use mmo_server::server::EnterGameRequest;
+use mmo_server::server::{EnterGameRequest, EnterGameResponse};
 
 #[test]
 fn testing() {
-    let app = spawn_app();
+    let mut app = spawn_app();
     let (mut client, mut transport) = app.create_client();
     let character_id = app.test_character_id;
 
-    let is_connected = |world: &mut World, elapsed: std::time::Duration| -> bool {
+    let is_connected = |_: &mut World, elapsed: std::time::Duration| -> bool {
         client.update(elapsed);
         transport.update(elapsed, &mut client).unwrap();
         client.is_connected()
@@ -26,5 +26,17 @@ fn testing() {
     );
     transport.send_packets(&mut client).unwrap();
 
-    let response_received = |world: &mut World| -> bool { client.is_connected() };
+    let response_received = |world: &mut World, _: std::time::Duration| -> bool {
+        while let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
+            let (res, _) = bincode::serde::decode_from_slice::<EnterGameResponse, _>(
+                &message.slice(0..message.len()),
+                bincode::config::standard(),
+            )
+            .unwrap();
+            assert_eq!(res.character_data.id, character_id);
+            return true;
+        }
+        false
+    };
+    app.run_until_condition_or_timeout(response_received);
 }

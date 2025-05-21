@@ -62,7 +62,7 @@ impl TestApp {
     }
 
     pub fn run_until_condition_or_timeout(
-        mut self,
+        &mut self,
         mut condition_check: impl FnMut(&mut World, Duration) -> bool,
     ) -> Result<(), String> {
         let start_time = Instant::now();

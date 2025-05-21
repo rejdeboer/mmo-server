@@ -22,15 +22,15 @@ pub struct PendingConnection {
 #[derive(Component)]
 pub struct EnterGameValidationTask(Task<Result<CharacterData, sqlx::Error>>);
 
-#[derive(bincode::Decode, bincode::Encode, Debug)]
+#[derive(bincode::Decode, bincode::Encode, serde::Deserialize, serde::Serialize, Debug)]
 pub struct EnterGameRequest {
     pub token: String,
     pub character_id: i32,
 }
 
-#[derive(bincode::Decode, bincode::Encode, Debug)]
+#[derive(bincode::Decode, bincode::Encode, serde::Serialize, serde::Deserialize, Debug)]
 pub struct EnterGameResponse {
-    character_data: CharacterData,
+    pub character_data: CharacterData,
 }
 
 #[derive(Event, Debug)]
@@ -40,15 +40,23 @@ pub struct EnterGameEvent {
     character_id: i32,
 }
 
-#[derive(bincode::Decode, bincode::Encode, Debug, Clone, sqlx::FromRow)]
-struct CharacterData {
-    id: i32,
-    name: String,
-    position_x: f64,
-    position_y: f64,
-    position_z: f64,
-    level: i32,
-    experience: i64,
+#[derive(
+    bincode::Decode,
+    bincode::Encode,
+    serde::Deserialize,
+    serde::Serialize,
+    Debug,
+    Clone,
+    sqlx::FromRow,
+)]
+pub struct CharacterData {
+    pub id: i32,
+    pub name: String,
+    pub position_x: f64,
+    pub position_y: f64,
+    pub position_z: f64,
+    pub level: i32,
+    pub experience: i64,
 }
 
 pub fn send_packets(

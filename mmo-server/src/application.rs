@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 use bevy_renet::RenetServerPlugin;
-use bevy_renet::netcode::{NetcodeServerTransport, ServerAuthentication, ServerConfig};
+use bevy_renet::netcode::{
+    NetcodeServerPlugin, NetcodeServerTransport, ServerAuthentication, ServerConfig,
+};
 use bevy_renet::renet::{ConnectionConfig, RenetServer};
 use bevy_tokio_tasks::{TokioTasksPlugin, TokioTasksRuntime};
 use sqlx::{PgPool, postgres::PgPoolOptions};
@@ -16,6 +18,7 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins);
     app.add_plugins(RenetServerPlugin);
+    app.add_plugins(NetcodeServerPlugin);
     app.add_plugins(TokioTasksPlugin::default());
 
     let ip_addr = IpAddr::V4(
