@@ -22,14 +22,14 @@ pub struct PendingConnection {
 #[derive(Component)]
 pub struct EnterGameValidationTask(Task<Result<CharacterData, sqlx::Error>>);
 
-#[derive(bincode::Decode, Debug)]
-struct EnterGameRequest {
-    token: String,
-    character_id: i32,
+#[derive(bincode::Decode, bincode::Encode, Debug)]
+pub struct EnterGameRequest {
+    pub token: String,
+    pub character_id: i32,
 }
 
-#[derive(bincode::Encode, Debug)]
-struct EnterGameResponse {
+#[derive(bincode::Decode, bincode::Encode, Debug)]
+pub struct EnterGameResponse {
     character_data: CharacterData,
 }
 
@@ -40,7 +40,7 @@ pub struct EnterGameEvent {
     character_id: i32,
 }
 
-#[derive(bincode::Encode, Debug, Clone, sqlx::FromRow)]
+#[derive(bincode::Decode, bincode::Encode, Debug, Clone, sqlx::FromRow)]
 struct CharacterData {
     id: i32,
     name: String,

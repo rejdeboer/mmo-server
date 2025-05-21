@@ -63,7 +63,7 @@ impl TestApp {
 
     pub fn run_until_condition_or_timeout(
         mut self,
-        condition_check: impl Fn(&mut World) -> bool,
+        mut condition_check: impl FnMut(&mut World, Duration) -> bool,
     ) -> Result<(), String> {
         let start_time = Instant::now();
         let mut last_tick_time = Instant::now();
@@ -73,7 +73,7 @@ impl TestApp {
             if last_tick_time.elapsed() >= self.tick_interval {
                 self.app.update();
                 last_tick_time = Instant::now();
-                if condition_check(self.app.world_mut()) {
+                if condition_check(self.app.world_mut(), last_tick_time.elapsed()) {
                     condition_met = true;
                     break;
                 }
