@@ -1,6 +1,7 @@
 use std::net::{IpAddr, SocketAddr, UdpSocket};
 use std::time::{Duration, Instant, SystemTime};
 
+use bevy::ecs::relationship::RelationshipSourceCollection;
 use bevy::prelude::*;
 use bevy::reflect::List;
 use bevy_renet::netcode::{ClientAuthentication, NetcodeClientTransport};
@@ -21,14 +22,13 @@ static TRACING: Lazy<()> = Lazy::new(|| {
 
 pub struct TestApp {
     pub app: App,
-    pub test_character_ids: Vec<i32>,
-    pub host: String,
-    pub port: u16,
+    pub clients: Vec<TestClient>,
     tick_interval: Duration,
     timeout: Duration,
 }
 
 pub struct TestClient {
+    pub character_id: i32,
     pub client: RenetClient,
     pub transport: NetcodeClientTransport,
 }
@@ -48,30 +48,9 @@ impl TestApp {
         self.timeout = timeout;
     }
 
-    pub fn create_client(&self) -> (RenetClient, NetcodeClientTransport) {
-        let client = RenetClient::new(ConnectionConfig::default());
-        let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
-
-        let current_time = SystemTime::now()
-            .duration_since(SystemTime::UNIX_EPOCH)
-            .unwrap();
-        let ip_addr = IpAddr::V4(self.host.parse().expect("host should be IPV4 addr"));
-        let server_addr: SocketAddr = SocketAddr::new(ip_addr, self.port);
-        let authentication = ClientAuthentication::Unsecure {
-            server_addr,
-            client_id: 0,
-            user_data: None,
-            protocol_id: 0,
-        };
-
-        let transport = NetcodeClientTransport::new(current_time, authentication, socket).unwrap();
-
-        (client, transport)
-    }
-
     pub fn run_until_condition_or_timeout(
         &mut self,
-        mut condition_check: impl FnMut(&mut World, Duration) -> bool,
+        mut condition_check: impl FnMut(&mut World) -> bool,
     ) -> Result<(), String> {
         let start_time = Instant::now();
         let mut last_tick_time = Instant::now();
@@ -79,9 +58,9 @@ impl TestApp {
 
         while start_time.elapsed() < self.timeout {
             if last_tick_time.elapsed() >= self.tick_interval {
-                self.app.update();
+                self.update(last_tick_time.elapsed());
                 last_tick_time = Instant::now();
-                if condition_check(self.app.world_mut(), last_tick_time.elapsed()) {
+                if condition_check(self.app.world_mut()) {
                     condition_met = true;
                     break;
                 }
@@ -94,9 +73,24 @@ impl TestApp {
             Err(format!("Test timed out after {:?}", self.timeout))
         }
     }
+
+    fn update(&mut self, dt: Duration) {
+        self.app.update();
+        for client in self.clients.iter_mut() {
+            client.update(dt);
+            client.transport.send_packets(&mut client.client).unwrap();
+        }
+    }
 }
 
-pub fn spawn_app() -> TestApp {
+impl TestClient {
+    pub fn update(&mut self, dt: Duration) {
+        self.client.update(dt);
+        self.transport.update(dt, &mut self.client).unwrap();
+    }
+}
+
+pub fn spawn_app(character_count: usize) -> TestApp {
     // Only initialize tracer once instead of every test
     Lazy::force(&TRACING);
 
@@ -108,7 +102,7 @@ pub fn spawn_app() -> TestApp {
     };
 
     let (mut application, port) = application::build(settings.clone()).expect("application built");
-    application.insert_resource(TestCharacterCount(1));
+    application.insert_resource(TestCharacterCount(character_count));
     application.add_systems(Startup, init_db);
 
     // NOTE: Run startup systems
@@ -121,16 +115,52 @@ pub fn spawn_app() -> TestApp {
         .0
         .clone();
 
+    let ip_addr = IpAddr::V4(
+        settings
+            .server
+            .host
+            .parse()
+            .expect("host should be IPV4 addr"),
+    );
+    let server_addr: SocketAddr = SocketAddr::new(ip_addr, port);
+
+    let mut clients: Vec<TestClient> = Vec::with_capacity(character_count);
+    for id in test_character_ids {
+        clients.push(create_client(id, server_addr));
+    }
+
     let test_app = TestApp {
         app: application,
-        test_character_ids,
-        host: settings.server.host,
-        port,
+        clients,
         tick_interval: Duration::from_millis(10),
         timeout: Duration::from_secs(1),
     };
 
     test_app
+}
+
+pub fn create_client(character_id: i32, server_addr: SocketAddr) -> TestClient {
+    let client = RenetClient::new(ConnectionConfig::default());
+    let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+
+    let current_time = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap();
+    let authentication = ClientAuthentication::Unsecure {
+        server_addr,
+        client_id: character_id as u64,
+        user_data: None,
+        protocol_id: 0,
+    };
+
+    let transport = NetcodeClientTransport::new(current_time, authentication, socket).unwrap();
+
+    let test_client = TestClient {
+        character_id,
+        client,
+        transport,
+    };
+    test_client
 }
 
 fn init_db(
