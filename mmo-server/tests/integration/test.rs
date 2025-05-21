@@ -27,9 +27,9 @@ fn testing() {
     transport.send_packets(&mut client).unwrap();
 
     let response_received = |world: &mut World, _: std::time::Duration| -> bool {
-        while let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
+        if let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
             let (res, _) = bincode::serde::decode_from_slice::<EnterGameResponse, _>(
-                &message.slice(0..message.len()),
+                &message,
                 bincode::config::standard(),
             )
             .unwrap();
@@ -38,5 +38,6 @@ fn testing() {
         }
         false
     };
-    app.run_until_condition_or_timeout(response_received);
+    app.run_until_condition_or_timeout(response_received)
+        .unwrap();
 }
