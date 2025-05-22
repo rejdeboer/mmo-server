@@ -50,6 +50,23 @@ impl TestScenario {
         self.app.world()
     }
 
+    pub fn client_wait_for_connection(&mut self, client_index: usize) {
+        let start_time = Instant::now();
+        let mut last_tick_time = Instant::now();
+
+        while start_time.elapsed() < self.timeout {
+            if last_tick_time.elapsed() >= self.tick_interval {
+                self.update(last_tick_time.elapsed());
+                last_tick_time = Instant::now();
+                if self.clients[client_index].client.is_connected() {
+                    return;
+                }
+            }
+            std::thread::sleep(Duration::from_millis(1)); // Prevent test busy loop
+        }
+        panic!("client not connected after timeout");
+    }
+
     pub fn client_send_message<T: serde::Serialize>(
         &mut self,
         client_index: usize,

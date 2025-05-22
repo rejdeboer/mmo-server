@@ -7,9 +7,7 @@ use mmo_server::server::{EnterGameRequest, EnterGameResponse};
 fn testing() {
     let mut app = spawn_app(1);
     let character_id = app.clients[0].character_id;
-
-    let is_connected = |_: &mut World| -> bool { app.clients[0].client.is_connected() };
-    app.run_until_condition_or_timeout(is_connected).unwrap();
+    app.client_wait_for_connection(0);
 
     let enter_game_request = EnterGameRequest {
         token: "todo".to_string(),
