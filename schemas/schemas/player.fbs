@@ -1,0 +1,13 @@
+include "common.fbs";
+
+namespace mmo;
+
+table Player {
+	character_id: int32;
+	pos: Vec3;
+	mana: int32;
+	hp: int32;
+	name: string;
+}
+
+root_type Player;
