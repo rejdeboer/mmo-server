@@ -1,11 +1,9 @@
 use std::net::{IpAddr, SocketAddr, UdpSocket};
 use std::time::{Duration, Instant, SystemTime};
 
-use bevy::ecs::relationship::RelationshipSourceCollection;
 use bevy::prelude::*;
-use bevy::reflect::List;
 use bevy_renet::netcode::{ClientAuthentication, NetcodeClientTransport};
-use bevy_renet::renet::{ConnectionConfig, RenetClient};
+use bevy_renet::renet::{ConnectionConfig, DefaultChannel, RenetClient};
 use bevy_tokio_tasks::TokioTasksRuntime;
 use fake::Fake;
 use fake::faker::internet::en::{Password, SafeEmail, Username};
@@ -20,9 +18,9 @@ static TRACING: Lazy<()> = Lazy::new(|| {
     init_subscriber(subscriber);
 });
 
-pub struct TestApp {
-    pub app: App,
+pub struct TestScenario {
     pub clients: Vec<TestClient>,
+    app: App,
     tick_interval: Duration,
     timeout: Duration,
 }
@@ -39,13 +37,59 @@ struct TestCharacterCount(pub usize);
 #[derive(Resource)]
 pub struct TestCharacterIds(pub Vec<i32>);
 
-impl TestApp {
+impl TestScenario {
     pub fn tick_interval(mut self, tick_interval: Duration) {
         self.tick_interval = tick_interval;
     }
 
     pub fn timeout(mut self, timeout: Duration) {
         self.timeout = timeout;
+    }
+
+    pub fn world(&self) -> &World {
+        self.app.world()
+    }
+
+    pub fn client_send_message<T: serde::Serialize>(
+        &mut self,
+        client_index: usize,
+        channel: DefaultChannel,
+        message: T,
+    ) {
+        let client = &mut self.clients[client_index];
+        let encoded = bincode::serde::encode_to_vec(message, bincode::config::standard()).unwrap();
+        client.client.send_message(channel, encoded);
+        client.transport.send_packets(&mut client.client).unwrap();
+    }
+
+    pub fn client_receive_message<T: serde::de::DeserializeOwned>(
+        &mut self,
+        client_index: usize,
+        channel: DefaultChannel,
+    ) -> T {
+        let start_time = Instant::now();
+        let mut last_tick_time = Instant::now();
+        let channel_id: u8 = channel.into();
+
+        while start_time.elapsed() < self.timeout {
+            if last_tick_time.elapsed() >= self.tick_interval {
+                self.update(last_tick_time.elapsed());
+                last_tick_time = Instant::now();
+                if let Some(message) = self.clients[client_index]
+                    .client
+                    .receive_message(channel_id)
+                {
+                    return bincode::serde::decode_from_slice::<T, _>(
+                        &message,
+                        bincode::config::standard(),
+                    )
+                    .unwrap()
+                    .0;
+                }
+            }
+            std::thread::sleep(Duration::from_millis(1)); // Prevent test busy loop
+        }
+        panic!("Test timed out after {:?}", self.timeout);
     }
 
     pub fn run_until_condition_or_timeout(
@@ -78,7 +122,6 @@ impl TestApp {
         self.app.update();
         for client in self.clients.iter_mut() {
             client.update(dt);
-            client.transport.send_packets(&mut client.client).unwrap();
         }
     }
 }
@@ -90,7 +133,7 @@ impl TestClient {
     }
 }
 
-pub fn spawn_app(character_count: usize) -> TestApp {
+pub fn spawn_app(character_count: usize) -> TestScenario {
     // Only initialize tracer once instead of every test
     Lazy::force(&TRACING);
 
@@ -129,7 +172,7 @@ pub fn spawn_app(character_count: usize) -> TestApp {
         clients.push(create_client(id, server_addr));
     }
 
-    let test_app = TestApp {
+    let mut test_app = TestScenario {
         app: application,
         clients,
         tick_interval: Duration::from_millis(10),
