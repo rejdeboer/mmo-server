@@ -3,6 +3,7 @@
 
 // @generated
 
+use crate::entity_generated::*;
 use crate::common_generated::*;
 use core::mem;
 use core::cmp::Ordering;
@@ -13,6 +14,7 @@ use self::flatbuffers::{EndianScalar, Follow};
 #[allow(unused_imports, dead_code)]
 pub mod mmo {
 
+  use crate::entity_generated::*;
   use crate::common_generated::*;
   use core::mem;
   use core::cmp::Ordering;
@@ -20,240 +22,303 @@ pub mod mmo {
   extern crate flatbuffers;
   use self::flatbuffers::{EndianScalar, Follow};
 
-pub enum PlayerOffset {}
+pub enum CharacterOffset {}
 #[derive(Copy, Clone, PartialEq)]
 
-pub struct Player<'a> {
+pub struct Character<'a> {
   pub _tab: flatbuffers::Table<'a>,
 }
 
-impl<'a> flatbuffers::Follow<'a> for Player<'a> {
-  type Inner = Player<'a>;
+impl<'a> flatbuffers::Follow<'a> for Character<'a> {
+  type Inner = Character<'a>;
   #[inline]
   unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
     Self { _tab: flatbuffers::Table::new(buf, loc) }
   }
 }
 
-impl<'a> Player<'a> {
-  pub const VT_CHARACTER_ID: flatbuffers::VOffsetT = 4;
-  pub const VT_POS: flatbuffers::VOffsetT = 6;
-  pub const VT_MANA: flatbuffers::VOffsetT = 8;
-  pub const VT_HP: flatbuffers::VOffsetT = 10;
-  pub const VT_NAME: flatbuffers::VOffsetT = 12;
+impl<'a> Character<'a> {
+  pub const VT_ID: flatbuffers::VOffsetT = 4;
+  pub const VT_ENTITY: flatbuffers::VOffsetT = 6;
 
   #[inline]
   pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
-    Player { _tab: table }
+    Character { _tab: table }
   }
   #[allow(unused_mut)]
   pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
     _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
-    args: &'args PlayerArgs<'args>
-  ) -> flatbuffers::WIPOffset<Player<'bldr>> {
-    let mut builder = PlayerBuilder::new(_fbb);
-    if let Some(x) = args.name { builder.add_name(x); }
-    builder.add_hp(args.hp);
-    builder.add_mana(args.mana);
-    if let Some(x) = args.pos { builder.add_pos(x); }
-    builder.add_character_id(args.character_id);
+    args: &'args CharacterArgs<'args>
+  ) -> flatbuffers::WIPOffset<Character<'bldr>> {
+    let mut builder = CharacterBuilder::new(_fbb);
+    if let Some(x) = args.entity { builder.add_entity(x); }
+    builder.add_id(args.id);
     builder.finish()
   }
 
 
   #[inline]
-  pub fn character_id(&self) -> i32 {
+  pub fn id(&self) -> i32 {
     // Safety:
     // Created from valid Table for this object
     // which contains a valid value in this slot
-    unsafe { self._tab.get::<i32>(Player::VT_CHARACTER_ID, Some(0)).unwrap()}
+    unsafe { self._tab.get::<i32>(Character::VT_ID, Some(0)).unwrap()}
   }
   #[inline]
-  pub fn pos(&self) -> Option<&'a Vec3> {
+  pub fn entity(&self) -> Option<Entity<'a>> {
     // Safety:
     // Created from valid Table for this object
     // which contains a valid value in this slot
-    unsafe { self._tab.get::<Vec3>(Player::VT_POS, None)}
-  }
-  #[inline]
-  pub fn mana(&self) -> i32 {
-    // Safety:
-    // Created from valid Table for this object
-    // which contains a valid value in this slot
-    unsafe { self._tab.get::<i32>(Player::VT_MANA, Some(0)).unwrap()}
-  }
-  #[inline]
-  pub fn hp(&self) -> i32 {
-    // Safety:
-    // Created from valid Table for this object
-    // which contains a valid value in this slot
-    unsafe { self._tab.get::<i32>(Player::VT_HP, Some(0)).unwrap()}
-  }
-  #[inline]
-  pub fn name(&self) -> Option<&'a str> {
-    // Safety:
-    // Created from valid Table for this object
-    // which contains a valid value in this slot
-    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<&str>>(Player::VT_NAME, None)}
+    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<Entity>>(Character::VT_ENTITY, None)}
   }
 }
 
-impl flatbuffers::Verifiable for Player<'_> {
+impl flatbuffers::Verifiable for Character<'_> {
   #[inline]
   fn run_verifier(
     v: &mut flatbuffers::Verifier, pos: usize
   ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
     use self::flatbuffers::Verifiable;
     v.visit_table(pos)?
-     .visit_field::<i32>("character_id", Self::VT_CHARACTER_ID, false)?
-     .visit_field::<Vec3>("pos", Self::VT_POS, false)?
-     .visit_field::<i32>("mana", Self::VT_MANA, false)?
-     .visit_field::<i32>("hp", Self::VT_HP, false)?
-     .visit_field::<flatbuffers::ForwardsUOffset<&str>>("name", Self::VT_NAME, false)?
+     .visit_field::<i32>("id", Self::VT_ID, false)?
+     .visit_field::<flatbuffers::ForwardsUOffset<Entity>>("entity", Self::VT_ENTITY, false)?
      .finish();
     Ok(())
   }
 }
-pub struct PlayerArgs<'a> {
-    pub character_id: i32,
-    pub pos: Option<&'a Vec3>,
-    pub mana: i32,
-    pub hp: i32,
-    pub name: Option<flatbuffers::WIPOffset<&'a str>>,
+pub struct CharacterArgs<'a> {
+    pub id: i32,
+    pub entity: Option<flatbuffers::WIPOffset<Entity<'a>>>,
 }
-impl<'a> Default for PlayerArgs<'a> {
+impl<'a> Default for CharacterArgs<'a> {
   #[inline]
   fn default() -> Self {
-    PlayerArgs {
-      character_id: 0,
-      pos: None,
-      mana: 0,
-      hp: 0,
-      name: None,
+    CharacterArgs {
+      id: 0,
+      entity: None,
     }
   }
 }
 
-pub struct PlayerBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> {
+pub struct CharacterBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> {
   fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
   start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
 }
-impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> PlayerBuilder<'a, 'b, A> {
+impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> CharacterBuilder<'a, 'b, A> {
   #[inline]
-  pub fn add_character_id(&mut self, character_id: i32) {
-    self.fbb_.push_slot::<i32>(Player::VT_CHARACTER_ID, character_id, 0);
+  pub fn add_id(&mut self, id: i32) {
+    self.fbb_.push_slot::<i32>(Character::VT_ID, id, 0);
   }
   #[inline]
-  pub fn add_pos(&mut self, pos: &Vec3) {
-    self.fbb_.push_slot_always::<&Vec3>(Player::VT_POS, pos);
+  pub fn add_entity(&mut self, entity: flatbuffers::WIPOffset<Entity<'b >>) {
+    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<Entity>>(Character::VT_ENTITY, entity);
   }
   #[inline]
-  pub fn add_mana(&mut self, mana: i32) {
-    self.fbb_.push_slot::<i32>(Player::VT_MANA, mana, 0);
-  }
-  #[inline]
-  pub fn add_hp(&mut self, hp: i32) {
-    self.fbb_.push_slot::<i32>(Player::VT_HP, hp, 0);
-  }
-  #[inline]
-  pub fn add_name(&mut self, name: flatbuffers::WIPOffset<&'b  str>) {
-    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(Player::VT_NAME, name);
-  }
-  #[inline]
-  pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> PlayerBuilder<'a, 'b, A> {
+  pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> CharacterBuilder<'a, 'b, A> {
     let start = _fbb.start_table();
-    PlayerBuilder {
+    CharacterBuilder {
       fbb_: _fbb,
       start_: start,
     }
   }
   #[inline]
-  pub fn finish(self) -> flatbuffers::WIPOffset<Player<'a>> {
+  pub fn finish(self) -> flatbuffers::WIPOffset<Character<'a>> {
     let o = self.fbb_.end_table(self.start_);
     flatbuffers::WIPOffset::new(o.value())
   }
 }
 
-impl core::fmt::Debug for Player<'_> {
+impl core::fmt::Debug for Character<'_> {
   fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-    let mut ds = f.debug_struct("Player");
-      ds.field("character_id", &self.character_id());
-      ds.field("pos", &self.pos());
-      ds.field("mana", &self.mana());
-      ds.field("hp", &self.hp());
-      ds.field("name", &self.name());
+    let mut ds = f.debug_struct("Character");
+      ds.field("id", &self.id());
+      ds.field("entity", &self.entity());
+      ds.finish()
+  }
+}
+pub enum PlayerDataOffset {}
+#[derive(Copy, Clone, PartialEq)]
+
+pub struct PlayerData<'a> {
+  pub _tab: flatbuffers::Table<'a>,
+}
+
+impl<'a> flatbuffers::Follow<'a> for PlayerData<'a> {
+  type Inner = PlayerData<'a>;
+  #[inline]
+  unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
+    Self { _tab: flatbuffers::Table::new(buf, loc) }
+  }
+}
+
+impl<'a> PlayerData<'a> {
+  pub const VT_CHARACTER: flatbuffers::VOffsetT = 4;
+  pub const VT_EXPERIENCE: flatbuffers::VOffsetT = 6;
+
+  #[inline]
+  pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
+    PlayerData { _tab: table }
+  }
+  #[allow(unused_mut)]
+  pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
+    _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
+    args: &'args PlayerDataArgs<'args>
+  ) -> flatbuffers::WIPOffset<PlayerData<'bldr>> {
+    let mut builder = PlayerDataBuilder::new(_fbb);
+    builder.add_experience(args.experience);
+    if let Some(x) = args.character { builder.add_character(x); }
+    builder.finish()
+  }
+
+
+  #[inline]
+  pub fn character(&self) -> Option<Character<'a>> {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<Character>>(PlayerData::VT_CHARACTER, None)}
+  }
+  #[inline]
+  pub fn experience(&self) -> i32 {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<i32>(PlayerData::VT_EXPERIENCE, Some(0)).unwrap()}
+  }
+}
+
+impl flatbuffers::Verifiable for PlayerData<'_> {
+  #[inline]
+  fn run_verifier(
+    v: &mut flatbuffers::Verifier, pos: usize
+  ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
+    use self::flatbuffers::Verifiable;
+    v.visit_table(pos)?
+     .visit_field::<flatbuffers::ForwardsUOffset<Character>>("character", Self::VT_CHARACTER, false)?
+     .visit_field::<i32>("experience", Self::VT_EXPERIENCE, false)?
+     .finish();
+    Ok(())
+  }
+}
+pub struct PlayerDataArgs<'a> {
+    pub character: Option<flatbuffers::WIPOffset<Character<'a>>>,
+    pub experience: i32,
+}
+impl<'a> Default for PlayerDataArgs<'a> {
+  #[inline]
+  fn default() -> Self {
+    PlayerDataArgs {
+      character: None,
+      experience: 0,
+    }
+  }
+}
+
+pub struct PlayerDataBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> {
+  fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
+  start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
+}
+impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> PlayerDataBuilder<'a, 'b, A> {
+  #[inline]
+  pub fn add_character(&mut self, character: flatbuffers::WIPOffset<Character<'b >>) {
+    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<Character>>(PlayerData::VT_CHARACTER, character);
+  }
+  #[inline]
+  pub fn add_experience(&mut self, experience: i32) {
+    self.fbb_.push_slot::<i32>(PlayerData::VT_EXPERIENCE, experience, 0);
+  }
+  #[inline]
+  pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> PlayerDataBuilder<'a, 'b, A> {
+    let start = _fbb.start_table();
+    PlayerDataBuilder {
+      fbb_: _fbb,
+      start_: start,
+    }
+  }
+  #[inline]
+  pub fn finish(self) -> flatbuffers::WIPOffset<PlayerData<'a>> {
+    let o = self.fbb_.end_table(self.start_);
+    flatbuffers::WIPOffset::new(o.value())
+  }
+}
+
+impl core::fmt::Debug for PlayerData<'_> {
+  fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    let mut ds = f.debug_struct("PlayerData");
+      ds.field("character", &self.character());
+      ds.field("experience", &self.experience());
       ds.finish()
   }
 }
 #[inline]
-/// Verifies that a buffer of bytes contains a `Player`
+/// Verifies that a buffer of bytes contains a `PlayerData`
 /// and returns it.
 /// Note that verification is still experimental and may not
 /// catch every error, or be maximally performant. For the
 /// previous, unchecked, behavior use
-/// `root_as_player_unchecked`.
-pub fn root_as_player(buf: &[u8]) -> Result<Player, flatbuffers::InvalidFlatbuffer> {
-  flatbuffers::root::<Player>(buf)
+/// `root_as_player_data_unchecked`.
+pub fn root_as_player_data(buf: &[u8]) -> Result<PlayerData, flatbuffers::InvalidFlatbuffer> {
+  flatbuffers::root::<PlayerData>(buf)
 }
 #[inline]
 /// Verifies that a buffer of bytes contains a size prefixed
-/// `Player` and returns it.
+/// `PlayerData` and returns it.
 /// Note that verification is still experimental and may not
 /// catch every error, or be maximally performant. For the
 /// previous, unchecked, behavior use
-/// `size_prefixed_root_as_player_unchecked`.
-pub fn size_prefixed_root_as_player(buf: &[u8]) -> Result<Player, flatbuffers::InvalidFlatbuffer> {
-  flatbuffers::size_prefixed_root::<Player>(buf)
+/// `size_prefixed_root_as_player_data_unchecked`.
+pub fn size_prefixed_root_as_player_data(buf: &[u8]) -> Result<PlayerData, flatbuffers::InvalidFlatbuffer> {
+  flatbuffers::size_prefixed_root::<PlayerData>(buf)
 }
 #[inline]
 /// Verifies, with the given options, that a buffer of bytes
-/// contains a `Player` and returns it.
+/// contains a `PlayerData` and returns it.
 /// Note that verification is still experimental and may not
 /// catch every error, or be maximally performant. For the
 /// previous, unchecked, behavior use
-/// `root_as_player_unchecked`.
-pub fn root_as_player_with_opts<'b, 'o>(
+/// `root_as_player_data_unchecked`.
+pub fn root_as_player_data_with_opts<'b, 'o>(
   opts: &'o flatbuffers::VerifierOptions,
   buf: &'b [u8],
-) -> Result<Player<'b>, flatbuffers::InvalidFlatbuffer> {
-  flatbuffers::root_with_opts::<Player<'b>>(opts, buf)
+) -> Result<PlayerData<'b>, flatbuffers::InvalidFlatbuffer> {
+  flatbuffers::root_with_opts::<PlayerData<'b>>(opts, buf)
 }
 #[inline]
 /// Verifies, with the given verifier options, that a buffer of
-/// bytes contains a size prefixed `Player` and returns
+/// bytes contains a size prefixed `PlayerData` and returns
 /// it. Note that verification is still experimental and may not
 /// catch every error, or be maximally performant. For the
 /// previous, unchecked, behavior use
-/// `root_as_player_unchecked`.
-pub fn size_prefixed_root_as_player_with_opts<'b, 'o>(
+/// `root_as_player_data_unchecked`.
+pub fn size_prefixed_root_as_player_data_with_opts<'b, 'o>(
   opts: &'o flatbuffers::VerifierOptions,
   buf: &'b [u8],
-) -> Result<Player<'b>, flatbuffers::InvalidFlatbuffer> {
-  flatbuffers::size_prefixed_root_with_opts::<Player<'b>>(opts, buf)
+) -> Result<PlayerData<'b>, flatbuffers::InvalidFlatbuffer> {
+  flatbuffers::size_prefixed_root_with_opts::<PlayerData<'b>>(opts, buf)
 }
 #[inline]
-/// Assumes, without verification, that a buffer of bytes contains a Player and returns it.
+/// Assumes, without verification, that a buffer of bytes contains a PlayerData and returns it.
 /// # Safety
-/// Callers must trust the given bytes do indeed contain a valid `Player`.
-pub unsafe fn root_as_player_unchecked(buf: &[u8]) -> Player {
-  flatbuffers::root_unchecked::<Player>(buf)
+/// Callers must trust the given bytes do indeed contain a valid `PlayerData`.
+pub unsafe fn root_as_player_data_unchecked(buf: &[u8]) -> PlayerData {
+  flatbuffers::root_unchecked::<PlayerData>(buf)
 }
 #[inline]
-/// Assumes, without verification, that a buffer of bytes contains a size prefixed Player and returns it.
+/// Assumes, without verification, that a buffer of bytes contains a size prefixed PlayerData and returns it.
 /// # Safety
-/// Callers must trust the given bytes do indeed contain a valid size prefixed `Player`.
-pub unsafe fn size_prefixed_root_as_player_unchecked(buf: &[u8]) -> Player {
-  flatbuffers::size_prefixed_root_unchecked::<Player>(buf)
+/// Callers must trust the given bytes do indeed contain a valid size prefixed `PlayerData`.
+pub unsafe fn size_prefixed_root_as_player_data_unchecked(buf: &[u8]) -> PlayerData {
+  flatbuffers::size_prefixed_root_unchecked::<PlayerData>(buf)
 }
 #[inline]
-pub fn finish_player_buffer<'a, 'b, A: flatbuffers::Allocator + 'a>(
+pub fn finish_player_data_buffer<'a, 'b, A: flatbuffers::Allocator + 'a>(
     fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
-    root: flatbuffers::WIPOffset<Player<'a>>) {
+    root: flatbuffers::WIPOffset<PlayerData<'a>>) {
   fbb.finish(root, None);
 }
 
 #[inline]
-pub fn finish_size_prefixed_player_buffer<'a, 'b, A: flatbuffers::Allocator + 'a>(fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>, root: flatbuffers::WIPOffset<Player<'a>>) {
+pub fn finish_size_prefixed_player_data_buffer<'a, 'b, A: flatbuffers::Allocator + 'a>(fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>, root: flatbuffers::WIPOffset<PlayerData<'a>>) {
   fbb.finish_size_prefixed(root, None);
 }
 }  // pub mod mmo

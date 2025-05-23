@@ -1,13 +1,15 @@
-include "common.fbs";
+include "entity.fbs";
 
 namespace mmo;
 
-table Player {
-	character_id: int32;
-	pos: Vec3;
-	mana: int32;
-	hp: int32;
-	name: string;
+table Character {
+	id: int32;
+	entity: Entity;
 }
 
-root_type Player;
+table PlayerData {
+	character: Character;
+	experience: int32;
+}
+
+root_type PlayerData;

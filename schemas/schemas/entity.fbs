@@ -1,0 +1,10 @@
+include "common.fbs";
+
+namespace mmo;
+
+table Entity {
+	name: string;
+	pos: Vec3;
+	hp: int32;
+	level: int32;
+}
