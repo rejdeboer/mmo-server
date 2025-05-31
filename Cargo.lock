@@ -1605,6 +1605,7 @@ dependencies = [
  "fake",
  "once_cell",
  "rand 0.8.5",
+ "schemas",
  "secrecy",
  "serde 1.0.219",
  "serde-aux",
