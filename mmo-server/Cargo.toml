@@ -11,6 +11,7 @@ bevy-tokio-tasks = "0.16.0"
 bevy_renet = { git = "https://github.com/lucaspoffo/renet" }
 bincode = { version = "2.0.1", features = ["serde"] }
 config = "0.11"
+flatbuffers = "25.2.10"
 schemas = { path = "../schemas" }
 secrecy = { version = "0.10.3", features = ["serde"] }
 serde = { version = "1.0.219", features = ["derive"] }

@@ -1603,6 +1603,7 @@ dependencies = [
  "bincode",
  "config",
  "fake",
+ "flatbuffers",
  "once_cell",
  "rand 0.8.5",
  "schemas",
