@@ -1,0 +1,24 @@
+include "common.fbs";
+
+namespace mmo;
+
+table EntityMoveEvent {
+	entity_id: int32;
+	position: Vec3; 
+}
+
+union EventData {
+	EntityMoveEvent
+}
+
+table Event {
+	data_type: EventData;
+	data: EventData (required);
+}
+
+table BatchedEvents {
+	// server_tick: uint;
+	events: [Event];
+}
+
+root_type BatchedEvents;
