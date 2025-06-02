@@ -1,0 +1,9 @@
+include "entity.fbs";
+
+namespace mmo;
+
+table Character {
+	entity: mmo.Entity;
+	// class: uint8;
+}
+

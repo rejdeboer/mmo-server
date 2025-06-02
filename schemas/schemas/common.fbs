@@ -5,3 +5,8 @@ struct Vec3 {
   y:float;
   z:float;
 }
+
+struct Transform {
+	position: Vec3;
+	rotation: Vec3;
+}

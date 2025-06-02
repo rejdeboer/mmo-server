@@ -1,0 +1,7 @@
+include "character.fbs";
+
+namespace mmo;
+
+table EnterGameResponse {
+	character: mmo.Character;
+}

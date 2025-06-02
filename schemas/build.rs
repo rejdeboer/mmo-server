@@ -2,10 +2,12 @@ use std::path::Path;
 
 fn main() {
     let schema_files = [
+        "schemas/character.fbs",
+        "schemas/common.fbs",
         "schemas/enter_game_request.fbs",
-        // "schemas/enter_game_response.fbs",
+        "schemas/enter_game_response.fbs",
+        "schemas/entity.fbs",
         "schemas/event.fbs",
-        "schemas/player.fbs",
     ];
 
     for schema in &schema_files {
@@ -15,7 +17,7 @@ fn main() {
     for schema in &schema_files {
         flatc_rust::run(flatc_rust::Args {
             inputs: &[Path::new(schema)],
-            out_dir: Path::new("src/generated/"),
+            out_dir: Path::new("src/"),
             ..Default::default()
         })
         .expect(&format!("Failed to compile {}", schema));

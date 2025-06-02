@@ -6,6 +6,7 @@ use bevy_renet::{
     renet::{ClientId, DefaultChannel, RenetServer, ServerEvent},
 };
 use bevy_tokio_tasks::TokioTasksRuntime;
+use flatbuffers::root;
 use sqlx::{Pool, Postgres};
 
 use crate::{application::DatabasePool, configuration::Settings};
@@ -22,13 +23,7 @@ pub struct PendingConnection {
 #[derive(Component)]
 pub struct EnterGameValidationTask(Task<Result<CharacterData, sqlx::Error>>);
 
-#[derive(bincode::Decode, bincode::Encode, serde::Deserialize, serde::Serialize, Debug)]
-pub struct EnterGameRequest {
-    pub token: String,
-    pub character_id: i32,
-}
-
-#[derive(bincode::Decode, bincode::Encode, serde::Serialize, serde::Deserialize, Debug)]
+#[derive(Debug)]
 pub struct EnterGameResponse {
     pub character_data: CharacterData,
 }
@@ -40,15 +35,7 @@ pub struct EnterGameEvent {
     character_id: i32,
 }
 
-#[derive(
-    bincode::Decode,
-    bincode::Encode,
-    serde::Deserialize,
-    serde::Serialize,
-    Debug,
-    Clone,
-    sqlx::FromRow,
-)]
+#[derive(Debug, Clone, sqlx::FromRow)]
 pub struct CharacterData {
     pub id: i32,
     pub name: String,
@@ -75,14 +62,14 @@ pub fn handle_connection_events(
     for event in events.read() {
         match event {
             ServerEvent::ClientConnected { client_id } => {
-                bevy::log::info!("player {} connected", client_id);
+                tracing::info!("player {} connected", client_id);
                 commands.spawn(PendingConnection {
                     client_id: *client_id,
                     initiated_at: Instant::now(),
                 });
             }
             ServerEvent::ClientDisconnected { client_id, reason } => {
-                bevy::log::info!("player {} disconnected: {}", client_id, reason);
+                tracing::info!("player {} disconnected: {}", client_id, reason);
                 let client_id = *client_id;
 
                 for (entity, pending_conn) in pending_connections_query.iter() {
@@ -115,26 +102,26 @@ pub fn receive_enter_game_requests(
         while let Some(message_bytes) =
             server.receive_message(client_id, DefaultChannel::ReliableOrdered)
         {
-            match bincode::decode_from_slice::<EnterGameRequest, _>(
-                &message_bytes,
-                bincode::config::standard(),
-            ) {
-                Ok((decoded, _len)) => {
-                    bevy::log::info!(
+            // TODO: Should we verify the file identifier?
+            match root::<schemas::EnterGameRequest>(&message_bytes) {
+                Ok(request) => {
+                    let character_id = request.character_id();
+                    let token = request.token().unwrap();
+                    tracing::info!(
                         "received handshake from client {}: character_id {}, token {}",
                         client_id,
-                        decoded.character_id,
-                        decoded.token
+                        character_id,
+                        token.to_string(),
                     );
                     event_writer.write(EnterGameEvent {
                         client_id,
-                        character_id: decoded.character_id,
-                        token: decoded.token,
+                        character_id,
+                        token: token.to_string(),
                     });
                     commands.entity(entity).despawn();
                 }
                 Err(e) => {
-                    bevy::log::error!(
+                    tracing::error!(
                         "failed to deserialize handshake from client {}: {}; disconnecting",
                         client_id,
                         e
@@ -175,7 +162,7 @@ pub fn process_enter_game_requests(
                         character_data: character,
                     };
                     let mut server = ctx.world.get_resource_mut::<RenetServer>().unwrap();
-                    bevy::log::info!("approving enter game request by client {}", client_id);
+                    tracing::info!("approving enter game request by client {}", client_id);
                     server.send_message(
                         client_id,
                         DefaultChannel::ReliableOrdered,
