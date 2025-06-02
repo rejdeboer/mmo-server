@@ -12,7 +12,7 @@ union EventData {
 }
 
 table Event {
-	data_type: EventData;
+	// data_type: EventData;
 	data: EventData (required);
 }
 

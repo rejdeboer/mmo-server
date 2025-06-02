@@ -8,3 +8,6 @@ path = "src/lib.rs"
 
 [dependencies]
 flatbuffers = "25.2.10"
+
+[build-dependencies]
+flatc-rust = "0.2"
