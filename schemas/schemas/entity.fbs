@@ -3,8 +3,8 @@ include "common.fbs";
 namespace mmo;
 
 table Entity {
-	name: string;
-	transform: mmo.Transform;
+	name: string (required);
+	transform: mmo.Transform (required);
 	hp: int32;
 	level: int32;
 }

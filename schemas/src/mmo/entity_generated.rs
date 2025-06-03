@@ -49,18 +49,18 @@ impl<'a> Entity<'a> {
 
 
   #[inline]
-  pub fn name(&self) -> Option<&'a str> {
+  pub fn name(&self) -> &'a str {
     // Safety:
     // Created from valid Table for this object
     // which contains a valid value in this slot
-    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<&str>>(Entity::VT_NAME, None)}
+    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<&str>>(Entity::VT_NAME, None).unwrap()}
   }
   #[inline]
-  pub fn transform(&self) -> Option<&'a Transform> {
+  pub fn transform(&self) -> &'a Transform {
     // Safety:
     // Created from valid Table for this object
     // which contains a valid value in this slot
-    unsafe { self._tab.get::<Transform>(Entity::VT_TRANSFORM, None)}
+    unsafe { self._tab.get::<Transform>(Entity::VT_TRANSFORM, None).unwrap()}
   }
   #[inline]
   pub fn hp(&self) -> i32 {
@@ -85,8 +85,8 @@ impl flatbuffers::Verifiable for Entity<'_> {
   ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
     use self::flatbuffers::Verifiable;
     v.visit_table(pos)?
-     .visit_field::<flatbuffers::ForwardsUOffset<&str>>("name", Self::VT_NAME, false)?
-     .visit_field::<Transform>("transform", Self::VT_TRANSFORM, false)?
+     .visit_field::<flatbuffers::ForwardsUOffset<&str>>("name", Self::VT_NAME, true)?
+     .visit_field::<Transform>("transform", Self::VT_TRANSFORM, true)?
      .visit_field::<i32>("hp", Self::VT_HP, false)?
      .visit_field::<i32>("level", Self::VT_LEVEL, false)?
      .finish();
@@ -103,8 +103,8 @@ impl<'a> Default for EntityArgs<'a> {
   #[inline]
   fn default() -> Self {
     EntityArgs {
-      name: None,
-      transform: None,
+      name: None, // required field
+      transform: None, // required field
       hp: 0,
       level: 0,
     }
@@ -143,6 +143,8 @@ impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> EntityBuilder<'a, 'b, A> {
   #[inline]
   pub fn finish(self) -> flatbuffers::WIPOffset<Entity<'a>> {
     let o = self.fbb_.end_table(self.start_);
+    self.fbb_.required(o, Entity::VT_NAME,"name");
+    self.fbb_.required(o, Entity::VT_TRANSFORM,"transform");
     flatbuffers::WIPOffset::new(o.value())
   }
 }

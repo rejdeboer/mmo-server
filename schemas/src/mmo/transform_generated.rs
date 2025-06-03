@@ -9,13 +9,13 @@ use core::mem;
 use core::cmp::Ordering;
 use self::flatbuffers::{EndianScalar, Follow};
 use super::*;
-// struct Transform, aligned to 4
+// struct Transform, aligned to 8
 #[repr(transparent)]
 #[derive(Clone, Copy, PartialEq)]
-pub struct Transform(pub [u8; 24]);
+pub struct Transform(pub [u8; 48]);
 impl Default for Transform { 
   fn default() -> Self { 
-    Self([0; 24])
+    Self([0; 48])
   }
 }
 impl core::fmt::Debug for Transform {
@@ -51,7 +51,7 @@ impl<'b> flatbuffers::Push for Transform {
     }
     #[inline]
     fn alignment() -> flatbuffers::PushAlignment {
-        flatbuffers::PushAlignment::new(4)
+        flatbuffers::PushAlignment::new(8)
     }
 }
 
@@ -71,7 +71,7 @@ impl<'a> Transform {
     position: &Vec3,
     rotation: &Vec3,
   ) -> Self {
-    let mut s = Self([0; 24]);
+    let mut s = Self([0; 48]);
     s.set_position(position);
     s.set_rotation(rotation);
     s
@@ -86,19 +86,19 @@ impl<'a> Transform {
 
   #[allow(clippy::identity_op)]
   pub fn set_position(&mut self, x: &Vec3) {
-    self.0[0..0 + 12].copy_from_slice(&x.0)
+    self.0[0..0 + 24].copy_from_slice(&x.0)
   }
 
   pub fn rotation(&self) -> &Vec3 {
     // Safety:
     // Created from a valid Table for this object
     // Which contains a valid struct in this slot
-    unsafe { &*(self.0[12..].as_ptr() as *const Vec3) }
+    unsafe { &*(self.0[24..].as_ptr() as *const Vec3) }
   }
 
   #[allow(clippy::identity_op)]
   pub fn set_rotation(&mut self, x: &Vec3) {
-    self.0[12..12 + 12].copy_from_slice(&x.0)
+    self.0[24..24 + 24].copy_from_slice(&x.0)
   }
 
 }

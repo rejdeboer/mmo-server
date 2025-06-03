@@ -6,7 +6,7 @@ use bevy_renet::{
     renet::{ClientId, DefaultChannel, RenetServer, ServerEvent},
 };
 use bevy_tokio_tasks::TokioTasksRuntime;
-use flatbuffers::root;
+use flatbuffers::{FlatBufferBuilder, root};
 use sqlx::{Pool, Postgres};
 
 use crate::{application::DatabasePool, configuration::Settings};
@@ -22,11 +22,6 @@ pub struct PendingConnection {
 
 #[derive(Component)]
 pub struct EnterGameValidationTask(Task<Result<CharacterData, sqlx::Error>>);
-
-#[derive(Debug)]
-pub struct EnterGameResponse {
-    pub character_data: CharacterData,
-}
 
 #[derive(Event, Debug)]
 pub struct EnterGameEvent {
@@ -44,6 +39,34 @@ pub struct CharacterData {
     pub position_z: f64,
     pub level: i32,
     pub experience: i64,
+}
+
+impl CharacterData {
+    pub fn serialize(self, builder: &mut FlatBufferBuilder) {
+        let transform = schemas::mmo::Transform::new(
+            &schemas::mmo::Vec3::new(self.position_x, self.position_y, self.position_z),
+            &schemas::mmo::Vec3::new(0., 0., 0.),
+        );
+        let name = builder.create_string(&self.name);
+
+        let entity = schemas::mmo::Entity::create(
+            builder,
+            &schemas::mmo::EntityArgs {
+                name: Some(name),
+                // TODO: Fill this in
+                hp: 0,
+                level: self.level,
+                transform: Some(&transform),
+            },
+        );
+
+        schemas::mmo::Character::create(
+            builder,
+            &schemas::mmo::CharacterArgs {
+                entity: Some(entity),
+            },
+        );
+    }
 }
 
 pub fn send_packets(

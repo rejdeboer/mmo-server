@@ -1,9 +1,9 @@
 namespace mmo;
 
 struct Vec3 {
-  x:float;
-  y:float;
-  z:float;
+  x: double;
+  y: double;
+  z: double;
 }
 
 struct Transform {
