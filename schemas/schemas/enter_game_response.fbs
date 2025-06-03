@@ -5,3 +5,5 @@ namespace mmo;
 table EnterGameResponse {
 	character: mmo.Character;
 }
+
+root_type EnterGameResponse;

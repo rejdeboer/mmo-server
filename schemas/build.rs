@@ -22,7 +22,8 @@ fn main() {
     flatc_rust::run(flatc_rust::Args {
         inputs: &paths,
         out_dir: Path::new("src/"),
-        extra: &["--rust-module-root-file"],
+        // TODO: Do we need this automation? It only generates mod file for last schema
+        // extra: &["--gen-all", "--rust-module-root-file"],
         ..Default::default()
     })
     .expect(&format!("Failed to compile"));
