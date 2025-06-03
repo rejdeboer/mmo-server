@@ -6,7 +6,7 @@ use bevy_renet::{
     renet::{ClientId, DefaultChannel, RenetServer, ServerEvent},
 };
 use bevy_tokio_tasks::TokioTasksRuntime;
-use flatbuffers::{FlatBufferBuilder, root};
+use flatbuffers::{FlatBufferBuilder, WIPOffset, root};
 use sqlx::{Pool, Postgres};
 
 use crate::{application::DatabasePool, configuration::Settings};
@@ -42,7 +42,10 @@ pub struct CharacterData {
 }
 
 impl CharacterData {
-    pub fn serialize(self, builder: &mut FlatBufferBuilder) {
+    pub fn serialize<'a>(
+        self,
+        builder: &mut FlatBufferBuilder<'a>,
+    ) -> WIPOffset<schemas::mmo::Character<'a>> {
         let transform = schemas::mmo::Transform::new(
             &schemas::mmo::Vec3::new(self.position_x, self.position_y, self.position_z),
             &schemas::mmo::Vec3::new(0., 0., 0.),
@@ -65,7 +68,7 @@ impl CharacterData {
             &schemas::mmo::CharacterArgs {
                 entity: Some(entity),
             },
-        );
+        )
     }
 }
 
@@ -126,7 +129,7 @@ pub fn receive_enter_game_requests(
             server.receive_message(client_id, DefaultChannel::ReliableOrdered)
         {
             // TODO: Should we verify the file identifier?
-            match root::<schemas::EnterGameRequest>(&message_bytes) {
+            match root::<schemas::mmo::EnterGameRequest>(&message_bytes) {
                 Ok(request) => {
                     let character_id = request.character_id();
                     let token = request.token().unwrap();
@@ -181,16 +184,21 @@ pub fn process_enter_game_requests(
                             character.position_z as f32,
                         ),
                     ));
-                    let response = EnterGameResponse {
-                        character_data: character,
-                    };
+
+                    let mut builder = FlatBufferBuilder::new();
+                    let character_offset = character.serialize(&mut builder);
+                    let response_offset = schemas::mmo::EnterGameResponse::create(
+                        &mut builder,
+                        &schemas::mmo::EnterGameResponseArgs {
+                            character: Some(character_offset),
+                        },
+                    );
+                    builder.finish_minimal(response_offset);
+                    let response = builder.finished_data().to_vec();
+
                     let mut server = ctx.world.get_resource_mut::<RenetServer>().unwrap();
                     tracing::info!("approving enter game request by client {}", client_id);
-                    server.send_message(
-                        client_id,
-                        DefaultChannel::ReliableOrdered,
-                        bincode::encode_to_vec(response, bincode::config::standard()).unwrap(),
-                    );
+                    server.send_message(client_id, DefaultChannel::ReliableOrdered, response);
                 })
                 .await;
             }
