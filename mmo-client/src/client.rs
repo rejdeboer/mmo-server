@@ -1,5 +1,5 @@
 use std::net::{IpAddr, SocketAddr, UdpSocket};
-use std::time::SystemTime;
+use std::time::{Duration, SystemTime};
 
 use renet::{ConnectionConfig, RenetClient};
 use renet_netcode::{ClientAuthentication, NetcodeClientTransport};
@@ -30,5 +30,14 @@ impl GameClient {
         let transport = NetcodeClientTransport::new(current_time, authentication, socket).unwrap();
 
         Self { client, transport }
+    }
+
+    pub fn is_connected(&self) -> bool {
+        self.client.is_connected()
+    }
+
+    pub fn update(&mut self, dt: Duration) {
+        self.client.update(dt);
+        self.transport.update(dt, &mut self.client).unwrap()
     }
 }
