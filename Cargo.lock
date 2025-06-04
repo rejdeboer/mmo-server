@@ -1603,6 +1603,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "mmo-client"
+version = "0.1.0"
+dependencies = [
+ "flatbuffers",
+ "renet_netcode",
+ "schemas",
+]
+
+[[package]]
 name = "mmo-server"
 version = "0.1.0"
 dependencies = [

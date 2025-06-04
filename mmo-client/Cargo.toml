@@ -1,0 +1,13 @@
+[package]
+name = "mmo-client"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+flatbuffers = "25.2.10"
+renet_netcode = { git = "https://github.com/lucaspoffo/renet" }
+schemas = { path = "../schemas" }
+
