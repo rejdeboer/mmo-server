@@ -19,6 +19,18 @@ pub struct Transform {
     pub position: Vec3,
 }
 
+impl Into<Character> for schemas::mmo::EnterGameResponse<'_> {
+    fn into(self) -> Character {
+        let entity = self.character().unwrap().entity().unwrap();
+        Character {
+            name: entity.name().to_string(),
+            hp: entity.hp(),
+            level: entity.level(),
+            transform: entity.transform().into(),
+        }
+    }
+}
+
 impl Into<Transform> for &schemas::mmo::Transform {
     fn into(self) -> Transform {
         Transform {

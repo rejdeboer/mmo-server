@@ -99,15 +99,3 @@ impl GameClient {
         events
     }
 }
-
-impl Into<Character> for schemas::mmo::EnterGameResponse<'_> {
-    fn into(self) -> Character {
-        let entity = self.character().unwrap().entity().unwrap();
-        Character {
-            name: entity.name().to_string(),
-            hp: entity.hp(),
-            level: entity.level(),
-            transform: entity.transform().into(),
-        }
-    }
-}
