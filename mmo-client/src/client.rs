@@ -5,6 +5,8 @@ use flatbuffers::root;
 use renet::{ConnectionConfig, DefaultChannel, RenetClient};
 use renet_netcode::{ClientAuthentication, NetcodeClientTransport};
 
+use crate::types::Character;
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum ClientState {
     Disconnected,
@@ -24,27 +26,6 @@ pub struct GameClient {
     client: RenetClient,
     transport: NetcodeClientTransport,
     state: ClientState,
-}
-
-// TODO: Do we need these intermediate structs?
-#[derive(Debug, Clone)]
-struct Character {
-    pub name: String,
-    pub hp: i32,
-    pub level: i32,
-    pub transform: Transform,
-}
-
-#[derive(Debug, Clone)]
-struct Vec3 {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-}
-
-#[derive(Debug, Clone)]
-struct Transform {
-    pub position: Vec3,
 }
 
 impl GameClient {
@@ -127,24 +108,6 @@ impl Into<Character> for schemas::mmo::EnterGameResponse<'_> {
             hp: entity.hp(),
             level: entity.level(),
             transform: entity.transform().into(),
-        }
-    }
-}
-
-impl Into<Transform> for &schemas::mmo::Transform {
-    fn into(self) -> Transform {
-        Transform {
-            position: self.position().into(),
-        }
-    }
-}
-
-impl Into<Vec3> for &schemas::mmo::Vec3 {
-    fn into(self) -> Vec3 {
-        Vec3 {
-            x: self.x() as f32,
-            y: self.y() as f32,
-            z: self.z() as f32,
         }
     }
 }
