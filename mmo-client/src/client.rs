@@ -26,24 +26,25 @@ pub struct GameClient {
     state: ClientState,
 }
 
+// TODO: Do we need these intermediate structs?
 #[derive(Debug, Clone)]
 struct Character {
-    name: String,
-    hp: i32,
-    level: i32,
-    transform: Transform,
+    pub name: String,
+    pub hp: i32,
+    pub level: i32,
+    pub transform: Transform,
 }
 
 #[derive(Debug, Clone)]
 struct Vec3 {
-    x: f32,
-    y: f32,
-    z: f32,
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
 }
 
 #[derive(Debug, Clone)]
 struct Transform {
-    position: Vec3,
+    pub position: Vec3,
 }
 
 impl GameClient {
