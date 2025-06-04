@@ -12,7 +12,6 @@ pub struct GameClient {
 impl GameClient {
     pub fn connect(host: String, port: u16) -> Self {
         let client = RenetClient::new(ConnectionConfig::default());
-        let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
 
         let ip_addr = IpAddr::V4(host.parse().expect("host should be IPV4 addr"));
         let server_addr: SocketAddr = SocketAddr::new(ip_addr, port);
@@ -27,6 +26,7 @@ impl GameClient {
             protocol_id: 0,
         };
 
+        let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
         let transport = NetcodeClientTransport::new(current_time, authentication, socket).unwrap();
 
         Self { client, transport }
