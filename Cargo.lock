@@ -1610,6 +1610,7 @@ dependencies = [
  "renet",
  "renet_netcode",
  "schemas",
+ "tracing",
 ]
 
 [[package]]

@@ -11,4 +11,5 @@ flatbuffers = "25.2.10"
 renet = { git = "https://github.com/lucaspoffo/renet" }
 renet_netcode = { git = "https://github.com/lucaspoffo/renet" }
 schemas = { path = "../schemas" }
+tracing = "0.1.40"
 
