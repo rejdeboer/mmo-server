@@ -1,12 +1,49 @@
 use std::net::{IpAddr, SocketAddr, UdpSocket};
 use std::time::{Duration, SystemTime};
 
-use renet::{ConnectionConfig, RenetClient};
+use flatbuffers::root;
+use renet::{ConnectionConfig, DefaultChannel, RenetClient};
 use renet_netcode::{ClientAuthentication, NetcodeClientTransport};
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ClientState {
+    Disconnected,
+    Connecting,
+    Connected,
+    InGame,
+}
+
+#[derive(Debug, Clone)]
+pub enum ClientEvent {
+    Connected,
+    Disconnected,
+    EnterGameSuccess { character: Character },
+}
 
 pub struct GameClient {
     client: RenetClient,
     transport: NetcodeClientTransport,
+    state: ClientState,
+}
+
+#[derive(Debug, Clone)]
+struct Character {
+    name: String,
+    hp: i32,
+    level: i32,
+    transform: Transform,
+}
+
+#[derive(Debug, Clone)]
+struct Vec3 {
+    x: f32,
+    y: f32,
+    z: f32,
+}
+
+#[derive(Debug, Clone)]
+struct Transform {
+    position: Vec3,
 }
 
 impl GameClient {
@@ -29,15 +66,84 @@ impl GameClient {
         let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
         let transport = NetcodeClientTransport::new(current_time, authentication, socket).unwrap();
 
-        Self { client, transport }
+        Self {
+            client,
+            transport,
+            state: ClientState::Connecting,
+        }
     }
 
     pub fn is_connected(&self) -> bool {
         self.client.is_connected()
     }
 
-    pub fn update(&mut self, dt: Duration) {
+    pub fn update(&mut self, dt: Duration) -> Vec<ClientEvent> {
         self.client.update(dt);
-        self.transport.update(dt, &mut self.client).unwrap()
+        self.transport.update(dt, &mut self.client).unwrap();
+
+        let mut events = Vec::new();
+        match self.state {
+            ClientState::Connecting => {
+                if self.client.is_connected() {
+                    self.state = ClientState::Connected;
+                    events.push(ClientEvent::Connected);
+                } else if self.client.is_disconnected() {
+                    // TODO: Handle reason
+                    self.state = ClientState::Disconnected;
+                    events.push(ClientEvent::Disconnected);
+                }
+            }
+            ClientState::Connected => {
+                if let Some(message) = self.client.receive_message(DefaultChannel::ReliableOrdered)
+                {
+                    match root::<schemas::mmo::EnterGameResponse>(&message) {
+                        Ok(response) => {
+                            events.push(ClientEvent::EnterGameSuccess {
+                                character: response.into(),
+                            });
+                            self.state = ClientState::InGame;
+                        }
+                        Err(e) => {
+                            tracing::error!("received invalid EnterGameResponse {}", e);
+                            events.push(ClientEvent::Disconnected);
+                            self.state = ClientState::Disconnected;
+                        }
+                    }
+                }
+            }
+            _ => (),
+        }
+
+        events
+    }
+}
+
+impl Into<Character> for schemas::mmo::EnterGameResponse<'_> {
+    fn into(self) -> Character {
+        let entity = self.character().unwrap().entity().unwrap();
+        Character {
+            name: entity.name().to_string(),
+            hp: entity.hp(),
+            level: entity.level(),
+            transform: entity.transform().into(),
+        }
+    }
+}
+
+impl Into<Transform> for &schemas::mmo::Transform {
+    fn into(self) -> Transform {
+        Transform {
+            position: self.position().into(),
+        }
+    }
+}
+
+impl Into<Vec3> for &schemas::mmo::Vec3 {
+    fn into(self) -> Vec3 {
+        Vec3 {
+            x: self.x() as f32,
+            y: self.y() as f32,
+            z: self.z() as f32,
+        }
     }
 }
