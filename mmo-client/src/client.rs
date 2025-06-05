@@ -1,7 +1,7 @@
 use std::net::{IpAddr, SocketAddr, UdpSocket};
 use std::time::{Duration, SystemTime};
 
-use flatbuffers::root;
+use flatbuffers::{FlatBufferBuilder, root};
 use renet::{ConnectionConfig, DefaultChannel, RenetClient};
 use renet_netcode::{ClientAuthentication, NetcodeClientTransport};
 
@@ -105,5 +105,24 @@ impl GameClient {
         }
 
         events
+    }
+
+    pub fn send_enter_game_request(&mut self, character_id: i32, token: String) {
+        assert!(matches!(self.state, ClientState::Connected));
+
+        let mut builder = FlatBufferBuilder::new();
+        let fb_token = builder.create_string(&token);
+        let request = schemas::mmo::EnterGameRequest::create(
+            &mut builder,
+            &schemas::mmo::EnterGameRequestArgs {
+                token: Some(fb_token),
+                character_id,
+            },
+        );
+
+        builder.finish_minimal(request);
+        let data = builder.finished_data();
+        self.client
+            .send_message(DefaultChannel::ReliableOrdered, data.to_vec());
     }
 }
