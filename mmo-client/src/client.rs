@@ -24,14 +24,22 @@ pub enum ClientEvent {
 
 pub struct GameClient {
     client: RenetClient,
-    transport: NetcodeClientTransport,
+    transport: Option<NetcodeClientTransport>,
     state: ClientState,
 }
 
-impl GameClient {
-    pub fn connect(host: String, port: u16) -> Self {
-        let client = RenetClient::new(ConnectionConfig::default());
+impl Default for GameClient {
+    fn default() -> Self {
+        Self {
+            client: RenetClient::new(ConnectionConfig::default()),
+            transport: None,
+            state: ClientState::Disconnected,
+        }
+    }
+}
 
+impl GameClient {
+    pub fn connect(&mut self, host: String, port: u16) {
         let ip_addr = IpAddr::V4(host.parse().expect("host should be IPV4 addr"));
         let server_addr: SocketAddr = SocketAddr::new(ip_addr, port);
 
@@ -48,11 +56,8 @@ impl GameClient {
         let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
         let transport = NetcodeClientTransport::new(current_time, authentication, socket).unwrap();
 
-        Self {
-            client,
-            transport,
-            state: ClientState::Connecting,
-        }
+        self.transport = Some(transport);
+        self.state = ClientState::Connecting;
     }
 
     pub fn is_connected(&self) -> bool {
@@ -61,7 +66,10 @@ impl GameClient {
 
     pub fn update(&mut self, dt: Duration) -> Vec<ClientEvent> {
         self.client.update(dt);
-        self.transport.update(dt, &mut self.client).unwrap();
+
+        if let Some(transport) = self.transport.as_mut() {
+            transport.update(dt, &mut self.client).unwrap();
+        }
 
         let mut events = Vec::new();
         match self.state {
