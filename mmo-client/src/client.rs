@@ -126,3 +126,21 @@ impl GameClient {
             .send_message(DefaultChannel::ReliableOrdered, data.to_vec());
     }
 }
+
+// Test that can be used to check if connection is successful with local server
+#[test]
+fn test_connection_manual() {
+    let mut client = GameClient::default();
+    client.connect("127.0.0.1".to_string(), 8000);
+    let mut last_time = SystemTime::now();
+    loop {
+        let new_time = SystemTime::now();
+        let dt = new_time.duration_since(last_time).unwrap();
+        last_time = new_time;
+        let events = client.update(dt);
+        if !events.is_empty() {
+            break;
+        }
+    }
+    println!("WE PRINTIN");
+}
