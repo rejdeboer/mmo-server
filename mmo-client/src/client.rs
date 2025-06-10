@@ -69,6 +69,7 @@ impl GameClient {
 
         if let Some(transport) = self.transport.as_mut() {
             transport.update(dt, &mut self.client).unwrap();
+            panic!("PANIC FROM TRANSPORT CONDITION");
         }
 
         let mut events = Vec::new();
