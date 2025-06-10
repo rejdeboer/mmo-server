@@ -55,7 +55,6 @@ impl GameClient {
 
         let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
         let transport = NetcodeClientTransport::new(current_time, authentication, socket).unwrap();
-        panic!("PANIC FROM CONNECT");
 
         self.transport = Some(transport);
         self.state = ClientState::Connecting;
@@ -65,12 +64,15 @@ impl GameClient {
         self.client.is_connected()
     }
 
+    pub fn get_state(&self) -> &ClientState {
+        &self.state
+    }
+
     pub fn update(&mut self, dt: Duration) -> Vec<ClientEvent> {
         self.client.update(dt);
 
         if let Some(transport) = self.transport.as_mut() {
             transport.update(dt, &mut self.client).unwrap();
-            panic!("PANIC FROM TRANSPORT CONDITION");
         }
 
         let mut events = Vec::new();
