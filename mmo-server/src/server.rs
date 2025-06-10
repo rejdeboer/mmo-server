@@ -88,14 +88,14 @@ pub fn handle_connection_events(
     for event in events.read() {
         match event {
             ServerEvent::ClientConnected { client_id } => {
-                tracing::info!("player {} connected", client_id);
+                bevy::log::info!("player {} connected", client_id);
                 commands.spawn(PendingConnection {
                     client_id: *client_id,
                     initiated_at: Instant::now(),
                 });
             }
             ServerEvent::ClientDisconnected { client_id, reason } => {
-                tracing::info!("player {} disconnected: {}", client_id, reason);
+                bevy::log::info!("player {} disconnected: {}", client_id, reason);
                 let client_id = *client_id;
 
                 for (entity, pending_conn) in pending_connections_query.iter() {
@@ -133,7 +133,7 @@ pub fn receive_enter_game_requests(
                 Ok(request) => {
                     let character_id = request.character_id();
                     let token = request.token().unwrap();
-                    tracing::info!(
+                    bevy::log::info!(
                         "received handshake from client {}: character_id {}, token {}",
                         client_id,
                         character_id,
@@ -147,7 +147,7 @@ pub fn receive_enter_game_requests(
                     commands.entity(entity).despawn();
                 }
                 Err(e) => {
-                    tracing::error!(
+                    bevy::log::error!(
                         "failed to deserialize handshake from client {}: {}; disconnecting",
                         client_id,
                         e
@@ -197,7 +197,7 @@ pub fn process_enter_game_requests(
                     let response = builder.finished_data().to_vec();
 
                     let mut server = ctx.world.get_resource_mut::<RenetServer>().unwrap();
-                    tracing::info!("approving enter game request by client {}", client_id);
+                    bevy::log::info!("approving enter game request by client {}", client_id);
                     server.send_message(client_id, DefaultChannel::ReliableOrdered, response);
                 })
                 .await;

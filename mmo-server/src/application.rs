@@ -1,3 +1,4 @@
+use bevy::log::LogPlugin;
 use bevy::prelude::*;
 use bevy_renet::RenetServerPlugin;
 use bevy_renet::netcode::{
@@ -17,6 +18,7 @@ pub struct DatabasePool(pub PgPool);
 pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins);
+    app.add_plugins(LogPlugin::default());
     app.add_plugins(RenetServerPlugin);
     app.add_plugins(NetcodeServerPlugin);
     app.add_plugins(TokioTasksPlugin::default());

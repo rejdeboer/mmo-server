@@ -1,10 +1,9 @@
-use mmo_server::{application, configuration, telemetry::get_subscriber};
-
-use tracing_subscriber::util::SubscriberInitExt;
+use mmo_server::{application, configuration};
 
 fn main() -> std::io::Result<()> {
-    let subscriber = get_subscriber();
-    subscriber.init();
+    // TODO: Use custom logger?
+    // let subscriber = get_subscriber();
+    // subscriber.init();
 
     let settings = configuration::get_configuration().expect("config fetched");
 
