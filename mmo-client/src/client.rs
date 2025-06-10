@@ -55,6 +55,7 @@ impl GameClient {
 
         let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
         let transport = NetcodeClientTransport::new(current_time, authentication, socket).unwrap();
+        panic!("PANIC FROM CONNECT");
 
         self.transport = Some(transport);
         self.state = ClientState::Connecting;
