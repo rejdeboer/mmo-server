@@ -1,0 +1,4 @@
+application:
+  signing_key: secret
+database:
+  require_ssl: false
