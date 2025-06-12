@@ -45,6 +45,6 @@ done
 
 export DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@localhost:${DB_PORT}/${DB_NAME}
 cargo sqlx database create
-cargo sqlx migrate run --source ../db/migrations/ 
+cargo sqlx migrate run --source migrations 
 
 >&2 echo "Postgres has been migrated, ready to go!"
