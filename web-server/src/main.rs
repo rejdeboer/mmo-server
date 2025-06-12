@@ -1,4 +1,4 @@
-use websocket::{configuration, server::Application, telemetry::get_subscriber};
+use crate::{configuration, server::Application, telemetry::get_subscriber};
 
 use tracing_subscriber::util::SubscriberInitExt;
 

@@ -1,5 +1,5 @@
 use axum::{
-    extract::{ConnectInfo, Path, State },
+    extract::{ConnectInfo, Path, State},
     middleware,
     response::Response,
     routing::get,
@@ -8,12 +8,7 @@ use axum::{
 use axum_extra::TypedHeader;
 use serde::Deserialize;
 use sqlx::{postgres::PgPoolOptions, PgPool};
-use std::{
-    collections::HashMap,
-    net::SocketAddr,
-    str::FromStr,
-    sync::{Arc, Mutex},
-};
+use std::{collections::HashMap, net::SocketAddr, str::FromStr};
 use tokio::{
     net::TcpListener,
     sync::mpsc::{channel, Sender},
@@ -26,7 +21,6 @@ use crate::{
     configuration::{DatabaseSettings, Settings},
     document::Document,
     error::ApiError,
-    websocket::{handle_socket, Message, Syncer},
 };
 
 pub struct Application {
@@ -57,7 +51,7 @@ impl Application {
 
         let application_state = ApplicationState {
             pool: connection_pool,
-        });
+        };
 
         let router = Router::new()
             .route("/character", post(character_post))
@@ -110,6 +104,4 @@ async fn character_post(
     } else {
         String::from("Unknown client")
     };
-
 }
-
