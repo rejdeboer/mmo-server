@@ -1,5 +1,5 @@
 use axum::{
-    extract::{ConnectInfo, Path, State, WebSocketUpgrade},
+    extract::{ConnectInfo, Path, State },
     middleware,
     response::Response,
     routing::get,
@@ -37,7 +37,6 @@ pub struct Application {
 
 pub struct ApplicationState {
     pub pool: PgPool,
-    pub doc_handles: Mutex<HashMap<Uuid, Sender<Message>>>,
 }
 
 #[derive(Deserialize)]
@@ -56,18 +55,17 @@ impl Application {
         let port = listener.local_addr().unwrap().port();
         let connection_pool = get_connection_pool(&settings.database);
 
-        let application_state = Arc::new(ApplicationState {
+        let application_state = ApplicationState {
             pool: connection_pool,
-            doc_handles: Mutex::new(HashMap::new()),
         });
 
         let router = Router::new()
-            .route("/:document_id", get(ws_handler))
+            .route("/character", post(character_post))
             .route_layer(middleware::from_fn_with_state(
                 settings.application.signing_key,
                 auth_middleware,
             ))
-            .route("/", get(|| async { "Hello from websocket server" }))
+            .route("/", get(|| async { "Hello from web server" }))
             .layer(
                 TraceLayer::new_for_http()
                     .make_span_with(DefaultMakeSpan::default().include_headers(true)),
@@ -101,12 +99,10 @@ pub fn get_connection_pool(settings: &DatabaseSettings) -> PgPool {
 }
 
 // TODO: Add connection context for tracing
-async fn ws_handler(
-    ws: WebSocketUpgrade,
+async fn character_post(
     user_agent: Option<TypedHeader<headers::UserAgent>>,
     ConnectInfo(_addr): ConnectInfo<SocketAddr>,
-    State(state): State<Arc<ApplicationState>>,
-    Path(document_id): Path<String>,
+    State(state): State<ApplicationState>,
     Extension(user): Extension<User>,
 ) -> Result<Response, ApiError> {
     let _user_agent = if let Some(TypedHeader(user_agent)) = user_agent {
@@ -115,50 +111,5 @@ async fn ws_handler(
         String::from("Unknown client")
     };
 
-    let document_id = Uuid::from_str(&document_id)
-        .map_err(|_| ApiError::BadRequest("please provide a valid document UUID".to_string()))?;
-
-    let document = sqlx::query_as!(
-        Document,
-        r#"
-        SELECT id, owner_id, name, state_vector
-        FROM documents
-        WHERE id = $1 
-        "#,
-        document_id
-    )
-    .fetch_one(&state.pool)
-    .await
-    .map_err(|error| {
-        tracing::error!(?error, "error fetching document");
-        ApiError::DocumentNotFoundError(document_id)
-    })?;
-
-    if document.owner_id != user.id {
-        tracing::error!(
-            ?user,
-            document = %document_id,
-            "user does not have access to document"
-        );
-        return Err(ApiError::DocumentNotFoundError(document_id));
-    }
-
-    let doc_handle = get_or_create_doc_handle(state, document);
-
-    Ok(ws.on_upgrade(move |socket| handle_socket(socket, user, doc_handle)))
 }
 
-fn get_or_create_doc_handle(state: Arc<ApplicationState>, document: Document) -> Sender<Message> {
-    let mut doc_handles = state.doc_handles.lock().expect("received handles lock");
-    let tx = doc_handles.get(&document.id);
-    if let Some(tx) = tx {
-        return tx.clone();
-    }
-
-    let (tx, rx) = channel::<Message>(128);
-    doc_handles.insert(document.id, tx.clone());
-    let syncer = Syncer::new(state.clone(), document.id, document.state_vector, rx);
-    syncer.run();
-
-    tx
-}
