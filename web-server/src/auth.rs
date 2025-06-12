@@ -11,7 +11,6 @@ use jsonwebtoken::{decode, DecodingKey, TokenData, Validation};
 use secrecy::{ExposeSecret, Secret};
 use serde::{Deserialize, Serialize};
 use serde_aux::field_attributes::deserialize_number_from_string;
-use uuid::Uuid;
 
 use crate::error::ApiError;
 
@@ -19,13 +18,13 @@ use crate::error::ApiError;
 pub struct Claims {
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub exp: u64,
-    pub user_id: String,
+    pub account_id: String,
     pub username: String,
 }
 
 #[derive(Debug, Clone)]
 pub struct User {
-    pub id: Uuid,
+    pub account_id: i32,
 }
 
 pub async fn auth_middleware(
@@ -41,7 +40,7 @@ pub async fn auth_middleware(
     })?;
 
     let user = User {
-        id: Uuid::from_str(&token.claims.user_id).unwrap(),
+        account_id: i32::from_str(&token.claims.account_id).unwrap(),
     };
     req.extensions_mut().insert(user);
 
