@@ -4,3 +4,5 @@ pub mod error;
 pub mod routes;
 pub mod server;
 pub mod telemetry;
+
+pub use server::ApplicationState;

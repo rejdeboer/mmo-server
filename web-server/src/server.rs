@@ -1,27 +1,18 @@
-use axum::{
-    extract::{ConnectInfo, Path, State},
-    middleware,
-    response::Response,
-    routing::get,
-    Extension, Router,
+use crate::{
+    auth::auth_middleware,
+    configuration::{DatabaseSettings, Settings},
+    routes::character_post,
 };
-use axum_extra::TypedHeader;
+use axum::{
+    middleware,
+    routing::{get, post},
+    Router,
+};
 use serde::Deserialize;
 use sqlx::{postgres::PgPoolOptions, PgPool};
-use std::{collections::HashMap, net::SocketAddr, str::FromStr};
-use tokio::{
-    net::TcpListener,
-    sync::mpsc::{channel, Sender},
-};
+use std::net::SocketAddr;
+use tokio::net::TcpListener;
 use tower_http::trace::{DefaultMakeSpan, TraceLayer};
-use uuid::Uuid;
-
-use crate::{
-    auth::{auth_middleware, User},
-    configuration::{DatabaseSettings, Settings},
-    document::Document,
-    error::ApiError,
-};
 
 pub struct Application {
     listener: TcpListener,
@@ -29,6 +20,7 @@ pub struct Application {
     port: u16,
 }
 
+#[derive(Clone)]
 pub struct ApplicationState {
     pub pool: PgPool,
 }
@@ -90,18 +82,4 @@ impl Application {
 
 pub fn get_connection_pool(settings: &DatabaseSettings) -> PgPool {
     PgPoolOptions::new().connect_lazy_with(settings.with_db())
-}
-
-// TODO: Add connection context for tracing
-async fn character_post(
-    user_agent: Option<TypedHeader<headers::UserAgent>>,
-    ConnectInfo(_addr): ConnectInfo<SocketAddr>,
-    State(state): State<ApplicationState>,
-    Extension(user): Extension<User>,
-) -> Result<Response, ApiError> {
-    let _user_agent = if let Some(TypedHeader(user_agent)) = user_agent {
-        user_agent.to_string()
-    } else {
-        String::from("Unknown client")
-    };
 }
