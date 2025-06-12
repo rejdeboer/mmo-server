@@ -27,15 +27,24 @@ pub struct User {
 }
 
 pub async fn auth_middleware(
-    // TODO: Using query parameters for the token is not very secure
-    // But the WebSocket web API does not support the usage of custom headers
-    // It's probably better to use some ephemeral OTP
-    Query(params): Query<QueryParams>,
+    auth_header: Option<TypedHeader<headers::Authorization>>,
     State(signing_key): State<Secret<String>>,
     mut req: Request,
     next: Next,
 ) -> Result<Response, ApiError> {
-    let token = decode_jwt(&params.token, signing_key).map_err(|e| {
+    let token_split = if let Some(TypedHeader(auth_header)) = auth_header {
+        auth_header.to_string().split(" ")
+    } else {
+        tracing::error!("no auth token provided");
+        return ApiError::AuthError("no auth token".to_string());
+    };
+
+    if token_split.len() != 2 || token_split[0] != "Bearer" {
+        tracing::error!("invalid auth token format");
+        return ApiError::AuthError("invalid auth token format".to_string());
+    }
+
+    let token = decode_jwt(&token_split[1], signing_key).map_err(|e| {
         tracing::error!(?e, "JWT decoding error");
         ApiError::AuthError("invalid token".to_string())
     })?;
