@@ -12,7 +12,6 @@ path = "src/main.rs"
 name = "web-server"
 
 [dependencies]
-axum = { version = "0.8" }
 axum-extra = { version = "0.10", features = ["typed-header"] }
 config = "0.11"
 futures = "0.3"
@@ -34,6 +33,10 @@ tower = { version = "0.4", features = ["util"] }
 tower-http = { version = "0.5.0", features = ["fs", "trace"] }
 unicode-segmentation = "1"
 validator = "0.20.0"
+
+[dependencies.axum]
+version = "0.8"
+features = ["macros"] # For debug handler
 
 [dependencies.sqlx]
 version = "0.8.5"

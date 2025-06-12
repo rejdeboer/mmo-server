@@ -1,7 +1,7 @@
 use crate::{
     auth::auth_middleware,
     configuration::{DatabaseSettings, Settings},
-    routes::character_post,
+    routes::{character_list, character_post},
 };
 use axum::{
     middleware,
@@ -45,13 +45,15 @@ impl Application {
             pool: connection_pool,
         };
 
-        let router = Router::new()
-            .route("/character", post(character_post))
+        let protected_routes = Router::new()
+            .route("/character", get(character_list).post(character_post))
             .route_layer(middleware::from_fn_with_state(
                 settings.application.signing_key,
                 auth_middleware,
-            ))
-            .route("/", get(|| async { "Hello from web server" }))
+            ));
+
+        let router = Router::new()
+            .merge(protected_routes)
             .layer(
                 TraceLayer::new_for_http()
                     .make_span_with(DefaultMakeSpan::default().include_headers(true)),
