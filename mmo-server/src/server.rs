@@ -21,7 +21,7 @@ pub struct PendingConnection {
 }
 
 #[derive(Component)]
-pub struct EnterGameValidationTask(Task<Result<CharacterData, sqlx::Error>>);
+pub struct EnterGameValidationTask(Task<Result<CharacterRow, sqlx::Error>>);
 
 #[derive(Event, Debug)]
 pub struct EnterGameEvent {
@@ -31,7 +31,7 @@ pub struct EnterGameEvent {
 }
 
 #[derive(Debug, Clone, sqlx::FromRow)]
-pub struct CharacterData {
+pub struct CharacterRow {
     pub id: i32,
     pub name: String,
     pub position_x: f64,
@@ -41,7 +41,7 @@ pub struct CharacterData {
     pub experience: i64,
 }
 
-impl CharacterData {
+impl CharacterRow {
     pub fn serialize<'a>(
         self,
         builder: &mut FlatBufferBuilder<'a>,
@@ -211,9 +211,9 @@ pub fn process_enter_game_requests(
 async fn load_character_data(
     pool: Pool<Postgres>,
     character_id: i32,
-) -> Result<CharacterData, sqlx::Error> {
+) -> Result<CharacterRow, sqlx::Error> {
     sqlx::query_as!(
-        CharacterData,
+        CharacterRow,
         r#"
         SELECT id, name, level, experience,
             position_x, position_y, position_z
