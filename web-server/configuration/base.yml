@@ -1,9 +1,0 @@
-application:
-  port: 8001
-  token_expiration_seconds: 3600
-database:
-  host: "postgres"
-  port: 5432
-  username: "postgres"
-  password: "password"
-  db_name: "mmo"
