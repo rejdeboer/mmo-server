@@ -11,7 +11,7 @@ COPY --from=planner /app/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
 COPY . .
 ENV SQLX_OFFLINE true
-RUN cargo build --release --bin websocket
+RUN cargo build --release --bin web-server
 
 FROM debian:bookworm-slim AS runtime
 WORKDIR /app
@@ -21,7 +21,7 @@ RUN apt-get update -y \
 	&& apt-get clean -y \
 	&& rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /app/target/release/websocket websocket
+COPY --from=builder /app/target/release/web-server web-server
 COPY configuration configuration
 
-ENTRYPOINT ["./websocket"]
+ENTRYPOINT ["./web-server"]
