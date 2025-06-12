@@ -1,7 +1,7 @@
 use crate::{
     auth::auth_middleware,
     configuration::{DatabaseSettings, Settings},
-    routes::{character_list, character_post},
+    routes::{character_create, character_list},
 };
 use axum::{
     middleware,
@@ -46,7 +46,7 @@ impl Application {
         };
 
         let protected_routes = Router::new()
-            .route("/character", get(character_list).post(character_post))
+            .route("/character", get(character_list).post(character_create))
             .route_layer(middleware::from_fn_with_state(
                 settings.application.signing_key,
                 auth_middleware,
