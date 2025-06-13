@@ -4,7 +4,7 @@ use tracing_subscriber::{layer::SubscriberExt, EnvFilter, Registry};
 
 pub fn get_subscriber() -> impl Subscriber + Send + Sync {
     let env_filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| "web-server=debug,tower_http=debug".into());
+        .unwrap_or_else(|_| "web_server=debug,tower_http=debug".into());
     let formatting_layer = tracing_subscriber::fmt::layer();
     Registry::default().with(env_filter).with(formatting_layer)
 }
