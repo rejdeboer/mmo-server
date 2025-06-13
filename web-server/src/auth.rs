@@ -5,7 +5,7 @@ use axum::{
 };
 use axum_extra::TypedHeader;
 use headers::authorization::Bearer;
-use jsonwebtoken::{decode, DecodingKey, TokenData, Validation};
+use jsonwebtoken::{DecodingKey, EncodingKey, Header, TokenData, Validation};
 use secrecy::{ExposeSecret, Secret};
 use serde::{Deserialize, Serialize};
 use serde_aux::field_attributes::deserialize_number_from_string;
@@ -47,11 +47,19 @@ pub async fn auth_middleware(
     Ok(next.run(req).await)
 }
 
+pub fn encode_jwt(claims: Claims, signing_key: &str) -> jsonwebtoken::errors::Result<String> {
+    jsonwebtoken::encode(
+        &Header::default(),
+        &claims,
+        &EncodingKey::from_secret(signing_key.as_bytes()),
+    )
+}
+
 fn decode_jwt(
     token: &str,
     signing_key: Secret<String>,
 ) -> jsonwebtoken::errors::Result<TokenData<Claims>> {
-    decode(
+    jsonwebtoken::decode(
         token,
         &DecodingKey::from_secret(signing_key.expose_secret().as_ref()),
         &Validation::new(jsonwebtoken::Algorithm::HS256),
