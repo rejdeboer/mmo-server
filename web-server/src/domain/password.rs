@@ -1,7 +1,6 @@
 use argon2::{
     password_hash::{
-        rand_core::OsRng, PasswordHash, PasswordHashString, PasswordHasher, PasswordVerifier,
-        SaltString,
+        rand_core::OsRng, PasswordHash, PasswordHashString, PasswordHasher, SaltString,
     },
     Argon2,
 };
@@ -22,7 +21,7 @@ impl Password {
         if is_empty_or_whitespace || is_too_long || is_too_short || contains_forbidden_characters {
             Err(format!("{} is not a valid password", s))
         } else {
-            Ok(Self(s.to_lowercase()))
+            Ok(Self(s))
         }
     }
 
