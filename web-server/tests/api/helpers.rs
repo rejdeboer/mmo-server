@@ -21,6 +21,12 @@ pub struct TestApp {
     pub signing_key: Secret<String>,
 }
 
+#[derive(sqlx::FromRow)]
+pub struct TestAccount {
+    pub username: String,
+    pub password: String,
+}
+
 impl TestApp {
     pub async fn create_account(&self, body: AccountCreate) -> reqwest::Response {
         reqwest::Client::new()
@@ -38,6 +44,16 @@ impl TestApp {
             self.signing_key.expose_secret().as_ref(),
         )
         .expect("JWT encoded")
+    }
+
+    pub async fn test_account(&self) -> TestAccount {
+        sqlx::query_as!(
+            TestAccount,
+            "SELECT username, passhash as password FROM accounts LIMIT 1"
+        )
+        .fetch_one(&self.db_pool)
+        .await
+        .expect("test account retrieved")
     }
 }
 
@@ -93,6 +109,7 @@ async fn configure_database(config: &DatabaseSettings) -> PgPool {
 async fn add_test_account(pool: &PgPool) -> i32 {
     let username: String = Username().fake();
     let email: String = SafeEmail().fake();
+    // NOTE: The password won't be hashed for testing
     let password: String = Password(9..10).fake();
 
     let row = sqlx::query!(
