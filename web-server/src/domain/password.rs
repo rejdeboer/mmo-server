@@ -28,11 +28,10 @@ impl Password {
     pub fn hash(self) -> Result<PasswordHashString, argon2::password_hash::Error> {
         let salt = SaltString::generate(&mut OsRng);
         let argon2 = Argon2::default();
-        let password_hash = argon2
+        let passhash = argon2
             .hash_password(self.as_ref().as_bytes(), &salt)?
-            .to_string();
-        let parsed_hash = PasswordHash::new(&password_hash)?;
-        Ok(parsed_hash.serialize())
+            .serialize();
+        Ok(passhash)
     }
 }
 
