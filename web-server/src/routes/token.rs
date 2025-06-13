@@ -1,3 +1,4 @@
+use crate::auth::encode_jwt;
 use crate::domain::{EmailAddress, LoginPassword};
 use crate::{error::ApiError, ApplicationState};
 use argon2::PasswordHash;
@@ -40,7 +41,7 @@ pub async fn login(
 
     let row = sqlx::query!(
         r#"
-        SELECT id, passhash
+        SELECT id, username, passhash
         FROM accounts
         WHERE email = $1
         LIMIT 1
@@ -55,7 +56,6 @@ pub async fn login(
     })?;
 
     let passhash = PasswordHash::new(&row.passhash).map_err(|error| {
-        // NOTE: This should never happen
         tracing::error!(?error, "failed to encode passhash");
         ApiError::UnexpectedError
     })?;
@@ -64,7 +64,10 @@ pub async fn login(
         .verify(&passhash)
         .map_err(|_| ApiError::AuthError("incorrect credentials".to_string()))?;
 
-    Ok(Json(TokenResponse {
-        token: "".to_string(),
-    }))
+    let token = encode_jwt(row.id, row.username, &state.signing_key).map_err(|error| {
+        tracing::error!(?error, "failed to encode jwt");
+        ApiError::UnexpectedError
+    })?;
+
+    Ok(Json(TokenResponse { token }))
 }
