@@ -1,11 +1,9 @@
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
-
 use fake::faker::internet::en::{Password, SafeEmail, Username};
 use fake::Fake;
 use once_cell::sync::Lazy;
 use secrecy::{ExposeSecret, Secret};
 use sqlx::{Connection, Executor, PgConnection, PgPool};
-use web_server::auth::{encode_jwt, Claims};
+use web_server::auth::encode_jwt;
 use web_server::configuration::{get_configuration, DatabaseSettings};
 use web_server::routes::AccountCreate;
 use web_server::server::{get_connection_pool, Application};

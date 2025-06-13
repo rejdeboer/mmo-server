@@ -56,9 +56,10 @@ pub fn encode_jwt(
     username: String,
     signing_key: &str,
 ) -> jsonwebtoken::errors::Result<String> {
-    let mut timer = SystemTime::now();
-    timer += Duration::from_secs(TOKEN_DURATION_SEC);
-    let exp = timer.duration_since(UNIX_EPOCH).unwrap().as_secs();
+    let exp = SystemTime::now()
+        .duration_since(UNIX_EPOCH - Duration::from_secs(TOKEN_DURATION_SEC))
+        .unwrap()
+        .as_secs();
 
     let claims = Claims {
         account_id,
