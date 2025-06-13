@@ -5,7 +5,7 @@ use fake::Fake;
 use once_cell::sync::Lazy;
 use secrecy::{ExposeSecret, Secret};
 use sqlx::{Connection, Executor, PgConnection, PgPool};
-use web_server::auth::Claims;
+use web_server::auth::{encode_jwt, Claims};
 use web_server::configuration::{get_configuration, DatabaseSettings};
 use web_server::routes::AccountCreate;
 use web_server::server::{get_connection_pool, Application};
@@ -34,22 +34,12 @@ impl TestApp {
     }
 
     pub fn signed_jwt(&self, account_id: i32) -> String {
-        let claims = Claims {
+        encode_jwt(
             account_id,
-            username: Username().fake(),
-            exp: SystemTime::now()
-                .duration_since(UNIX_EPOCH - Duration::from_secs(3600))
-                .unwrap()
-                .as_secs(),
-        };
-
-        jsonwebtoken::encode(
-            &jsonwebtoken::Header::default(),
-            &claims,
-            &jsonwebtoken::EncodingKey::from_secret(self.signing_key.expose_secret().as_ref()),
+            Username().fake(),
+            self.signing_key.expose_secret().as_ref(),
         )
-        .expect("token encoded")
-        .to_string()
+        .expect("JWT encoded")
     }
 }
 
