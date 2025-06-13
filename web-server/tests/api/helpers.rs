@@ -7,6 +7,7 @@ use secrecy::{ExposeSecret, Secret};
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use web_server::auth::Claims;
 use web_server::configuration::{get_configuration, DatabaseSettings};
+use web_server::routes::AccountCreate;
 use web_server::server::{get_connection_pool, Application};
 use web_server::telemetry::{get_subscriber, init_subscriber};
 
@@ -23,6 +24,15 @@ pub struct TestApp {
 }
 
 impl TestApp {
+    pub async fn create_account(&self, body: AccountCreate) -> reqwest::Response {
+        reqwest::Client::new()
+            .post(&format!("{}/account", &self.address))
+            .json(&body)
+            .send()
+            .await
+            .expect("Failed to execute request.")
+    }
+
     pub fn signed_jwt(&self, account_id: i32) -> String {
         let claims = Claims {
             account_id,
