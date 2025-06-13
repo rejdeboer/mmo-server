@@ -1,7 +1,7 @@
 use crate::{
     auth::auth_middleware,
     configuration::{DatabaseSettings, Settings},
-    routes::{character_create, character_list},
+    routes::{account_create, character_create, character_list},
 };
 use axum::{
     middleware,
@@ -54,6 +54,7 @@ impl Application {
 
         let router = Router::new()
             .merge(protected_routes)
+            .route("/account", post(account_create))
             .layer(
                 TraceLayer::new_for_http()
                     .make_span_with(DefaultMakeSpan::default().include_headers(true)),
