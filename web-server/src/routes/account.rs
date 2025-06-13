@@ -19,7 +19,7 @@ pub struct NewAccount {
 }
 
 #[derive(Debug, Clone, Serialize, sqlx::FromRow)]
-pub struct AccountRow {
+pub struct AccountCreateRow {
     pub username: String,
     pub email: String,
 }
@@ -47,11 +47,11 @@ impl TryInto<NewAccount> for AccountCreate {
 pub async fn account_create(
     State(state): State<ApplicationState>,
     Json(payload): Json<AccountCreate>,
-) -> Result<Json<AccountRow>, ApiError> {
+) -> Result<Json<AccountCreateRow>, ApiError> {
     let new_account: NewAccount = payload.try_into().map_err(ApiError::BadRequest)?;
 
     let row = sqlx::query_as!(
-        AccountRow,
+        AccountCreateRow,
         r#"
         INSERT INTO accounts (username, email, passhash)
         VALUES ($1, $2, $3)

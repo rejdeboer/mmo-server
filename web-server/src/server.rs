@@ -1,13 +1,14 @@
 use crate::{
     auth::auth_middleware,
     configuration::{DatabaseSettings, Settings},
-    routes::{account_create, character_create, character_list},
+    routes::{account_create, character_create, character_list, login},
 };
 use axum::{
     middleware,
     routing::{get, post},
     Router,
 };
+use secrecy::ExposeSecret;
 use serde::Deserialize;
 use sqlx::{postgres::PgPoolOptions, PgPool};
 use std::net::SocketAddr;
@@ -23,6 +24,7 @@ pub struct Application {
 #[derive(Clone)]
 pub struct ApplicationState {
     pub pool: PgPool,
+    pub signing_key: String,
 }
 
 #[derive(Deserialize)]
@@ -43,6 +45,7 @@ impl Application {
 
         let application_state = ApplicationState {
             pool: connection_pool,
+            signing_key: settings.application.signing_key.expose_secret().to_string(),
         };
 
         let protected_routes = Router::new()
@@ -55,6 +58,7 @@ impl Application {
         let router = Router::new()
             .merge(protected_routes)
             .route("/account", post(account_create))
+            .route("/token", post(login))
             .layer(
                 TraceLayer::new_for_http()
                     .make_span_with(DefaultMakeSpan::default().include_headers(true)),

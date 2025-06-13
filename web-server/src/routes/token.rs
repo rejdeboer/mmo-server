@@ -1,0 +1,70 @@
+use crate::domain::{EmailAddress, LoginPassword};
+use crate::{error::ApiError, ApplicationState};
+use argon2::PasswordHash;
+use axum::extract::State;
+use axum::Json;
+use serde::{Deserialize, Serialize};
+
+#[derive(Deserialize, Serialize)]
+pub struct LoginBody {
+    pub email: String,
+    pub password: String,
+}
+
+#[derive(Serialize)]
+pub struct TokenResponse {
+    pub token: String,
+}
+
+struct LoginAttempt {
+    pub email: EmailAddress,
+    pub password: LoginPassword,
+}
+
+impl TryInto<LoginAttempt> for LoginBody {
+    type Error = String;
+
+    fn try_into(self) -> Result<LoginAttempt, Self::Error> {
+        let email = EmailAddress::parse(self.email)?;
+        let password = LoginPassword::parse(self.password)?;
+
+        Ok(LoginAttempt { email, password })
+    }
+}
+
+pub async fn login(
+    State(state): State<ApplicationState>,
+    Json(payload): Json<LoginBody>,
+) -> Result<Json<TokenResponse>, ApiError> {
+    let attempt: LoginAttempt = payload.try_into().map_err(ApiError::BadRequest)?;
+
+    let row = sqlx::query!(
+        r#"
+        SELECT id, passhash
+        FROM accounts
+        WHERE email = $1
+        LIMIT 1
+        "#,
+        attempt.email.as_ref(),
+    )
+    .fetch_one(&state.pool)
+    .await
+    .map_err(|error| {
+        tracing::error!(?error, email = attempt.email.as_ref(), "account not found");
+        ApiError::AuthError("incorrect credentials".to_string())
+    })?;
+
+    let passhash = PasswordHash::new(&row.passhash).map_err(|error| {
+        // NOTE: This should never happen
+        tracing::error!(?error, "failed to encode passhash");
+        ApiError::UnexpectedError
+    })?;
+    attempt
+        .password
+        .verify(&passhash)
+        .map_err(|_| ApiError::AuthError("incorrect credentials".to_string()))?;
+
+    Ok(Json(TokenResponse {
+        token: "".to_string(),
+    }))
+}

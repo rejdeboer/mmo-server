@@ -1,3 +1,5 @@
+use argon2::{Argon2, PasswordHash, PasswordVerifier};
+
 use super::MAX_PASSWORD_LENGTH;
 
 #[derive(Debug)]
@@ -12,6 +14,11 @@ impl LoginPassword {
         } else {
             Ok(Self(s))
         }
+    }
+
+    pub fn verify(&self, hash: &PasswordHash<'_>) -> argon2::password_hash::Result<()> {
+        let argon = Argon2::default();
+        argon.verify_password(self.as_ref().as_bytes(), hash)
     }
 }
 
