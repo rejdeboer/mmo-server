@@ -1,3 +1,5 @@
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
 use axum::{
     extract::{Request, State},
     middleware::Next,
@@ -11,6 +13,8 @@ use serde::{Deserialize, Serialize};
 use serde_aux::field_attributes::deserialize_number_from_string;
 
 use crate::error::ApiError;
+
+const TOKEN_DURATION_SEC: u64 = 7200;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
@@ -47,7 +51,21 @@ pub async fn auth_middleware(
     Ok(next.run(req).await)
 }
 
-pub fn encode_jwt(claims: Claims, signing_key: &str) -> jsonwebtoken::errors::Result<String> {
+pub fn encode_jwt(
+    account_id: i32,
+    username: String,
+    signing_key: &str,
+) -> jsonwebtoken::errors::Result<String> {
+    let mut timer = SystemTime::now();
+    timer += Duration::from_secs(TOKEN_DURATION_SEC);
+    let exp = timer.duration_since(UNIX_EPOCH).unwrap().as_secs();
+
+    let claims = Claims {
+        account_id,
+        username,
+        exp,
+    };
+
     jsonwebtoken::encode(
         &Header::default(),
         &claims,
