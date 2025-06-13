@@ -24,6 +24,7 @@ pub struct TestApp {
 #[derive(sqlx::FromRow)]
 pub struct TestAccount {
     pub username: String,
+    pub email: String,
     pub password: String,
 }
 
@@ -49,7 +50,7 @@ impl TestApp {
     pub async fn test_account(&self) -> TestAccount {
         sqlx::query_as!(
             TestAccount,
-            "SELECT username, passhash as password FROM accounts LIMIT 1"
+            "SELECT username, email, passhash as password FROM accounts LIMIT 1"
         )
         .fetch_one(&self.db_pool)
         .await

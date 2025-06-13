@@ -74,7 +74,7 @@ pub fn encode_jwt(
     )
 }
 
-fn decode_jwt(
+pub fn decode_jwt(
     token: &str,
     signing_key: Secret<String>,
 ) -> jsonwebtoken::errors::Result<TokenData<Claims>> {
