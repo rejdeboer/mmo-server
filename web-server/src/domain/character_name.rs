@@ -4,8 +4,8 @@ pub struct CharacterName(String);
 impl CharacterName {
     // TODO: Verify if we use normal constraints
     pub fn parse(s: String) -> Result<CharacterName, String> {
-        let is_too_long = s.len() > 32;
-        let is_too_short = s.len() < 3;
+        let is_too_long = s.chars().count() > 32;
+        let is_too_short = s.chars().count() < 3;
 
         let forbidden_characters = ['/', '(', ')', '"', '<', '>', '\\', '{', '}', ' '];
         let contains_forbidden_characters = s.chars().any(|g| forbidden_characters.contains(&g));

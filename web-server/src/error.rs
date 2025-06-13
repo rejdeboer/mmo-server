@@ -1,6 +1,7 @@
 use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
+    Json,
 };
 
 #[derive(Debug)]
@@ -13,14 +14,17 @@ pub enum ApiError {
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
         match self {
-            Self::BadRequest(e) => (StatusCode::BAD_REQUEST, format!("Bad request: {}", e)),
+            Self::BadRequest(e) => (
+                StatusCode::BAD_REQUEST,
+                Json::from(format!("Bad request: {}", e)),
+            ),
             Self::AuthError(e) => (
                 StatusCode::UNAUTHORIZED,
-                format!("Authorization error: {}", e),
+                Json::from(format!("Authorization error: {}", e)),
             ),
             Self::UnexpectedError => (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                "An unexpected error has occured".to_string(),
+                Json::from("An unexpected error has occured".to_string()),
             ),
         }
         .into_response()

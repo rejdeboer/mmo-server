@@ -10,8 +10,8 @@ impl Password {
     // TODO: Verify if we use normal constraints
     pub fn parse(s: String) -> Result<Password, String> {
         let is_empty_or_whitespace = s.trim().is_empty();
-        let is_too_long = s.len() > 32;
-        let is_too_short = s.len() < 8;
+        let is_too_long = s.chars().count() > 32;
+        let is_too_short = s.chars().count() < 8;
 
         let forbidden_characters = ['(', ')', '"', '<', '>', '\\', '{', '}', ' '];
         let contains_forbidden_characters = s.chars().any(|g| forbidden_characters.contains(&g));

@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS accounts (
     id SERIAL PRIMARY KEY,
     email VARCHAR(50) NOT NULL UNIQUE,
     username VARCHAR(50) NOT NULL UNIQUE,
-    passhash VARCHAR(50) NOT NULL
+    passhash VARCHAR(256) NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS "idx_accounts_id" ON "accounts" ("id");

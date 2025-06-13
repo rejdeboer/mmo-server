@@ -36,7 +36,7 @@ impl TestApp {
     pub fn signed_jwt(&self, account_id: i32) -> String {
         let claims = Claims {
             account_id,
-            username: "rejdeboer".to_string(),
+            username: Username().fake(),
             exp: SystemTime::now()
                 .duration_since(UNIX_EPOCH - Duration::from_secs(3600))
                 .unwrap()
@@ -72,7 +72,7 @@ pub async fn spawn_app() -> TestApp {
     let _ = tokio::spawn(application.run_until_stopped());
 
     let test_app = TestApp {
-        address: format!("ws://localhost:{}", application_port),
+        address: format!("http://localhost:{}", application_port),
         port: application_port,
         db_pool: get_connection_pool(&settings.database),
         signing_key: settings.application.signing_key,
@@ -105,7 +105,7 @@ async fn configure_database(config: &DatabaseSettings) -> PgPool {
 async fn add_test_account(pool: &PgPool) -> i32 {
     let username: String = Username().fake();
     let email: String = SafeEmail().fake();
-    let password: String = Password(10..10).fake();
+    let password: String = Password(9..10).fake();
 
     let row = sqlx::query!(
         "INSERT INTO accounts (username, email, passhash)
