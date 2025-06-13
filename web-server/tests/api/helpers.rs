@@ -5,7 +5,7 @@ use secrecy::{ExposeSecret, Secret};
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use web_server::auth::encode_jwt;
 use web_server::configuration::{get_configuration, DatabaseSettings};
-use web_server::routes::AccountCreate;
+use web_server::domain::SafePassword;
 use web_server::server::{get_connection_pool, Application};
 use web_server::telemetry::{get_subscriber, init_subscriber};
 
@@ -14,13 +14,6 @@ static TRACING: Lazy<()> = Lazy::new(|| {
     init_subscriber(subscriber);
 });
 
-pub struct TestApp {
-    pub address: String,
-    pub port: u16,
-    pub db_pool: PgPool,
-    pub signing_key: Secret<String>,
-}
-
 #[derive(sqlx::FromRow)]
 pub struct TestAccount {
     pub username: String,
@@ -28,16 +21,40 @@ pub struct TestAccount {
     pub password: String,
 }
 
-impl TestApp {
-    pub async fn create_account(&self, body: AccountCreate) -> reqwest::Response {
-        reqwest::Client::new()
-            .post(&format!("{}/account", &self.address))
-            .json(&body)
-            .send()
-            .await
-            .expect("Failed to execute request.")
+impl TestAccount {
+    pub fn generate() -> Self {
+        Self {
+            username: Username().fake(),
+            email: SafeEmail().fake(),
+            password: Password(9..10).fake(),
+        }
     }
 
+    async fn store(&self, pool: &PgPool) {
+        let password = SafePassword::parse(self.password.clone()).expect("password parsed");
+        let passhash = password.hash().expect("password hashed");
+        sqlx::query!(
+            "INSERT INTO accounts (username, email, passhash)
+            VALUES ($1, $2, $3)",
+            &self.username,
+            &self.email,
+            passhash.as_str(),
+        )
+        .execute(pool)
+        .await
+        .expect("Failed to store test user.");
+    }
+}
+
+pub struct TestApp {
+    pub address: String,
+    pub port: u16,
+    pub db_pool: PgPool,
+    pub signing_key: Secret<String>,
+    pub account: TestAccount,
+}
+
+impl TestApp {
     pub fn signed_jwt(&self, account_id: i32) -> String {
         encode_jwt(
             account_id,
@@ -45,16 +62,6 @@ impl TestApp {
             self.signing_key.expose_secret().as_ref(),
         )
         .expect("JWT encoded")
-    }
-
-    pub async fn test_account(&self) -> TestAccount {
-        sqlx::query_as!(
-            TestAccount,
-            "SELECT username, email, passhash as password FROM accounts LIMIT 1"
-        )
-        .fetch_one(&self.db_pool)
-        .await
-        .expect("test account retrieved")
     }
 }
 
@@ -81,9 +88,10 @@ pub async fn spawn_app() -> TestApp {
         port: application_port,
         db_pool: get_connection_pool(&settings.database),
         signing_key: settings.application.signing_key,
+        account: TestAccount::generate(),
     };
 
-    add_test_account(&test_app.db_pool).await;
+    test_app.account.store(&test_app.db_pool).await;
     test_app
 }
 
@@ -105,25 +113,4 @@ async fn configure_database(config: &DatabaseSettings) -> PgPool {
         .expect("migration successful");
 
     connection_pool
-}
-
-async fn add_test_account(pool: &PgPool) -> i32 {
-    let username: String = Username().fake();
-    let email: String = SafeEmail().fake();
-    // NOTE: The password won't be hashed for testing
-    let password: String = Password(9..10).fake();
-
-    let row = sqlx::query!(
-        "INSERT INTO accounts (username, email, passhash)
-        VALUES ($1, $2, $3)
-        RETURNING id",
-        &username,
-        &email,
-        &password,
-    )
-    .fetch_one(pool)
-    .await
-    .expect("test account created");
-
-    row.id
 }

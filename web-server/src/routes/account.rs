@@ -1,11 +1,11 @@
-use crate::domain::{EmailAddress, Password, Username};
+use crate::domain::{EmailAddress, SafePassword, Username};
 use crate::{error::ApiError, ApplicationState};
 use argon2::password_hash::PasswordHashString;
 use axum::extract::State;
 use axum::Json;
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct AccountCreate {
     pub username: String,
     pub email: String,
@@ -30,7 +30,7 @@ impl TryInto<NewAccount> for AccountCreate {
     fn try_into(self) -> Result<NewAccount, Self::Error> {
         let username = Username::parse(self.username)?;
         let email = EmailAddress::parse(self.email)?;
-        let password = Password::parse(self.password)?;
+        let password = SafePassword::parse(self.password)?;
         let passhash = password.hash().map_err(|e| {
             // NOTE: This should never happen
             tracing::error!(?e, "error hashing password");
