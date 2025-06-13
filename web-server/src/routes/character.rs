@@ -12,7 +12,7 @@ pub struct CharacterRow {
 }
 
 #[derive(Deserialize)]
-pub struct CreateCharacter {
+pub struct CharacterCreate {
     pub name: String,
 }
 
@@ -20,7 +20,7 @@ pub struct CreateCharacter {
 pub async fn character_create(
     State(state): State<ApplicationState>,
     Extension(user): Extension<User>,
-    Json(payload): Json<CreateCharacter>,
+    Json(payload): Json<CharacterCreate>,
 ) -> Result<Json<CharacterRow>, ApiError> {
     let name = CharacterName::parse(payload.name).map_err(ApiError::BadRequest)?;
     let row = sqlx::query_as!(
