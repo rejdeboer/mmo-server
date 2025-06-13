@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use axum::{
     extract::{Request, State},
     middleware::Next,
@@ -18,7 +16,9 @@ use crate::error::ApiError;
 pub struct Claims {
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub exp: u64,
-    pub account_id: String,
+    // TODO: Might be more secure to store some external account ID instead
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    pub account_id: i32,
     pub username: String,
 }
 
@@ -40,7 +40,7 @@ pub async fn auth_middleware(
     })?;
 
     let user = User {
-        account_id: i32::from_str(&token.claims.account_id).unwrap(),
+        account_id: token.claims.account_id,
     };
     req.extensions_mut().insert(user);
 
