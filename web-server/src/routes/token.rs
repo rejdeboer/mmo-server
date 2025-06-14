@@ -55,19 +55,26 @@ pub async fn login(
         ApiError::AuthError("incorrect credentials".to_string())
     })?;
 
-    let passhash = PasswordHash::new(&row.passhash).map_err(|error| {
-        tracing::error!(?error, "failed to encode passhash");
-        ApiError::UnexpectedError
-    })?;
-
     // TODO: Prevent timing attacks by having this route always taking the same time
-    tokio::task::spawn_blocking(move || attempt.password.verify(&passhash))
-        .await
-        .map_err(|err| {
-            tracing::error!(?err, "failed to spawn blocking task");
+    let passhash = row.passhash;
+    tokio::task::spawn_blocking(move || {
+        let passhash = PasswordHash::new(&passhash)?;
+        attempt.password.verify(&passhash)
+    })
+    .await
+    .map_err(|err| {
+        tracing::error!(?err, "failed to spawn blocking task");
+        ApiError::UnexpectedError
+    })?
+    .map_err(|err| match err {
+        argon2::password_hash::Error::Password => {
+            ApiError::AuthError("incorrect credentials".to_string())
+        }
+        _ => {
+            tracing::error!(?err, "failed to verify password");
             ApiError::UnexpectedError
-        })
-        .map_err(|_| ApiError::AuthError("incorrect credentials".to_string()))?;
+        }
+    })?;
 
     let token = encode_jwt(row.id, row.username, &state.signing_key).map_err(|error| {
         tracing::error!(?error, "failed to encode jwt");
