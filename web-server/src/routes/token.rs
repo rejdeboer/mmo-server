@@ -59,9 +59,14 @@ pub async fn login(
         tracing::error!(?error, "failed to encode passhash");
         ApiError::UnexpectedError
     })?;
-    attempt
-        .password
-        .verify(&passhash)
+
+    // TODO: Prevent timing attacks by having this route always taking the same time
+    tokio::task::spawn_blocking(move || attempt.password.verify(&passhash))
+        .await
+        .map_err(|err| {
+            tracing::error!(?err, "failed to spawn blocking task");
+            ApiError::UnexpectedError
+        })
         .map_err(|_| ApiError::AuthError("incorrect credentials".to_string()))?;
 
     let token = encode_jwt(row.id, row.username, &state.signing_key).map_err(|error| {
