@@ -5,4 +5,4 @@ database:
   port: 5432
   username: "postgres"
   password: "password"
-  db_name: "multiplayer"
+  db_name: "mmo"
