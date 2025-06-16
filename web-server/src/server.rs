@@ -1,7 +1,7 @@
 use crate::{
     auth::auth_middleware,
     configuration::{DatabaseSettings, Settings},
-    routes::{account_create, character_create, character_list, login},
+    routes::{account_create, character_create, character_list, game_entry, login},
 };
 use axum::{
     middleware,
@@ -58,16 +58,18 @@ impl Application {
             settings.application.netcode_private_key.expose_secret(),
             base64::STANDARD,
             &mut netcode_private_key,
-        );
+        )
+        .expect("netcode private key decoded");
 
         let application_state = ApplicationState {
             pool: connection_pool,
-            jwt_signing_key: settings.application.jwt_signing_key,
+            jwt_signing_key: settings.application.jwt_signing_key.clone(),
             netcode_private_key: NetcodePrivateKey(netcode_private_key),
         };
 
         let protected_routes = Router::new()
             .route("/character", get(character_list).post(character_create))
+            .route("/game/request-entry", post(game_entry))
             .route_layer(middleware::from_fn_with_state(
                 settings.application.jwt_signing_key,
                 auth_middleware,

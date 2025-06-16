@@ -4,6 +4,7 @@ use crate::{error::ApiError, ApplicationState};
 use argon2::PasswordHash;
 use axum::extract::State;
 use axum::Json;
+use secrecy::ExposeSecret;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize)]
@@ -76,10 +77,12 @@ pub async fn login(
         }
     })?;
 
-    let token = encode_jwt(row.id, row.username, &state.jwt_signing_key).map_err(|error| {
-        tracing::error!(?error, "failed to encode jwt");
-        ApiError::UnexpectedError
-    })?;
+    let token = encode_jwt(row.id, row.username, state.jwt_signing_key.expose_secret()).map_err(
+        |error| {
+            tracing::error!(?error, "failed to encode jwt");
+            ApiError::UnexpectedError
+        },
+    )?;
 
     Ok(Json(TokenResponse { token }))
 }

@@ -8,7 +8,7 @@ use axum::{
 use axum_extra::TypedHeader;
 use headers::authorization::Bearer;
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, TokenData, Validation};
-use secrecy::{ExposeSecret, Secret};
+use secrecy::{ExposeSecret, SecretString};
 use serde::{Deserialize, Serialize};
 use serde_aux::field_attributes::deserialize_number_from_string;
 
@@ -33,7 +33,7 @@ pub struct User {
 
 pub async fn auth_middleware(
     auth_header_option: Option<TypedHeader<headers::Authorization<Bearer>>>,
-    State(jwt_signing_key): State<Secret<String>>,
+    State(jwt_signing_key): State<SecretString>,
     mut req: Request,
     next: Next,
 ) -> Result<Response, ApiError> {
@@ -76,7 +76,7 @@ pub fn encode_jwt(
 
 pub fn decode_jwt(
     token: &str,
-    signing_key: Secret<String>,
+    signing_key: SecretString,
 ) -> jsonwebtoken::errors::Result<TokenData<Claims>> {
     jsonwebtoken::decode(
         token,
