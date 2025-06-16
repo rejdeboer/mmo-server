@@ -11,7 +11,7 @@ pub struct CharacterRow {
     pub experience: i64,
 }
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct CharacterCreate {
     pub name: String,
 }

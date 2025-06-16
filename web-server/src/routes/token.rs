@@ -13,7 +13,7 @@ pub struct LoginBody {
     pub password: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct TokenResponse {
     pub token: String,
 }
