@@ -8,7 +8,7 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use secrecy::ExposeSecret;
+use secrecy::{ExposeSecret, SecretString};
 use serde::Deserialize;
 use sqlx::{postgres::PgPoolOptions, PgPool};
 use std::net::SocketAddr;
@@ -22,9 +22,19 @@ pub struct Application {
 }
 
 #[derive(Clone)]
+pub struct NetcodePrivateKey([u8; 32]);
+
+impl AsRef<[u8; 32]> for NetcodePrivateKey {
+    fn as_ref(&self) -> &[u8; 32] {
+        &self.0
+    }
+}
+
+#[derive(Clone)]
 pub struct ApplicationState {
     pub pool: PgPool,
-    pub jwt_signing_key: String,
+    pub jwt_signing_key: SecretString,
+    pub netcode_private_key: NetcodePrivateKey,
 }
 
 #[derive(Deserialize)]
@@ -43,13 +53,17 @@ impl Application {
         let port = listener.local_addr().unwrap().port();
         let connection_pool = get_connection_pool(&settings.database);
 
+        let mut netcode_private_key: [u8; 32] = [0; 32];
+        base64::decode_config_slice(
+            settings.application.netcode_private_key.expose_secret(),
+            base64::STANDARD,
+            &mut netcode_private_key,
+        );
+
         let application_state = ApplicationState {
             pool: connection_pool,
-            jwt_signing_key: settings
-                .application
-                .jwt_signing_key
-                .expose_secret()
-                .to_string(),
+            jwt_signing_key: settings.application.jwt_signing_key,
+            netcode_private_key: NetcodePrivateKey(netcode_private_key),
         };
 
         let protected_routes = Router::new()

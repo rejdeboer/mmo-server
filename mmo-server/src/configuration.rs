@@ -23,7 +23,7 @@ pub struct ServerSettings {
     pub port: u16,
     pub host: String,
     pub is_secure: bool,
-    pub connect_token_key: SecretString,
+    pub netcode_private_key: SecretString,
 }
 
 #[derive(serde::Deserialize, Clone)]

@@ -23,7 +23,7 @@ futures-util = { version = "0.3", default-features = false, features = [
 headers = "0.4"
 jsonwebtoken = "9.3"
 rand = { version = "0.8", features = ["std_rng"] }
-secrecy = { version = "0.8", features = ["serde"] }
+secrecy = { version = "0.10.3", features = ["serde"] }
 serde = { version = "1", features = ["derive"] }
 serde-aux = "3"
 tokio = { version = "1.0", features = ["full"] }
