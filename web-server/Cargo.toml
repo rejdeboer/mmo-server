@@ -23,6 +23,7 @@ futures-util = { version = "0.3", default-features = false, features = [
 headers = "0.4"
 jsonwebtoken = "9.3"
 rand = { version = "0.8", features = ["std_rng"] }
+schemas = { path = "../schemas" }
 secrecy = { version = "0.10.3", features = ["serde"] }
 serde = { version = "1", features = ["derive"] }
 serde-aux = "3"
@@ -36,6 +37,7 @@ unicode-segmentation = "1"
 validator = "0.20.0"
 renetcode = "1.0.0"
 base64 = "0.12"
+flatbuffers = "25.2.10"
 
 [dependencies.axum]
 version = "0.8"

@@ -1,8 +1,0 @@
-namespace mmo;
-
-table EnterGameRequest {
-	character_id: int32;
-	token: string;
-}
-
-root_type EnterGameRequest;

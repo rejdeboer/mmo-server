@@ -6,7 +6,7 @@ fn main() {
         "schemas/entity.fbs",
         "schemas/event.fbs",
         "schemas/character.fbs",
-        "schemas/enter_game_request.fbs",
+        "schemas/netcode_token_user_data.fbs",
         "schemas/enter_game_response.fbs",
     ];
 
@@ -23,7 +23,7 @@ fn main() {
         inputs: &paths,
         out_dir: Path::new("src/"),
         // TODO: Do we need this automation? It only generates mod file for last schema
-        // extra: &["--gen-all", "--rust-module-root-file"],
+        extra: &["--gen-all", "--rust-module-root-file"],
         ..Default::default()
     })
     .expect(&format!("Failed to compile"));

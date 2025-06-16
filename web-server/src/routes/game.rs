@@ -4,8 +4,10 @@ use std::{
 };
 
 use axum::{extract::State, response::Result, Extension, Json};
-use renetcode::ConnectToken;
+use flatbuffers::FlatBufferBuilder;
+use renetcode::{ConnectToken, NETCODE_USER_DATA_BYTES};
 use serde::{Deserialize, Serialize};
+use tracing::instrument;
 
 use crate::{auth::User, error::ApiError, ApplicationState};
 
@@ -19,6 +21,7 @@ pub struct GameEntryResponse {
     pub token: String,
 }
 
+#[instrument(skip(state, payload))]
 pub async fn game_entry(
     State(state): State<ApplicationState>,
     Extension(user): Extension<User>,
@@ -34,7 +37,7 @@ pub async fn game_entry(
     .fetch_one(&state.pool)
     .await
     .map_err(|error| {
-        tracing::error!(?error, ?user, "user does not have character");
+        tracing::error!(?error, "user does not have character");
         ApiError::BadRequest("user does not have character".to_string())
     })?;
 
@@ -43,13 +46,9 @@ pub async fn game_entry(
         user.account_id,
         payload.character_id,
         state.netcode_private_key.as_ref(),
-    )
-    .map_err(|error| {
-        tracing::error!(?error, ?user, "failed to generate netcode token");
-        ApiError::UnexpectedError
-    })?;
+    )?;
     connect_token.write(&mut token_buffer).map_err(|error| {
-        tracing::error!(?error, ?user, "failed to write netcodet token to buffer");
+        tracing::error!(?error, "failed to write netcode token to buffer");
         ApiError::UnexpectedError
     })?;
     let token = base64::encode(token_buffer);
@@ -62,20 +61,37 @@ fn generate_connect_token(
     account_id: i32,
     character_id: i32,
     private_key: &[u8; 32],
-) -> Result<ConnectToken, renetcode::TokenGenerationError> {
+) -> Result<ConnectToken, ApiError> {
     let ip_addr = IpAddr::V4("127.0.0.1".parse().expect("host should be IPV4 addr"));
     let server_addr: SocketAddr = SocketAddr::new(ip_addr, 8000);
     let mut public_addresses: Vec<SocketAddr> = Vec::new();
     public_addresses.push(server_addr);
 
-    ConnectToken::generate(
+    let mut builder = FlatBufferBuilder::new();
+    let response_offset = schemas::mmo::NetcodeTokenUserData::create(
+        &mut builder,
+        &schemas::mmo::NetcodeTokenUserDataArgs { character_id },
+    );
+    builder.finish_minimal(response_offset);
+
+    let mut user_data: [u8; NETCODE_USER_DATA_BYTES] = [0; NETCODE_USER_DATA_BYTES];
+    let copy_data = builder.finished_data();
+    user_data[0..copy_data.len()].copy_from_slice(copy_data);
+
+    let token = ConnectToken::generate(
         SystemTime::now().duration_since(UNIX_EPOCH).unwrap(),
         0,
         300,
         account_id as u64,
         15,
         public_addresses,
-        None,
+        Some(&user_data),
         private_key,
     )
+    .map_err(|error| {
+        tracing::error!(?error, "failed to generate netcode token");
+        ApiError::UnexpectedError
+    })?;
+
+    Ok(token)
 }

@@ -10,6 +10,6 @@ pub mod mmo {
     pub use self::character_generated::*;
     mod enter_game_response_generated;
     pub use self::enter_game_response_generated::*;
-    mod enter_game_request_generated;
-    pub use self::enter_game_request_generated::*;
+    mod netcode_token_user_data_generated;
+    pub use self::netcode_token_user_data_generated::*;
 } // mmo
