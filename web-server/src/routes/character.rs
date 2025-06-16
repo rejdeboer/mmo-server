@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{auth::User, domain::CharacterName, error::ApiError, ApplicationState};
 
-#[derive(Debug, Clone, sqlx::FromRow, Serialize)]
+#[derive(Debug, Clone, sqlx::FromRow, Serialize, Deserialize)]
 pub struct CharacterRow {
     pub id: i32,
     pub name: String,

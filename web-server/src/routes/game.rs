@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{auth::User, error::ApiError, ApplicationState};
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct GameEntryRequest {
     pub character_id: i32,
 }

@@ -7,7 +7,7 @@ use sqlx::{Connection, Executor, PgConnection, PgPool};
 use web_server::auth::encode_jwt;
 use web_server::configuration::{get_configuration, DatabaseSettings};
 use web_server::domain::SafePassword;
-use web_server::routes::{LoginBody, TokenResponse};
+use web_server::routes::{CharacterCreate, LoginBody, TokenResponse};
 use web_server::server::{get_connection_pool, Application};
 use web_server::telemetry::{get_subscriber, init_subscriber};
 
@@ -89,6 +89,15 @@ impl TestApp {
         );
 
         self.api_client = create_api_client(Some(headers));
+    }
+
+    pub async fn create_character(&self, body: CharacterCreate) -> reqwest::Response {
+        self.api_client
+            .post(&format!("{}/character", self.address))
+            .json(&body)
+            .send()
+            .await
+            .expect("Failed to execute request.")
     }
 }
 
