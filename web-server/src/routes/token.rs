@@ -76,7 +76,7 @@ pub async fn login(
         }
     })?;
 
-    let token = encode_jwt(row.id, row.username, &state.signing_key).map_err(|error| {
+    let token = encode_jwt(row.id, row.username, &state.jwt_signing_key).map_err(|error| {
         tracing::error!(?error, "failed to encode jwt");
         ApiError::UnexpectedError
     })?;

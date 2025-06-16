@@ -33,12 +33,12 @@ pub struct User {
 
 pub async fn auth_middleware(
     auth_header_option: Option<TypedHeader<headers::Authorization<Bearer>>>,
-    State(signing_key): State<Secret<String>>,
+    State(jwt_signing_key): State<Secret<String>>,
     mut req: Request,
     next: Next,
 ) -> Result<Response, ApiError> {
     let auth_header = auth_header_option.ok_or(ApiError::AuthError("no auth token".to_string()))?;
-    let token = decode_jwt(auth_header.token(), signing_key).map_err(|e| {
+    let token = decode_jwt(auth_header.token(), jwt_signing_key).map_err(|e| {
         tracing::error!(?e, "JWT decoding error");
         ApiError::AuthError("invalid token".to_string())
     })?;

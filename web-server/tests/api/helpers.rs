@@ -50,7 +50,7 @@ pub struct TestApp {
     pub address: String,
     pub port: u16,
     pub db_pool: PgPool,
-    pub signing_key: Secret<String>,
+    pub jwt_signing_key: Secret<String>,
     pub account: TestAccount,
 }
 
@@ -59,7 +59,7 @@ impl TestApp {
         encode_jwt(
             account_id,
             Username().fake(),
-            self.signing_key.expose_secret().as_ref(),
+            self.jwt_signing_key.expose_secret().as_ref(),
         )
         .expect("JWT encoded")
     }
@@ -87,7 +87,7 @@ pub async fn spawn_app() -> TestApp {
         address: format!("http://localhost:{}", application_port),
         port: application_port,
         db_pool: get_connection_pool(&settings.database),
-        signing_key: settings.application.signing_key,
+        jwt_signing_key: settings.application.signing_key,
         account: TestAccount::generate(),
     };
 

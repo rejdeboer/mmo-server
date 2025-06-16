@@ -2,5 +2,5 @@ database:
   require_ssl: false
 application:
   host: 127.0.0.1
-  signing_key: secret
+  jwt_signing_key: secret
   connect_token_key: Z8ocDNthwK2cWI0XMIOVsEsKErlxSjuw7k0YibAucSk=

@@ -21,7 +21,7 @@ pub struct ApplicationSettings {
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub port: u16,
     pub host: String,
-    pub signing_key: Secret<String>,
+    pub jwt_signing_key: Secret<String>,
     pub connect_token_key: Secret<String>,
 }
 

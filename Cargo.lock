@@ -2720,7 +2720,17 @@ dependencies = [
  "bevy_ecs",
  "log",
  "renet",
- "renetcode",
+ "renetcode 1.0.0 (git+https://github.com/lucaspoffo/renet)",
+]
+
+[[package]]
+name = "renetcode"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "118d456f815f7fd5bd12713a9e69a0b0f8b45806bd515e05bb60146f1867310d"
+dependencies = [
+ "chacha20poly1305",
+ "log",
 ]
 
 [[package]]
@@ -4145,6 +4155,7 @@ dependencies = [
  "quickcheck",
  "quickcheck_macros",
  "rand 0.8.5",
+ "renetcode 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "reqwest",
  "secrecy 0.8.0",
  "serde 1.0.219",
