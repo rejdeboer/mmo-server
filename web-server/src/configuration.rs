@@ -22,6 +22,7 @@ pub struct ApplicationSettings {
     pub port: u16,
     pub host: String,
     pub signing_key: Secret<String>,
+    pub connect_token_key: Secret<String>,
 }
 
 #[derive(serde::Deserialize, Clone)]
