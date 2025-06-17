@@ -57,15 +57,11 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     app.insert_resource(netcode_transport);
     app.insert_resource(settings);
 
-    app.add_event::<crate::server::EnterGameEvent>();
-
     app.add_systems(Startup, setup_database_pool);
     app.add_systems(
         Update,
         (
             crate::server::handle_connection_events,
-            crate::server::receive_enter_game_requests,
-            crate::server::process_enter_game_requests,
             crate::server::send_packets,
         ),
     );
