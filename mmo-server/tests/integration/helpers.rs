@@ -241,7 +241,7 @@ fn init_db(
         let connection_pool = PgPool::connect_with(settings.database.with_db())
             .await
             .expect("failed to connect to postgres");
-        sqlx::migrate!("../migrations")
+        sqlx::migrate!("../db/migrations")
             .run(&connection_pool)
             .await
             .expect("migration successful");

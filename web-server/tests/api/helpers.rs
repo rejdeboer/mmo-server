@@ -1,14 +1,14 @@
-use axum::http::{request, HeaderMap};
-use fake::faker::internet::en::{Password, SafeEmail, Username};
+use axum::http::{HeaderMap, request};
 use fake::Fake;
+use fake::faker::internet::en::{Password, SafeEmail, Username};
 use once_cell::sync::Lazy;
 use secrecy::{ExposeSecret, SecretString};
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use web_server::auth::encode_jwt;
-use web_server::configuration::{get_configuration, DatabaseSettings};
+use web_server::configuration::{DatabaseSettings, get_configuration};
 use web_server::domain::SafePassword;
 use web_server::routes::{CharacterCreate, LoginBody, TokenResponse};
-use web_server::server::{get_connection_pool, Application};
+use web_server::server::{Application, get_connection_pool};
 use web_server::telemetry::{get_subscriber, init_subscriber};
 
 static TRACING: Lazy<()> = Lazy::new(|| {
@@ -154,7 +154,7 @@ async fn configure_database(config: &DatabaseSettings) -> PgPool {
     let connection_pool = PgPool::connect_with(config.with_db())
         .await
         .expect("Failed to connect to Postgres.");
-    sqlx::migrate!("../migrations")
+    sqlx::migrate!("../db/migrations")
         .run(&connection_pool)
         .await
         .expect("migration successful");

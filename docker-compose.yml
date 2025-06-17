@@ -39,11 +39,13 @@ services:
       timeout: 5s
       retries: 5
 
-  # postgres-migration:
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #   build: 
-  #     dockerfile: ./db/Dockerfile
-  #   working_dir: /app
+  postgres-migration:
+    depends_on:
+      postgres:
+        condition: service_healthy
+    build: 
+      dockerfile: ./db/Dockerfile
+    working_dir: /app
+    environment:
+      - DATABASE_URL=postgres://postgres:password@postgres:5432/mmo
 
