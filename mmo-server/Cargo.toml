@@ -7,9 +7,8 @@ edition = "2024"
 path = "src/lib.rs"
 
 [dependencies]
-bevy-tokio-tasks = "0.16.0"
+bevy-tokio-tasks = "0.16"
 bevy_renet = { git = "https://github.com/lucaspoffo/renet" }
-bincode = { version = "2.0.1", features = ["serde"] }
 config = "0.11"
 flatbuffers = "25.2.10"
 schemas = { path = "../schemas" }
@@ -22,7 +21,7 @@ tracing-log = "0.2.0"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [dependencies.bevy]
-version = "0.16.0"
+version = "0.16"
 default-features = false
 features = ["bevy_state", "bevy_log"]
 

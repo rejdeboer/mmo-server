@@ -77,14 +77,15 @@ pub fn send_packets(
 
 pub fn handle_connection_events(
     mut events: EventReader<ServerEvent>,
-    mut event_writer: EventWriter<ConnectionEvent>,
+    mut commands: Commands,
+    mut transport: ResMut<NetcodeServerTransport>,
     players: Query<(Entity, &ClientIdComponent, &Transform)>,
 ) {
     for event in events.read() {
         match event {
             ServerEvent::ClientConnected { client_id } => {
                 bevy::log::info!("player {} connected", client_id);
-                event_writer.write(ConnectionEvent(client_id));
+                let user_data = transport.user_data(client_id);
             }
             ServerEvent::ClientDisconnected { client_id, reason } => {
                 bevy::log::info!("player {} disconnected: {}", client_id, reason);
