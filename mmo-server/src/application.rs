@@ -37,6 +37,13 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
 
     let port = socket.local_addr()?.port();
 
+    let authentication = match settings.server.is_secure {
+        true => ServerAuthentication::Secure {
+            private_key: settings.server.netcode_private_key,
+        },
+        false => ServerAuthentication::Unsecure,
+    };
+
     let netcode_server = RenetServer::new(ConnectionConfig::default());
     bevy::log::info!("listening on {}", socket.local_addr()?);
     let netcode_transport = NetcodeServerTransport::new(
@@ -47,8 +54,7 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
             max_clients: 100,
             protocol_id: 0,
             public_addresses,
-            // TODO: Implement secure server using `settings.server.is_secure`
-            authentication: ServerAuthentication::Unsecure,
+            authentication,
         },
         socket,
     )?;

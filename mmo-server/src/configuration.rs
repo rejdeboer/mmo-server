@@ -1,5 +1,7 @@
 use bevy::ecs::resource::Resource;
+use bevy_renet::netcode::NETCODE_KEY_BYTES;
 use secrecy::{ExposeSecret, SecretString};
+use serde::{Deserialize, Deserializer};
 use serde_aux::field_attributes::deserialize_number_from_string;
 use sqlx::{
     ConnectOptions,
@@ -23,7 +25,8 @@ pub struct ServerSettings {
     pub port: u16,
     pub host: String,
     pub is_secure: bool,
-    pub netcode_private_key: SecretString,
+    #[serde(deserialize_with = "deserialize_netcode_key")]
+    pub netcode_private_key: [u8; NETCODE_KEY_BYTES],
 }
 
 #[derive(serde::Deserialize, Clone)]
@@ -100,4 +103,16 @@ pub fn get_configuration() -> Result<Settings, config::ConfigError> {
     settings.merge(config::Environment::with_prefix("app").separator("__"))?;
 
     settings.try_into()
+}
+
+fn deserialize_netcode_key<'de, D>(deserializer: D) -> Result<[u8; NETCODE_KEY_BYTES], D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let mut netcode_private_key: [u8; 32] = [0; 32];
+    let encoded: String = Deserialize::deserialize(deserializer)?;
+    base64::decode_config_slice(encoded, base64::STANDARD, &mut netcode_private_key)
+        .map_err(serde::de::Error::custom)?;
+
+    Ok(netcode_private_key)
 }
