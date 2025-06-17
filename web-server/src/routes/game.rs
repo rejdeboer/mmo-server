@@ -41,18 +41,17 @@ pub async fn game_entry(
         ApiError::BadRequest("user does not have character".to_string())
     })?;
 
-    let mut token_buffer: [u8; 1024] = [0; 1024];
-    let mut token_slice = &mut token_buffer[..];
+    let mut token_buffer: Vec<u8> = vec![];
     let connect_token = generate_connect_token(
         user.account_id,
         payload.character_id,
         state.game_server_settings,
     )?;
-    connect_token.write(&mut token_slice).map_err(|error| {
+    connect_token.write(&mut token_buffer).map_err(|error| {
         tracing::error!(?error, "failed to write netcode token to buffer");
         ApiError::UnexpectedError
     })?;
-    let token = base64::encode_config(token_buffer, base64::STANDARD_NO_PAD);
+    let token = base64::encode_config(token_buffer, base64::STANDARD);
     tracing::info!("TOKEN: {}", token);
 
     Ok(Json(GameEntryResponse { token }))
