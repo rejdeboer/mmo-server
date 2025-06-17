@@ -1,4 +1,5 @@
 use secrecy::{ExposeSecret, SecretString};
+use serde::{Deserialize, Deserializer};
 use serde_aux::field_attributes::deserialize_number_from_string;
 use sqlx::{
     postgres::{PgConnectOptions, PgSslMode},
@@ -14,6 +15,7 @@ pub enum Environment {
 pub struct Settings {
     pub application: ApplicationSettings,
     pub database: DatabaseSettings,
+    pub game_server: GameServerSettings,
 }
 
 #[derive(serde::Deserialize, Clone)]
@@ -22,7 +24,6 @@ pub struct ApplicationSettings {
     pub port: u16,
     pub host: String,
     pub jwt_signing_key: SecretString,
-    pub netcode_private_key: SecretString,
 }
 
 #[derive(serde::Deserialize, Clone)]
@@ -34,6 +35,24 @@ pub struct DatabaseSettings {
     pub host: String,
     pub db_name: String,
     pub require_ssl: bool,
+}
+
+#[derive(serde::Deserialize, Clone)]
+pub struct GameServerSettings {
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    pub port: u16,
+    pub host: String,
+    #[serde(deserialize_with = "deserialize_netcode_key")]
+    pub netcode_private_key: NetcodePrivateKey,
+}
+
+#[derive(Clone)]
+pub struct NetcodePrivateKey([u8; 32]);
+
+impl AsRef<[u8; 32]> for NetcodePrivateKey {
+    fn as_ref(&self) -> &[u8; 32] {
+        &self.0
+    }
 }
 
 impl Environment {
@@ -99,4 +118,16 @@ pub fn get_configuration() -> Result<Settings, config::ConfigError> {
     settings.merge(config::Environment::with_prefix("app").separator("__"))?;
 
     settings.try_into()
+}
+
+fn deserialize_netcode_key<'de, D>(deserializer: D) -> Result<NetcodePrivateKey, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let mut netcode_private_key: [u8; 32] = [0; 32];
+    let encoded: String = Deserialize::deserialize(deserializer)?;
+    base64::decode_config_slice(encoded, base64::STANDARD, &mut netcode_private_key)
+        .map_err(serde::de::Error::custom)?;
+
+    Ok(NetcodePrivateKey(netcode_private_key))
 }

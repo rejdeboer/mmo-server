@@ -15,19 +15,15 @@ use crate::{application::DatabasePool, configuration::Settings};
 pub struct ClientIdComponent(pub ClientId);
 
 #[derive(Component)]
-pub struct PendingConnection {
-    client_id: ClientId,
-    initiated_at: Instant,
-}
-
-#[derive(Component)]
 pub struct EnterGameValidationTask(Task<Result<CharacterRow, sqlx::Error>>);
 
 #[derive(Event, Debug)]
-pub struct EnterGameEvent {
-    client_id: ClientId,
-    token: String,
-    character_id: i32,
+pub struct ConnectionEvent(ClientId);
+
+impl ConnectionEvent {
+    pub fn client_id(&self) -> &ClientId {
+        &self.0
+    }
 }
 
 #[derive(Debug, Clone, sqlx::FromRow)]
@@ -81,29 +77,18 @@ pub fn send_packets(
 
 pub fn handle_connection_events(
     mut events: EventReader<ServerEvent>,
-    mut commands: Commands,
-    pending_connections_query: Query<(Entity, &PendingConnection)>,
+    mut event_writer: EventWriter<ConnectionEvent>,
     players: Query<(Entity, &ClientIdComponent, &Transform)>,
 ) {
     for event in events.read() {
         match event {
             ServerEvent::ClientConnected { client_id } => {
                 bevy::log::info!("player {} connected", client_id);
-                commands.spawn(PendingConnection {
-                    client_id: *client_id,
-                    initiated_at: Instant::now(),
-                });
+                event_writer.write(ConnectionEvent(client_id));
             }
             ServerEvent::ClientDisconnected { client_id, reason } => {
                 bevy::log::info!("player {} disconnected: {}", client_id, reason);
                 let client_id = *client_id;
-
-                for (entity, pending_conn) in pending_connections_query.iter() {
-                    if pending_conn.client_id == client_id {
-                        commands.entity(entity).despawn();
-                        return;
-                    }
-                }
 
                 // TODO: Save character data
                 for (entity, player_client_id, _transform) in players.iter() {

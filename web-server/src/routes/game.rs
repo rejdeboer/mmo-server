@@ -9,7 +9,7 @@ use renetcode::{ConnectToken, NETCODE_USER_DATA_BYTES};
 use serde::{Deserialize, Serialize};
 use tracing::instrument;
 
-use crate::{auth::User, error::ApiError, ApplicationState};
+use crate::{auth::User, configuration::GameServerSettings, error::ApiError, ApplicationState};
 
 #[derive(Serialize, Deserialize)]
 pub struct GameEntryRequest {
@@ -45,7 +45,7 @@ pub async fn game_entry(
     let connect_token = generate_connect_token(
         user.account_id,
         payload.character_id,
-        state.netcode_private_key.as_ref(),
+        state.game_server_settings,
     )?;
     connect_token.write(&mut token_buffer).map_err(|error| {
         tracing::error!(?error, "failed to write netcode token to buffer");
@@ -60,10 +60,15 @@ pub async fn game_entry(
 fn generate_connect_token(
     account_id: i32,
     character_id: i32,
-    private_key: &[u8; 32],
+    game_server_settings: GameServerSettings,
 ) -> Result<ConnectToken, ApiError> {
-    let ip_addr = IpAddr::V4("127.0.0.1".parse().expect("host should be IPV4 addr"));
-    let server_addr: SocketAddr = SocketAddr::new(ip_addr, 8000);
+    let ip_addr = IpAddr::V4(
+        game_server_settings
+            .host
+            .parse()
+            .expect("host should be IPV4 addr"),
+    );
+    let server_addr: SocketAddr = SocketAddr::new(ip_addr, game_server_settings.port);
     let mut public_addresses: Vec<SocketAddr> = Vec::new();
     public_addresses.push(server_addr);
 
@@ -86,7 +91,7 @@ fn generate_connect_token(
         15,
         public_addresses,
         Some(&user_data),
-        private_key,
+        game_server_settings.netcode_private_key.as_ref(),
     )
     .map_err(|error| {
         tracing::error!(?error, "failed to generate netcode token");
