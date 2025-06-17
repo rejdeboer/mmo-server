@@ -3,13 +3,13 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use axum::{extract::State, response::Result, Extension, Json};
+use axum::{Extension, Json, extract::State, response::Result};
 use flatbuffers::FlatBufferBuilder;
 use renetcode::{ConnectToken, NETCODE_USER_DATA_BYTES};
 use serde::{Deserialize, Serialize};
 use tracing::instrument;
 
-use crate::{auth::User, configuration::GameServerSettings, error::ApiError, ApplicationState};
+use crate::{ApplicationState, auth::User, configuration::GameServerSettings, error::ApiError};
 
 #[derive(Serialize, Deserialize)]
 pub struct GameEntryRequest {
@@ -51,7 +51,7 @@ pub async fn game_entry(
         tracing::error!(?error, "failed to write netcode token to buffer");
         ApiError::UnexpectedError
     })?;
-    let token = base64::encode(token_buffer);
+    let token = base64::encode_config(token_buffer, base64::STANDARD_NO_PAD);
 
     Ok(Json(GameEntryResponse { token }))
 }
