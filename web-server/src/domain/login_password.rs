@@ -31,17 +31,16 @@ impl AsRef<str> for LoginPassword {
 #[cfg(test)]
 mod tests {
     use crate::domain::{LoginPassword, MAX_PASSWORD_LENGTH};
-    use claim::{assert_err, assert_ok};
 
     #[test]
     fn a_32_char_long_pw_is_valid() {
         let name = "a".repeat(32);
-        assert_ok!(LoginPassword::parse(name));
+        assert!(LoginPassword::parse(name).is_ok())
     }
 
     #[test]
     fn a_pw_longer_than_max_chars_is_rejected() {
         let name = "a".repeat(MAX_PASSWORD_LENGTH + 1);
-        assert_err!(LoginPassword::parse(name));
+        assert!(LoginPassword::parse(name).is_err())
     }
 }

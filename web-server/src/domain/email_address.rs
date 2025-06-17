@@ -28,7 +28,6 @@ impl std::fmt::Display for EmailAddress {
 #[cfg(test)]
 mod tests {
     use super::EmailAddress;
-    use claim::assert_err;
     use fake::faker::internet::en::SafeEmail;
     use fake::Fake;
 
@@ -45,19 +44,19 @@ mod tests {
     #[test]
     fn empty_string_is_rejected() {
         let email = "".to_string();
-        assert_err!(EmailAddress::parse(email));
+        assert!(EmailAddress::parse(email).is_err());
     }
 
     #[test]
     fn email_missing_at_symbol_is_rejected() {
         let email = "rick.deboer.com".to_string();
-        assert_err!(EmailAddress::parse(email));
+        assert!(EmailAddress::parse(email).is_err());
     }
 
     #[test]
     fn email_missing_subject_is_rejected() {
         let email = "@live.nl".to_string();
-        assert_err!(EmailAddress::parse(email));
+        assert!(EmailAddress::parse(email).is_err());
     }
 
     #[quickcheck_macros::quickcheck]
