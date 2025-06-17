@@ -1,11 +1,32 @@
 version: '3'
 services:
-  server:
+  mmo-server:
     build: 
+      context: ./mmo-server
+      dockerfile: Dockerfile
       target: planner
     working_dir: /app
     volumes:
-      - ./websocket/:/app
+      - ./mmo-server/:/app
+    ports:
+      - 8000:8000
+    environment:
+      - APP_APPLICATION__HOST=0.0.0.0
+      - APP_DATABASE__HOST=postgres
+      - SQLX_OFFLINE=true
+    entrypoint: bash -c "
+        cargo install cargo-watch
+        && cargo watch -x run
+      "
+
+  web-server:
+    build: 
+      context: ./web-server
+      dockerfile: Dockerfile
+      target: planner
+    working_dir: /app
+    volumes:
+      - ./web-server/:/app
     ports:
       - 8001:8001
     environment:
@@ -16,6 +37,7 @@ services:
         cargo install cargo-watch
         && cargo watch -x run
       "
+
   postgres:
     image: postgres:17-alpine
     hostname: postgres
@@ -33,39 +55,11 @@ services:
       timeout: 5s
       retries: 5
 
-  postgres-migration:
-    depends_on:
-      postgres:
-        condition: service_healthy
-    build: 
-      dockerfile: ./db/Dockerfile
-    working_dir: /app
+  # postgres-migration:
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   build: 
+  #     dockerfile: ./db/Dockerfile
+  #   working_dir: /app
 
-  azurite:
-    image: mcr.microsoft.com/azure-storage/azurite
-    container_name: "azurite"
-    hostname: azurite
-    restart: always
-    ports:
-      - "10000:10000"
-      - "10001:10001"
-      - "10002:10002"
-    # required, see https://github.com/Azure/Azurite/issues/1666
-    healthcheck:
-        test: nc 127.0.0.1 10000 -z
-        interval: 1s
-        retries: 30
-
-  init-azurite:
-    image: mcr.microsoft.com/azure-cli:latest
-    command:
-      - /bin/sh
-      - -c
-      - |
-          az storage container create --name user-images
-    depends_on:
-      - azurite
-        # condition: service_healthy
-    environment:
-      # https://github.com/Azure/Azurite/blob/main/README.md#usage-with-azure-storage-sdks-or-tools
-      AZURE_STORAGE_CONNECTION_STRING: DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;
