@@ -45,7 +45,11 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     };
 
     let netcode_server = RenetServer::new(ConnectionConfig::default());
-    bevy::log::info!("listening on {}", socket.local_addr()?);
+    bevy::log::info!(
+        "listening on {}; secure: {}",
+        socket.local_addr()?,
+        settings.server.is_secure
+    );
     let netcode_transport = NetcodeServerTransport::new(
         ServerConfig {
             current_time: SystemTime::now()
