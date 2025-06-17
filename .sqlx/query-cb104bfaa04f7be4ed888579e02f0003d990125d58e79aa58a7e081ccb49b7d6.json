@@ -1,0 +1,41 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO characters (name, account_id)\n        VALUES ($1, $2)\n        RETURNING id, name, level, experience\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "level",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "experience",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "cb104bfaa04f7be4ed888579e02f0003d990125d58e79aa58a7e081ccb49b7d6"
+}

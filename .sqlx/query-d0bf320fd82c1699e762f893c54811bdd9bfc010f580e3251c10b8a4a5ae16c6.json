@@ -1,0 +1,58 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT id, name, level, experience,\n            position_x, position_y, position_z\n        FROM characters\n        WHERE id = $1 \n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "level",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "experience",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 4,
+        "name": "position_x",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 5,
+        "name": "position_y",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 6,
+        "name": "position_z",
+        "type_info": "Float8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "d0bf320fd82c1699e762f893c54811bdd9bfc010f580e3251c10b8a4a5ae16c6"
+}

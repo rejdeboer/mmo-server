@@ -3,4 +3,4 @@ target
 scripts
 
 schemas/schemas
-schemas/src/build.rs
+schemas/build.rs
