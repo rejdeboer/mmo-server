@@ -2,9 +2,7 @@ version: '3'
 services:
   mmo-server:
     build: 
-      context: ./mmo-server
-      dockerfile: Dockerfile
-      target: planner
+      target: mmo-server
     working_dir: /app
     volumes:
       - ./mmo-server/:/app
@@ -21,9 +19,7 @@ services:
 
   web-server:
     build: 
-      context: ./web-server
-      dockerfile: Dockerfile
-      target: planner
+      target: web-server
     working_dir: /app
     volumes:
       - ./web-server/:/app
