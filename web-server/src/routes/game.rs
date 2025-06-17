@@ -51,7 +51,7 @@ pub async fn game_entry(
         tracing::error!(?error, "failed to write netcode token to buffer");
         ApiError::UnexpectedError
     })?;
-    let token = base64::encode_config(token_buffer, base64::STANDARD_NO_PAD);
+    let token = base64::encode_config(token_buffer, base64::STANDARD);
 
     Ok(Json(GameEntryResponse { token }))
 }
