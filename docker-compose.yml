@@ -4,35 +4,25 @@ services:
     build: 
       target: mmo-server
     working_dir: /app
-    volumes:
-      - ./mmo-server/:/app
     ports:
       - 8000:8000
     environment:
       - APP_APPLICATION__HOST=0.0.0.0
       - APP_DATABASE__HOST=postgres
       - SQLX_OFFLINE=true
-    entrypoint: bash -c "
-        cargo install cargo-watch
-        && cargo watch -x run
-      "
+    entrypoint: ./mmo-server
 
   web-server:
     build: 
       target: web-server
     working_dir: /app
-    volumes:
-      - ./web-server/:/app
     ports:
       - 8001:8001
     environment:
       - APP_APPLICATION__HOST=0.0.0.0
       - APP_DATABASE__HOST=postgres
       - SQLX_OFFLINE=true
-    entrypoint: bash -c "
-        cargo install cargo-watch
-        && cargo watch -x run
-      "
+    entrypoint: ./web-server
 
   postgres:
     image: postgres:17-alpine
