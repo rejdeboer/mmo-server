@@ -13,7 +13,7 @@ COPY . .
 ENV SQLX_OFFLINE true
 RUN cargo build --release 
 
-FROM debian:bookworm-slim AS runtime
+FROM debian:bookworm-slim AS runtime-base
 WORKDIR /app
 RUN apt-get update -y \
 	&& apt-get install -y --no-install-recommends openssl ca-certificates \
@@ -21,7 +21,14 @@ RUN apt-get update -y \
 	&& apt-get clean -y \
 	&& rm -rf /var/lib/apt/lists/*
 
+FROM runtime-base AS web-server
 COPY --from=builder /app/target/release/web-server web-server
-COPY configuration configuration
+COPY web-server/configuration configuration
+CMD ["./web-server"]
+LABEL service=web-server
 
-ENTRYPOINT ["./web-server"]
+FROM runtime-base AS mmo-server
+COPY --from=builder /app/target/release/mmo-server mmo-server
+COPY mmo-server/configuration configuration
+CMD ["./mmo-server"]
+LABEL service=mmo-server

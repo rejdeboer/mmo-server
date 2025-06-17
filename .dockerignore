@@ -1,3 +1,6 @@
 tests
 target
 scripts
+
+schemas/schemas
+schemas/src/build.rs
