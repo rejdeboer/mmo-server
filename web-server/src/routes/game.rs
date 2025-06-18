@@ -52,7 +52,6 @@ pub async fn game_entry(
         ApiError::UnexpectedError
     })?;
     let token = base64::encode_config(token_buffer, base64::STANDARD);
-    tracing::info!("TOKEN: {}", token);
 
     Ok(Json(GameEntryResponse { token }))
 }
