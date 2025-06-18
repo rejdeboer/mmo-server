@@ -9,7 +9,6 @@ services:
       - 8000:8000/udp
     environment:
       - APP_SERVER__IS_SECURE=true
-      - APP_DATABASE__HOST=postgres
       - APP_DATABASE__PORT=5433
       - SQLX_OFFLINE=true
 
