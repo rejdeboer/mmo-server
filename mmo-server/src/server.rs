@@ -54,13 +54,6 @@ impl CharacterRow {
     }
 }
 
-pub fn send_packets(
-    mut server: ResMut<RenetServer>,
-    mut transport: ResMut<NetcodeServerTransport>,
-) {
-    transport.send_packets(&mut server);
-}
-
 pub fn handle_connection_events(
     mut events: EventReader<ServerEvent>,
     mut commands: Commands,
