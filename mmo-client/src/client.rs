@@ -96,14 +96,25 @@ impl GameClient {
     }
 
     /// Can be used for testing
-    pub fn connect_unsecure(&mut self, host: String, port: u16) {
+    pub fn connect_unsecure(&mut self, host: String, port: u16, character_id: i32) {
         let ip_addr = IpAddr::V4(host.parse().expect("host should be IPV4 addr"));
         let server_addr: SocketAddr = SocketAddr::new(ip_addr, port);
+
+        let mut builder = FlatBufferBuilder::new();
+        let response_offset = schemas::mmo::NetcodeTokenUserData::create(
+            &mut builder,
+            &schemas::mmo::NetcodeTokenUserDataArgs { character_id },
+        );
+        builder.finish_minimal(response_offset);
+
+        let mut user_data: [u8; 256] = [0; 256];
+        let copy_data = builder.finished_data();
+        user_data[0..copy_data.len()].copy_from_slice(copy_data);
 
         let authentication = ClientAuthentication::Unsecure {
             server_addr,
             client_id: 0,
-            user_data: None,
+            user_data: Some(user_data),
             protocol_id: 0,
         };
 
