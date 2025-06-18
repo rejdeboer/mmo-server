@@ -4,10 +4,10 @@ services:
     build: 
       target: mmo-server
     working_dir: /app
+    network_mode: host
     ports:
       - 8000:8000/udp
     environment:
-      - APP_SERVER__HOST=0.0.0.0
       - APP_SERVER__IS_SECURE=true
       - APP_DATABASE__HOST=postgres
       - APP_DATABASE__PORT=5433
@@ -23,7 +23,6 @@ services:
       - APP_APPLICATION__HOST=0.0.0.0
       - APP_DATABASE__HOST=postgres
       - APP_DATABASE__PORT=5433
-      - APP_GAME_SERVER__HOST=0.0.0.0
       - SQLX_OFFLINE=true
 
   postgres:
