@@ -5,6 +5,7 @@ namespace mmo;
 table EntityMoveEvent {
 	entity_id: int32;
 	position: Vec3; 
+	direction: Vec3;
 }
 
 union EventData {
