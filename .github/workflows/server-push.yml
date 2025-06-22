@@ -146,7 +146,7 @@ jobs:
     needs: [ "test", "fmt", "clippy", "coverage" ]
     defaults:
       run:
-        working-directory: websocket
+        working-directory: web-server
     steps:
       - uses: actions/checkout@v3
         with:
