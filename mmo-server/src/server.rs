@@ -16,9 +16,9 @@ pub struct ClientIdComponent(pub ClientId);
 pub struct CharacterRow {
     pub id: i32,
     pub name: String,
-    pub position_x: f64,
-    pub position_y: f64,
-    pub position_z: f64,
+    pub position_x: f32,
+    pub position_y: f32,
+    pub position_z: f32,
     pub level: i32,
     pub experience: i64,
 }
@@ -107,9 +107,9 @@ fn process_client_connected(
                     ctx.world.spawn((
                         ClientIdComponent(client_id),
                         Transform::from_xyz(
-                            character.position_x as f32,
-                            character.position_y as f32,
-                            character.position_z as f32,
+                            character.position_x,
+                            character.position_y,
+                            character.position_z,
                         ),
                     ));
 
@@ -171,7 +171,7 @@ fn process_client_disconnected(
     bevy::log::info!("player {} disconnected: {}", client_id, reason);
 
     // TODO: Save character data
-    for (entity, player_client_id, _transform) in players.iter() {
+    for (entity, player_client_id, transform) in players.iter() {
         if player_client_id.0 == client_id {
             commands.entity(entity).despawn();
             return;

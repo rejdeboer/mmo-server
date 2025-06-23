@@ -42,9 +42,9 @@ impl Into<Transform> for &schemas::mmo::Transform {
 impl Into<Vec3> for &schemas::mmo::Vec3 {
     fn into(self) -> Vec3 {
         Vec3 {
-            x: self.x() as f32,
-            y: self.y() as f32,
-            z: self.z() as f32,
+            x: self.x(),
+            y: self.y(),
+            z: self.z(),
         }
     }
 }

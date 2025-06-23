@@ -1,14 +1,14 @@
 namespace mmo;
 
 struct Vec2 {
-  x: double;
-  y: double;
+  x: float;
+  y: float;
 }
 
 struct Vec3 {
-  x: double;
-  y: double;
-  z: double;
+  x: float;
+  y: float;
+  z: float;
 }
 
 struct Transform {
