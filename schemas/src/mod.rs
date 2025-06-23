@@ -2,6 +2,8 @@
 // @generated
 pub mod mmo {
   use super::*;
+  mod vec_2_generated;
+  pub use self::vec_2_generated::*;
   mod vec_3_generated;
   pub use self::vec_3_generated::*;
   mod transform_generated;
