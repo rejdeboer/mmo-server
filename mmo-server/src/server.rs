@@ -12,6 +12,9 @@ use crate::application::DatabasePool;
 #[derive(Debug, Component)]
 pub struct ClientIdComponent(pub ClientId);
 
+#[derive(Debug, Component)]
+pub struct CharacterIdComponent(pub i32);
+
 #[derive(Debug, Clone, sqlx::FromRow)]
 pub struct CharacterRow {
     pub id: i32,
@@ -59,7 +62,12 @@ pub fn handle_connection_events(
     mut commands: Commands,
     mut server: ResMut<RenetServer>,
     transport: Res<NetcodeServerTransport>,
-    players: Query<(Entity, &ClientIdComponent, &Transform)>,
+    players: Query<(
+        Entity,
+        &ClientIdComponent,
+        &CharacterIdComponent,
+        &Transform,
+    )>,
     runtime: Res<TokioTasksRuntime>,
     pool: Res<DatabasePool>,
 ) {
@@ -106,6 +114,7 @@ fn process_client_connected(
                 ctx.run_on_main_thread(move |ctx| {
                     ctx.world.spawn((
                         ClientIdComponent(client_id),
+                        CharacterIdComponent(character.id),
                         Transform::from_xyz(
                             character.position_x,
                             character.position_y,
@@ -164,16 +173,44 @@ fn process_client_disconnected(
     client_id: ClientId,
     reason: &DisconnectReason,
     commands: &mut Commands,
-    players: Query<(Entity, &ClientIdComponent, &Transform)>,
+    players: Query<(
+        Entity,
+        &ClientIdComponent,
+        &CharacterIdComponent,
+        &Transform,
+    )>,
     pool: &DatabasePool,
     runtime: &TokioTasksRuntime,
 ) {
     bevy::log::info!("player {} disconnected: {}", client_id, reason);
 
     // TODO: Save character data
-    for (entity, player_client_id, transform) in players.iter() {
+    for (entity, player_client_id, character_id, transform) in players.iter() {
         if player_client_id.0 == client_id {
+            let db_pool = pool.0.clone();
+            let character_id = character_id.0;
+            let transform = transform.clone();
             commands.entity(entity).despawn();
+            runtime.spawn_background_task(async move |_| {
+                // TODO: This pos is probably incorrect
+                let pos = transform.translation;
+                if let Err(error) = sqlx::query!(
+                    r#"
+                    UPDATE CHARACTERS
+                    SET position_x = $2, position_y = $3, position_z = $4
+                    WHERE id = $1 
+                    "#,
+                    character_id,
+                    pos.x,
+                    pos.y,
+                    pos.z,
+                )
+                .execute(&db_pool)
+                .await
+                {
+                    bevy::log::error!(?error, "failed to update character");
+                };
+            });
             return;
         }
     }
