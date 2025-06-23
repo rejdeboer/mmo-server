@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_renet::{
     netcode::NetcodeServerTransport,
-    renet::{ClientId, DefaultChannel, RenetServer, ServerEvent},
+    renet::{ClientId, DefaultChannel, DisconnectReason, RenetServer, ServerEvent},
 };
 use bevy_tokio_tasks::TokioTasksRuntime;
 use flatbuffers::{FlatBufferBuilder, WIPOffset, root};
@@ -69,16 +69,14 @@ pub fn handle_connection_events(
                 process_client_connected(*client_id, &transport, &mut server, &pool, &runtime)
             }
             ServerEvent::ClientDisconnected { client_id, reason } => {
-                bevy::log::info!("player {} disconnected: {}", client_id, reason);
-                let client_id = *client_id;
-
-                // TODO: Save character data
-                for (entity, player_client_id, _transform) in players.iter() {
-                    if player_client_id.0 == client_id {
-                        commands.entity(entity).despawn();
-                        return;
-                    }
-                }
+                process_client_disconnected(
+                    *client_id,
+                    reason,
+                    &mut commands,
+                    players,
+                    &pool,
+                    &runtime,
+                );
             }
         }
     }
@@ -160,4 +158,23 @@ async fn load_character_data(
     )
     .fetch_one(&pool)
     .await
+}
+
+fn process_client_disconnected(
+    client_id: ClientId,
+    reason: &DisconnectReason,
+    commands: &mut Commands,
+    players: Query<(Entity, &ClientIdComponent, &Transform)>,
+    pool: &DatabasePool,
+    runtime: &TokioTasksRuntime,
+) {
+    bevy::log::info!("player {} disconnected: {}", client_id, reason);
+
+    // TODO: Save character data
+    for (entity, player_client_id, _transform) in players.iter() {
+        if player_client_id.0 == client_id {
+            commands.entity(entity).despawn();
+            return;
+        }
+    }
 }
