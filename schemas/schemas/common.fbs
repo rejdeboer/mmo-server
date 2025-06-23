@@ -1,5 +1,10 @@
 namespace mmo;
 
+struct Vec2 {
+  x: double;
+  y: double;
+}
+
 struct Vec3 {
   x: double;
   y: double;
