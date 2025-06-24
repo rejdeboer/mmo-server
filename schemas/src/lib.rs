@@ -12,4 +12,6 @@ pub mod mmo {
     pub use self::enter_game_response_generated::*;
     mod netcode_token_user_data_generated;
     pub use self::netcode_token_user_data_generated::*;
+    mod event_generated;
+    pub use event_generated::*;
 } // mmo

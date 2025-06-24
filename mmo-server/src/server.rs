@@ -90,6 +90,19 @@ pub fn handle_connection_events(
     }
 }
 
+pub fn handle_server_messages(
+    mut server: ResMut<RenetServer>,
+    clients: Query<(Entity, &ClientIdComponent)>,
+) {
+    for (entity, client_id) in clients.iter() {
+        if let Some(message) = server.receive_message(client_id.0, DefaultChannel::Unreliable) {
+            process_unreliable(entity, message);
+        }
+    }
+}
+
+fn process_unreliable(entity: Entity, message: bevy_renet::renet::Bytes) {}
+
 fn process_client_connected(
     client_id: ClientId,
     transport: &NetcodeServerTransport,
@@ -184,7 +197,6 @@ fn process_client_disconnected(
 ) {
     bevy::log::info!("player {} disconnected: {}", client_id, reason);
 
-    // TODO: Save character data
     for (entity, player_client_id, character_id, transform) in players.iter() {
         if player_client_id.0 == client_id {
             let db_pool = pool.0.clone();
