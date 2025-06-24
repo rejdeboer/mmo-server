@@ -20,4 +20,6 @@ pub mod mmo {
     pub use event_data_generated::*;
     mod event_generated;
     pub use event_generated::*;
+    mod batched_events_generated;
+    pub use batched_events_generated::*;
 } // mmo

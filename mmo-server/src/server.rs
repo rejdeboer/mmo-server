@@ -5,6 +5,7 @@ use bevy_renet::{
 };
 use bevy_tokio_tasks::TokioTasksRuntime;
 use flatbuffers::{FlatBufferBuilder, WIPOffset, root};
+use schemas::mmo::{EntityMoveEvent, EventData};
 use sqlx::{Pool, Postgres};
 
 use crate::application::DatabasePool;
@@ -101,7 +102,30 @@ pub fn handle_server_messages(
     }
 }
 
-fn process_unreliable(entity: Entity, message: bevy_renet::renet::Bytes) {}
+fn process_unreliable(entity: Entity, message: bevy_renet::renet::Bytes) {
+    match root::<schemas::mmo::BatchedEvents>(&message) {
+        Ok(batch) => {
+            for event in batch.events().unwrap() {
+                match event.data_type() {
+                    EventData::EntityMoveEvent => {
+                        process_player_move_event(
+                            entity,
+                            event.data_as_entity_move_event().unwrap(),
+                        );
+                    }
+                    _ => {
+                        bevy::log::warn!("unhandled event data type");
+                    }
+                }
+            }
+        }
+        Err(error) => {
+            bevy::log::error!(?error, "message does not follow event schema");
+        }
+    }
+}
+
+fn process_player_move_event(entity: Entity, event: EntityMoveEvent) {}
 
 fn process_client_connected(
     client_id: ClientId,

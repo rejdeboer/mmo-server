@@ -69,7 +69,13 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
 
     // TODO: Implement server tick of 20ms?
     app.add_systems(Startup, setup_database_pool);
-    app.add_systems(Update, (crate::server::handle_connection_events,));
+    app.add_systems(
+        Update,
+        (
+            crate::server::handle_connection_events,
+            crate::server::handle_server_messages,
+        ),
+    );
 
     return Ok((app, port));
 }
