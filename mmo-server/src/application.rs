@@ -8,12 +8,29 @@ use bevy_renet::renet::{ConnectionConfig, RenetServer};
 use bevy_tokio_tasks::{TokioTasksPlugin, TokioTasksRuntime};
 use sqlx::{PgPool, postgres::PgPoolOptions};
 use std::net::{IpAddr, SocketAddr, UdpSocket};
+use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::SystemTime;
 
 use crate::configuration::Settings;
+use crate::server::EntityMoveEvent;
 
 #[derive(Resource, Clone)]
 pub struct DatabasePool(pub PgPool);
+
+#[derive(Resource)]
+pub struct EntityIdCounter(AtomicU32);
+
+impl EntityIdCounter {
+    pub fn increment(&mut self) -> u32 {
+        self.0.fetch_add(1, Ordering::Relaxed)
+    }
+}
+
+impl Default for EntityIdCounter {
+    fn default() -> Self {
+        Self(AtomicU32::from(0))
+    }
+}
 
 pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     let mut app = App::new();
@@ -66,8 +83,11 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     app.insert_resource(netcode_server);
     app.insert_resource(netcode_transport);
     app.insert_resource(settings);
+    app.insert_resource(EntityIdCounter::default());
 
-    // TODO: Implement server tick of 20ms?
+    app.add_event::<EntityMoveEvent>();
+
+    // TODO: Implement server tick of 20Hz?
     app.add_systems(Startup, setup_database_pool);
     app.add_systems(
         Update,

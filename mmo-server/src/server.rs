@@ -5,16 +5,24 @@ use bevy_renet::{
 };
 use bevy_tokio_tasks::TokioTasksRuntime;
 use flatbuffers::{FlatBufferBuilder, WIPOffset, root};
-use schemas::mmo::{EntityMoveEvent, EventData};
 use sqlx::{Pool, Postgres};
 
-use crate::application::DatabasePool;
+use crate::application::{DatabasePool, EntityIdCounter};
 
 #[derive(Debug, Component)]
 pub struct ClientIdComponent(pub ClientId);
 
 #[derive(Debug, Component)]
 pub struct CharacterIdComponent(pub i32);
+
+#[derive(Debug, Component)]
+pub struct EntityIdComponent(pub u32);
+
+#[derive(Event)]
+pub struct EntityMoveEvent {
+    pub entity: Entity,
+    pub transform: Transform,
+}
 
 #[derive(Debug, Clone, sqlx::FromRow)]
 pub struct CharacterRow {
@@ -94,23 +102,25 @@ pub fn handle_connection_events(
 pub fn handle_server_messages(
     mut server: ResMut<RenetServer>,
     clients: Query<(Entity, &ClientIdComponent)>,
+    mut commands: Commands,
 ) {
     for (entity, client_id) in clients.iter() {
         if let Some(message) = server.receive_message(client_id.0, DefaultChannel::Unreliable) {
-            process_unreliable(entity, message);
+            process_message(entity, message, &mut commands);
         }
     }
 }
 
-fn process_unreliable(entity: Entity, message: bevy_renet::renet::Bytes) {
+fn process_message(entity: Entity, message: bevy_renet::renet::Bytes, commands: &mut Commands) {
     match root::<schemas::mmo::BatchedEvents>(&message) {
         Ok(batch) => {
             for event in batch.events().unwrap() {
                 match event.data_type() {
-                    EventData::EntityMoveEvent => {
+                    schemas::mmo::EventData::EntityMoveEvent => {
                         process_player_move_event(
                             entity,
                             event.data_as_entity_move_event().unwrap(),
+                            commands,
                         );
                     }
                     _ => {
@@ -125,7 +135,18 @@ fn process_unreliable(entity: Entity, message: bevy_renet::renet::Bytes) {
     }
 }
 
-fn process_player_move_event(entity: Entity, event: EntityMoveEvent) {}
+fn process_player_move_event(
+    entity: Entity,
+    event: schemas::mmo::EntityMoveEvent,
+    commands: &mut Commands,
+) {
+    let pos = event.position().unwrap();
+    // TODO: Rotations
+    let transform = Transform::from_xyz(pos.x(), pos.y(), pos.z());
+    commands.entity(entity).insert(transform);
+    // TODO: This way of writing events is not performant
+    commands.send_event(EntityMoveEvent { entity, transform });
+}
 
 fn process_client_connected(
     client_id: ClientId,
@@ -149,8 +170,14 @@ fn process_client_connected(
             runtime.spawn_background_task(async move |mut ctx| {
                 let character = load_character_data(db_pool, character_id).await.unwrap();
                 ctx.run_on_main_thread(move |ctx| {
+                    let entity_id = ctx
+                        .world
+                        .get_resource_mut::<EntityIdCounter>()
+                        .unwrap()
+                        .increment();
                     ctx.world.spawn((
                         ClientIdComponent(client_id),
+                        EntityIdComponent(entity_id),
                         CharacterIdComponent(character.id),
                         Transform::from_xyz(
                             character.position_x,
@@ -164,6 +191,7 @@ fn process_client_connected(
                     let response_offset = schemas::mmo::EnterGameResponse::create(
                         &mut builder,
                         &schemas::mmo::EnterGameResponseArgs {
+                            player_entity_id: entity_id,
                             character: Some(character_offset),
                         },
                     );
@@ -177,11 +205,11 @@ fn process_client_connected(
                 .await;
             });
         }
-        Err(e) => {
+        Err(error) => {
             bevy::log::error!(
-                "failed to deserialize user data from client {}: {}; disconnecting",
+                ?error,
+                "failed to deserialize user data from client {}; disconnecting",
                 client_id,
-                e
             );
             server.disconnect(client_id);
         }
