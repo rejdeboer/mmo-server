@@ -92,7 +92,7 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     app.add_systems(
         Update,
         (
-            crate::server::handle_connection_events,
+            crate::systems::handle_connection_events,
             crate::server::handle_server_messages,
             crate::server::handle_entity_move_events,
         ),
