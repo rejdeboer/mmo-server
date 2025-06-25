@@ -3,7 +3,7 @@ include "common.fbs";
 namespace mmo;
 
 table EntityMoveEvent {
-	entity_id: int32;
+	entity_id: uint32;
 	position: Vec3; 
 	direction: Vec2;
 }
@@ -13,7 +13,6 @@ union EventData {
 }
 
 table Event {
-	// data_type: EventData;
 	data: EventData (required);
 }
 

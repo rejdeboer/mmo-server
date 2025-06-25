@@ -47,11 +47,11 @@ impl<'a> EntityMoveEvent<'a> {
 
 
   #[inline]
-  pub fn entity_id(&self) -> i32 {
+  pub fn entity_id(&self) -> u32 {
     // Safety:
     // Created from valid Table for this object
     // which contains a valid value in this slot
-    unsafe { self._tab.get::<i32>(EntityMoveEvent::VT_ENTITY_ID, Some(0)).unwrap()}
+    unsafe { self._tab.get::<u32>(EntityMoveEvent::VT_ENTITY_ID, Some(0)).unwrap()}
   }
   #[inline]
   pub fn position(&self) -> Option<&'a Vec3> {
@@ -76,7 +76,7 @@ impl flatbuffers::Verifiable for EntityMoveEvent<'_> {
   ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
     use self::flatbuffers::Verifiable;
     v.visit_table(pos)?
-     .visit_field::<i32>("entity_id", Self::VT_ENTITY_ID, false)?
+     .visit_field::<u32>("entity_id", Self::VT_ENTITY_ID, false)?
      .visit_field::<Vec3>("position", Self::VT_POSITION, false)?
      .visit_field::<Vec2>("direction", Self::VT_DIRECTION, false)?
      .finish();
@@ -84,7 +84,7 @@ impl flatbuffers::Verifiable for EntityMoveEvent<'_> {
   }
 }
 pub struct EntityMoveEventArgs<'a> {
-    pub entity_id: i32,
+    pub entity_id: u32,
     pub position: Option<&'a Vec3>,
     pub direction: Option<&'a Vec2>,
 }
@@ -105,8 +105,8 @@ pub struct EntityMoveEventBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> {
 }
 impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> EntityMoveEventBuilder<'a, 'b, A> {
   #[inline]
-  pub fn add_entity_id(&mut self, entity_id: i32) {
-    self.fbb_.push_slot::<i32>(EntityMoveEvent::VT_ENTITY_ID, entity_id, 0);
+  pub fn add_entity_id(&mut self, entity_id: u32) {
+    self.fbb_.push_slot::<u32>(EntityMoveEvent::VT_ENTITY_ID, entity_id, 0);
   }
   #[inline]
   pub fn add_position(&mut self, position: &Vec3) {
