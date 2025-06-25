@@ -3,6 +3,7 @@ include "character.fbs";
 namespace mmo;
 
 table EnterGameResponse {
+	player_entity_id: uint32;
 	character: mmo.Character;
 }
 
