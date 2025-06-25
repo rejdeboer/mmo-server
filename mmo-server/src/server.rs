@@ -1,3 +1,5 @@
+use core::slice::SlicePattern;
+
 use bevy::prelude::*;
 use bevy_renet::{
     netcode::NetcodeServerTransport,
@@ -278,4 +280,46 @@ fn process_client_disconnected(
             return;
         }
     }
+}
+
+pub fn handle_entity_move_events(
+    mut ev_moves: EventReader<EntityMoveEvent>,
+    mut server: ResMut<RenetServer>,
+    q_entity_id: Query<&EntityIdComponent>,
+) {
+    let mut events = Vec::<WIPOffset<schemas::mmo::Event>>::new();
+    let mut builder = FlatBufferBuilder::new();
+
+    for event in ev_moves.read() {
+        let entity_id = q_entity_id.get(event.entity).unwrap().0;
+        let pos = event.transform.translation;
+        let event_data = schemas::mmo::EntityMoveEvent::create(
+            &mut builder,
+            &schemas::mmo::EntityMoveEventArgs {
+                entity_id,
+                position: Some(&schemas::mmo::Vec3::new(pos.x, pos.y, pos.z)),
+                direction: Some(&schemas::mmo::Vec2::new(0., 0.)),
+            },
+        );
+        let fb_event = schemas::mmo::Event::create(
+            &mut builder,
+            &schemas::mmo::EventArgs {
+                data_type: schemas::mmo::EventData::EntityMoveEvent,
+                data: Some(event_data.as_union_value()),
+            },
+        );
+        events.push(fb_event);
+    }
+
+    let fb_events = builder.create_vector(events.as_slice());
+    let batch = schemas::mmo::BatchedEvents::create(
+        &mut builder,
+        &schemas::mmo::BatchedEventsArgs {
+            events: Some(fb_events),
+        },
+    );
+    builder.finish_minimal(batch);
+    let data = builder.finished_data().to_vec();
+
+    server.broadcast_message(DefaultChannel::Unreliable, data);
 }
