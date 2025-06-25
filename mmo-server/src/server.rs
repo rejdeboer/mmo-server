@@ -1,5 +1,3 @@
-use core::slice::SlicePattern;
-
 use bevy::prelude::*;
 use bevy_renet::{
     netcode::NetcodeServerTransport,
@@ -9,16 +7,10 @@ use bevy_tokio_tasks::TokioTasksRuntime;
 use flatbuffers::{FlatBufferBuilder, WIPOffset, root};
 use sqlx::{Pool, Postgres};
 
-use crate::application::{DatabasePool, EntityIdCounter};
-
-#[derive(Debug, Component)]
-pub struct ClientIdComponent(pub ClientId);
-
-#[derive(Debug, Component)]
-pub struct CharacterIdComponent(pub i32);
-
-#[derive(Debug, Component)]
-pub struct EntityIdComponent(pub u32);
+use crate::{
+    application::{DatabasePool, EntityIdCounter},
+    components::{CharacterIdComponent, ClientIdComponent, EntityIdComponent},
+};
 
 #[derive(Event)]
 pub struct EntityMoveEvent {
