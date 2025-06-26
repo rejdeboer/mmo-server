@@ -9,7 +9,7 @@ use sqlx::{Pool, Postgres};
 
 use crate::{
     application::{DatabasePool, EntityIdCounter},
-    components::{CharacterIdComponent, ClientIdComponent, EntityIdComponent},
+    components::{CharacterIdComponent, ClientIdComponent, EntityId},
 };
 
 #[derive(Debug, Clone, sqlx::FromRow)]
@@ -24,7 +24,7 @@ pub struct CharacterRow {
 }
 
 impl CharacterRow {
-    pub fn serialize<'a>(
+    fn encode<'a>(
         self,
         builder: &mut FlatBufferBuilder<'a>,
     ) -> WIPOffset<schemas::mmo::Character<'a>> {
@@ -116,7 +116,7 @@ fn process_client_connected(
                         .increment();
                     ctx.world.spawn((
                         ClientIdComponent(client_id),
-                        EntityIdComponent(entity_id),
+                        EntityId(entity_id),
                         CharacterIdComponent(character.id),
                         Transform::from_xyz(
                             character.position_x,
@@ -126,7 +126,7 @@ fn process_client_connected(
                     ));
 
                     let mut builder = FlatBufferBuilder::new();
-                    let character_offset = character.serialize(&mut builder);
+                    let character_offset = character.encode(&mut builder);
                     let response_offset = schemas::mmo::EnterGameResponse::create(
                         &mut builder,
                         &schemas::mmo::EnterGameResponseArgs {
