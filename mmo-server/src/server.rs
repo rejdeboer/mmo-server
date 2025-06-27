@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{platform::collections::HashMap, prelude::*};
 use bevy_renet::renet::{ClientId, DefaultChannel, RenetServer};
 use flatbuffers::{FlatBufferBuilder, WIPOffset, root};
 
@@ -49,26 +49,31 @@ impl OutgoingMessageData {
 }
 
 // TODO: Maybe use change detection for transform changes
-pub fn sync_players(
-    mut server: ResMut<RenetServer>,
-    mut ev_msg: EventReader<OutgoingMessage>,
-    q_clients: Query<&ClientIdComponent>,
-) {
-    let events: Vec<&OutgoingMessage> = ev_msg.read().collect();
+pub fn sync_players(mut server: ResMut<RenetServer>, mut ev_msg: EventReader<OutgoingMessage>) {
+    let mut client_events: HashMap<ClientId, Vec<&OutgoingMessageData>> = HashMap::new();
+    for event in ev_msg.read() {
+        client_events
+            .entry(event.client_id)
+            .or_default()
+            .push(&event.data);
+    }
+
+    if client_events.is_empty() {
+        return;
+    }
+
     let mut builder = FlatBufferBuilder::new();
 
     // TODO: Parallelism?
-    q_clients.iter().for_each(|client_id| {
+    for (client_id, events) in client_events {
+        let mut player_events = Vec::<WIPOffset<schemas::mmo::Event>>::with_capacity(events.len());
         let mut can_be_unreliable = true;
-        let mut player_events = Vec::<WIPOffset<schemas::mmo::Event>>::new();
 
-        for event in &events {
-            if client_id.0 == event.client_id {
-                if can_be_unreliable && !matches!(event.data, OutgoingMessageData::Movement(_, _)) {
-                    can_be_unreliable = false;
-                }
-                player_events.push(event.data.encode(&mut builder));
+        for event in events {
+            if can_be_unreliable && !matches!(event, OutgoingMessageData::Movement(_, _)) {
+                can_be_unreliable = false;
             }
+            player_events.push(event.encode(&mut builder));
         }
 
         if player_events.is_empty() {
@@ -86,13 +91,13 @@ pub fn sync_players(
         let data = builder.finished_data().to_vec();
 
         if can_be_unreliable {
-            server.send_message(client_id.0, DefaultChannel::Unreliable, data);
+            server.send_message(client_id, DefaultChannel::Unreliable, data);
         } else {
-            server.send_message(client_id.0, DefaultChannel::ReliableOrdered, data);
+            server.send_message(client_id, DefaultChannel::ReliableOrdered, data);
         }
 
         builder.reset();
-    });
+    }
 }
 
 pub fn handle_server_messages(
