@@ -18,6 +18,8 @@ pub struct OutgoingMessage {
 
 pub enum OutgoingMessageData {
     Movement(EntityId, Transform),
+    Spawn(EntityId),
+    Despawn(EntityId),
 }
 
 impl OutgoingMessageData {
@@ -40,6 +42,32 @@ impl OutgoingMessageData {
                     builder,
                     &schemas::mmo::EventArgs {
                         data_type: schemas::mmo::EventData::EntityMoveEvent,
+                        data: Some(event_data.as_union_value()),
+                    },
+                )
+            }
+            Self::Spawn(id) => {
+                let event_data = schemas::mmo::EntitySpawnEvent::create(
+                    builder,
+                    &schemas::mmo::EntitySpawnEventArgs { entity_id: id.0 },
+                );
+                schemas::mmo::Event::create(
+                    builder,
+                    &schemas::mmo::EventArgs {
+                        data_type: schemas::mmo::EventData::EntitySpawnEvent,
+                        data: Some(event_data.as_union_value()),
+                    },
+                )
+            }
+            Self::Despawn(id) => {
+                let event_data = schemas::mmo::EntityDespawnEvent::create(
+                    builder,
+                    &schemas::mmo::EntityDespawnEventArgs { entity_id: id.0 },
+                );
+                schemas::mmo::Event::create(
+                    builder,
+                    &schemas::mmo::EventArgs {
+                        data_type: schemas::mmo::EventData::EntityDespawnEvent,
                         data: Some(event_data.as_union_value()),
                     },
                 )
