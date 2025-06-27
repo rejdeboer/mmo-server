@@ -2,8 +2,6 @@ use bevy::prelude::*;
 use bevy_renet::renet::ClientId;
 use flatbuffers::{FlatBufferBuilder, WIPOffset};
 
-use crate::components::EntityId;
-
 #[derive(Event)]
 pub struct EntityMoveEvent {
     pub entity: Entity,
@@ -17,9 +15,9 @@ pub struct OutgoingMessage {
 }
 
 pub enum OutgoingMessageData {
-    Movement(EntityId, Transform),
-    Spawn(EntityId),
-    Despawn(EntityId),
+    Movement(Entity, Transform),
+    Spawn(Entity),
+    Despawn(Entity),
 }
 
 impl OutgoingMessageData {
@@ -33,7 +31,7 @@ impl OutgoingMessageData {
                 let event_data = schemas::mmo::EntityMoveEvent::create(
                     builder,
                     &schemas::mmo::EntityMoveEventArgs {
-                        entity_id: id.0,
+                        entity_id: id.to_bits(),
                         position: Some(&schemas::mmo::Vec3::new(pos.x, pos.y, pos.z)),
                         direction: Some(&schemas::mmo::Vec2::new(0., 0.)),
                     },
@@ -49,7 +47,9 @@ impl OutgoingMessageData {
             Self::Spawn(id) => {
                 let event_data = schemas::mmo::EntitySpawnEvent::create(
                     builder,
-                    &schemas::mmo::EntitySpawnEventArgs { entity_id: id.0 },
+                    &schemas::mmo::EntitySpawnEventArgs {
+                        entity_id: id.to_bits(),
+                    },
                 );
                 schemas::mmo::Event::create(
                     builder,
@@ -62,7 +62,9 @@ impl OutgoingMessageData {
             Self::Despawn(id) => {
                 let event_data = schemas::mmo::EntityDespawnEvent::create(
                     builder,
-                    &schemas::mmo::EntityDespawnEventArgs { entity_id: id.0 },
+                    &schemas::mmo::EntityDespawnEventArgs {
+                        entity_id: id.to_bits(),
+                    },
                 );
                 schemas::mmo::Event::create(
                     builder,

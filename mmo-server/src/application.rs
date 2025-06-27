@@ -9,7 +9,6 @@ use bevy_renet::renet::{ConnectionConfig, RenetServer};
 use bevy_tokio_tasks::{TokioTasksPlugin, TokioTasksRuntime};
 use sqlx::{PgPool, postgres::PgPoolOptions};
 use std::net::{IpAddr, SocketAddr, UdpSocket};
-use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::SystemTime;
 
 use crate::configuration::Settings;
@@ -18,24 +17,9 @@ use crate::events::{EntityMoveEvent, OutgoingMessage};
 #[derive(Resource, Clone)]
 pub struct DatabasePool(pub PgPool);
 
-#[derive(Resource)]
-pub struct EntityIdCounter(AtomicU32);
-
 #[derive(Debug, Resource, Default)]
 pub struct SpatialGrid {
     pub cells: HashMap<IVec2, Vec<Entity>>,
-}
-
-impl EntityIdCounter {
-    pub fn increment(&mut self) -> u32 {
-        self.0.fetch_add(1, Ordering::Relaxed)
-    }
-}
-
-impl Default for EntityIdCounter {
-    fn default() -> Self {
-        Self(AtomicU32::from(0))
-    }
 }
 
 pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
@@ -89,7 +73,7 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     app.insert_resource(netcode_server);
     app.insert_resource(netcode_transport);
     app.insert_resource(settings);
-    app.insert_resource(EntityIdCounter::default());
+    app.insert_resource(SpatialGrid::default());
 
     app.add_event::<EntityMoveEvent>();
     app.add_event::<OutgoingMessage>();
@@ -100,6 +84,8 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
         Update,
         (
             crate::systems::handle_connection_events,
+            crate::systems::update_spatial_grid,
+            crate::systems::update_player_visibility,
             crate::server::handle_server_messages,
             crate::server::sync_players,
         ),

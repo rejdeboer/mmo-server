@@ -8,8 +8,8 @@ use flatbuffers::{FlatBufferBuilder, WIPOffset, root};
 use sqlx::{Pool, Postgres};
 
 use crate::{
-    application::{DatabasePool, EntityIdCounter},
-    components::{CharacterIdComponent, ClientIdComponent, EntityId},
+    application::DatabasePool,
+    components::{CharacterIdComponent, ClientIdComponent},
 };
 
 #[derive(Debug, Clone, sqlx::FromRow)]
@@ -111,26 +111,23 @@ fn process_client_connected(
                 ctx.run_on_main_thread(move |ctx| {
                     let entity_id = ctx
                         .world
-                        .get_resource_mut::<EntityIdCounter>()
-                        .unwrap()
-                        .increment();
-                    ctx.world.spawn((
-                        ClientIdComponent(client_id),
-                        EntityId(entity_id),
-                        CharacterIdComponent(character.id),
-                        Transform::from_xyz(
-                            character.position_x,
-                            character.position_y,
-                            character.position_z,
-                        ),
-                    ));
+                        .spawn((
+                            ClientIdComponent(client_id),
+                            CharacterIdComponent(character.id),
+                            Transform::from_xyz(
+                                character.position_x,
+                                character.position_y,
+                                character.position_z,
+                            ),
+                        ))
+                        .id();
 
                     let mut builder = FlatBufferBuilder::new();
                     let character_offset = character.encode(&mut builder);
                     let response_offset = schemas::mmo::EnterGameResponse::create(
                         &mut builder,
                         &schemas::mmo::EnterGameResponseArgs {
-                            player_entity_id: entity_id,
+                            player_entity_id: entity_id.to_bits(),
                             character: Some(character_offset),
                         },
                     );

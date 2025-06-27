@@ -38,18 +38,18 @@ impl<'a> EnterGameResponse<'a> {
     args: &'args EnterGameResponseArgs<'args>
   ) -> flatbuffers::WIPOffset<EnterGameResponse<'bldr>> {
     let mut builder = EnterGameResponseBuilder::new(_fbb);
-    if let Some(x) = args.character { builder.add_character(x); }
     builder.add_player_entity_id(args.player_entity_id);
+    if let Some(x) = args.character { builder.add_character(x); }
     builder.finish()
   }
 
 
   #[inline]
-  pub fn player_entity_id(&self) -> u32 {
+  pub fn player_entity_id(&self) -> u64 {
     // Safety:
     // Created from valid Table for this object
     // which contains a valid value in this slot
-    unsafe { self._tab.get::<u32>(EnterGameResponse::VT_PLAYER_ENTITY_ID, Some(0)).unwrap()}
+    unsafe { self._tab.get::<u64>(EnterGameResponse::VT_PLAYER_ENTITY_ID, Some(0)).unwrap()}
   }
   #[inline]
   pub fn character(&self) -> Option<Character<'a>> {
@@ -67,14 +67,14 @@ impl flatbuffers::Verifiable for EnterGameResponse<'_> {
   ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
     use self::flatbuffers::Verifiable;
     v.visit_table(pos)?
-     .visit_field::<u32>("player_entity_id", Self::VT_PLAYER_ENTITY_ID, false)?
+     .visit_field::<u64>("player_entity_id", Self::VT_PLAYER_ENTITY_ID, false)?
      .visit_field::<flatbuffers::ForwardsUOffset<Character>>("character", Self::VT_CHARACTER, false)?
      .finish();
     Ok(())
   }
 }
 pub struct EnterGameResponseArgs<'a> {
-    pub player_entity_id: u32,
+    pub player_entity_id: u64,
     pub character: Option<flatbuffers::WIPOffset<Character<'a>>>,
 }
 impl<'a> Default for EnterGameResponseArgs<'a> {
@@ -93,8 +93,8 @@ pub struct EnterGameResponseBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> 
 }
 impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> EnterGameResponseBuilder<'a, 'b, A> {
   #[inline]
-  pub fn add_player_entity_id(&mut self, player_entity_id: u32) {
-    self.fbb_.push_slot::<u32>(EnterGameResponse::VT_PLAYER_ENTITY_ID, player_entity_id, 0);
+  pub fn add_player_entity_id(&mut self, player_entity_id: u64) {
+    self.fbb_.push_slot::<u64>(EnterGameResponse::VT_PLAYER_ENTITY_ID, player_entity_id, 0);
   }
   #[inline]
   pub fn add_character(&mut self, character: flatbuffers::WIPOffset<Character<'b >>) {
