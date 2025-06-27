@@ -95,7 +95,6 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
         (
             crate::systems::handle_connection_events,
             crate::server::handle_server_messages,
-            crate::server::handle_entity_move_events,
             crate::server::sync_players,
         ),
     );
