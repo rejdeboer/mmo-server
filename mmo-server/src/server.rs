@@ -22,7 +22,7 @@ pub enum OutgoingMessageData {
 
 impl OutgoingMessageData {
     pub fn encode<'a>(
-        self,
+        &self,
         builder: &mut FlatBufferBuilder<'a>,
     ) -> WIPOffset<schemas::mmo::Event<'a>> {
         match self {
@@ -48,9 +48,52 @@ impl OutgoingMessageData {
     }
 }
 
-// pub fn flush_messages(mut server: ResMut<RenetServer>, mut ev_msg: EventReader<OutgoingMessage>) {
-//     ev_msg.re
-// }
+// TODO: Maybe use change detection for transform changes
+pub fn sync_players(
+    mut server: ResMut<RenetServer>,
+    mut ev_msg: EventReader<OutgoingMessage>,
+    q_clients: Query<&ClientIdComponent>,
+) {
+    let events: Vec<&OutgoingMessage> = ev_msg.read().collect();
+    let mut builder = FlatBufferBuilder::new();
+
+    // TODO: Parallelism?
+    q_clients.iter().for_each(|client_id| {
+        let mut can_be_unreliable = true;
+        let mut player_events = Vec::<WIPOffset<schemas::mmo::Event>>::new();
+
+        for event in &events {
+            if client_id.0 == event.client_id {
+                if can_be_unreliable && !matches!(event.data, OutgoingMessageData::Movement(_, _)) {
+                    can_be_unreliable = false;
+                }
+                player_events.push(event.data.encode(&mut builder));
+            }
+        }
+
+        if player_events.is_empty() {
+            return;
+        }
+
+        let fb_events = builder.create_vector(player_events.as_slice());
+        let batch = schemas::mmo::BatchedEvents::create(
+            &mut builder,
+            &schemas::mmo::BatchedEventsArgs {
+                events: Some(fb_events),
+            },
+        );
+        builder.finish_minimal(batch);
+        let data = builder.finished_data().to_vec();
+
+        if can_be_unreliable {
+            server.send_message(client_id.0, DefaultChannel::Unreliable, data);
+        } else {
+            server.send_message(client_id.0, DefaultChannel::ReliableOrdered, data);
+        }
+
+        builder.reset();
+    });
+}
 
 pub fn handle_server_messages(
     mut server: ResMut<RenetServer>,

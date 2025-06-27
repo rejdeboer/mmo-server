@@ -12,7 +12,7 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::SystemTime;
 
 use crate::configuration::Settings;
-use crate::server::EntityMoveEvent;
+use crate::server::{EntityMoveEvent, OutgoingMessage};
 
 #[derive(Resource, Clone)]
 pub struct DatabasePool(pub PgPool);
@@ -86,6 +86,7 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     app.insert_resource(EntityIdCounter::default());
 
     app.add_event::<EntityMoveEvent>();
+    app.add_event::<OutgoingMessage>();
 
     // TODO: Implement server tick of 20Hz?
     app.add_systems(Startup, setup_database_pool);
@@ -95,6 +96,7 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
             crate::systems::handle_connection_events,
             crate::server::handle_server_messages,
             crate::server::handle_entity_move_events,
+            crate::server::sync_players,
         ),
     );
 
