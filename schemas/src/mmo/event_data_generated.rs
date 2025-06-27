@@ -12,12 +12,14 @@ use super::*;
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
 pub const ENUM_MIN_EVENT_DATA: u8 = 0;
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
-pub const ENUM_MAX_EVENT_DATA: u8 = 1;
+pub const ENUM_MAX_EVENT_DATA: u8 = 3;
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
 #[allow(non_camel_case_types)]
-pub const ENUM_VALUES_EVENT_DATA: [EventData; 2] = [
+pub const ENUM_VALUES_EVENT_DATA: [EventData; 4] = [
   EventData::NONE,
   EventData::EntityMoveEvent,
+  EventData::EntitySpawnEvent,
+  EventData::EntityDespawnEvent,
 ];
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
@@ -27,18 +29,24 @@ pub struct EventData(pub u8);
 impl EventData {
   pub const NONE: Self = Self(0);
   pub const EntityMoveEvent: Self = Self(1);
+  pub const EntitySpawnEvent: Self = Self(2);
+  pub const EntityDespawnEvent: Self = Self(3);
 
   pub const ENUM_MIN: u8 = 0;
-  pub const ENUM_MAX: u8 = 1;
+  pub const ENUM_MAX: u8 = 3;
   pub const ENUM_VALUES: &'static [Self] = &[
     Self::NONE,
     Self::EntityMoveEvent,
+    Self::EntitySpawnEvent,
+    Self::EntityDespawnEvent,
   ];
   /// Returns the variant's name or "" if unknown.
   pub fn variant_name(self) -> Option<&'static str> {
     match self {
       Self::NONE => Some("NONE"),
       Self::EntityMoveEvent => Some("EntityMoveEvent"),
+      Self::EntitySpawnEvent => Some("EntitySpawnEvent"),
+      Self::EntityDespawnEvent => Some("EntityDespawnEvent"),
       _ => None,
     }
   }

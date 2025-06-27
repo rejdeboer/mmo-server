@@ -72,6 +72,34 @@ impl<'a> Event<'a> {
     }
   }
 
+  #[inline]
+  #[allow(non_snake_case)]
+  pub fn data_as_entity_spawn_event(&self) -> Option<EntitySpawnEvent<'a>> {
+    if self.data_type() == EventData::EntitySpawnEvent {
+      let u = self.data();
+      // Safety:
+      // Created from a valid Table for this object
+      // Which contains a valid union in this slot
+      Some(unsafe { EntitySpawnEvent::init_from_table(u) })
+    } else {
+      None
+    }
+  }
+
+  #[inline]
+  #[allow(non_snake_case)]
+  pub fn data_as_entity_despawn_event(&self) -> Option<EntityDespawnEvent<'a>> {
+    if self.data_type() == EventData::EntityDespawnEvent {
+      let u = self.data();
+      // Safety:
+      // Created from a valid Table for this object
+      // Which contains a valid union in this slot
+      Some(unsafe { EntityDespawnEvent::init_from_table(u) })
+    } else {
+      None
+    }
+  }
+
 }
 
 impl flatbuffers::Verifiable for Event<'_> {
@@ -84,6 +112,8 @@ impl flatbuffers::Verifiable for Event<'_> {
      .visit_union::<EventData, _>("data_type", Self::VT_DATA_TYPE, "data", Self::VT_DATA, true, |key, v, pos| {
         match key {
           EventData::EntityMoveEvent => v.verify_union_variant::<flatbuffers::ForwardsUOffset<EntityMoveEvent>>("EventData::EntityMoveEvent", pos),
+          EventData::EntitySpawnEvent => v.verify_union_variant::<flatbuffers::ForwardsUOffset<EntitySpawnEvent>>("EventData::EntitySpawnEvent", pos),
+          EventData::EntityDespawnEvent => v.verify_union_variant::<flatbuffers::ForwardsUOffset<EntityDespawnEvent>>("EventData::EntityDespawnEvent", pos),
           _ => Ok(()),
         }
      })?
@@ -141,6 +171,20 @@ impl core::fmt::Debug for Event<'_> {
       match self.data_type() {
         EventData::EntityMoveEvent => {
           if let Some(x) = self.data_as_entity_move_event() {
+            ds.field("data", &x)
+          } else {
+            ds.field("data", &"InvalidFlatbuffer: Union discriminant does not match value.")
+          }
+        },
+        EventData::EntitySpawnEvent => {
+          if let Some(x) = self.data_as_entity_spawn_event() {
+            ds.field("data", &x)
+          } else {
+            ds.field("data", &"InvalidFlatbuffer: Union discriminant does not match value.")
+          }
+        },
+        EventData::EntityDespawnEvent => {
+          if let Some(x) = self.data_as_entity_despawn_event() {
             ds.field("data", &x)
           } else {
             ds.field("data", &"InvalidFlatbuffer: Union discriminant does not match value.")

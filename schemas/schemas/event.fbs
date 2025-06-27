@@ -8,8 +8,18 @@ table EntityMoveEvent {
 	direction: Vec2;
 }
 
+table EntitySpawnEvent {
+	entity_id: uint32;
+}
+
+table EntityDespawnEvent {
+	entity_id: uint32;
+}
+
 union EventData {
-	EntityMoveEvent
+	EntityMoveEvent,
+	EntitySpawnEvent,
+	EntityDespawnEvent,
 }
 
 table Event {

@@ -16,6 +16,10 @@ pub mod mmo {
     pub use self::netcode_token_user_data_generated::*;
     mod entity_move_event_generated;
     pub use entity_move_event_generated::*;
+    mod entity_spawn_event_generated;
+    pub use entity_spawn_event_generated::*;
+    mod entity_despawn_event_generated;
+    pub use entity_despawn_event_generated::*;
     mod event_data_generated;
     pub use event_data_generated::*;
     mod event_generated;
