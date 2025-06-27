@@ -1,4 +1,5 @@
 use bevy::log::LogPlugin;
+use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 use bevy_renet::RenetServerPlugin;
 use bevy_renet::netcode::{
@@ -12,13 +13,18 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::SystemTime;
 
 use crate::configuration::Settings;
-use crate::server::{EntityMoveEvent, OutgoingMessage};
+use crate::events::{EntityMoveEvent, OutgoingMessage};
 
 #[derive(Resource, Clone)]
 pub struct DatabasePool(pub PgPool);
 
 #[derive(Resource)]
 pub struct EntityIdCounter(AtomicU32);
+
+#[derive(Debug, Resource, Default)]
+pub struct SpatialGrid {
+    pub cells: HashMap<IVec2, Vec<Entity>>,
+}
 
 impl EntityIdCounter {
     pub fn increment(&mut self) -> u32 {
