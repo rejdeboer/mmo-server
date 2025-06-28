@@ -5,6 +5,7 @@ use flatbuffers::{FlatBufferBuilder, root};
 use renet::{ConnectionConfig, DefaultChannel, RenetClient};
 use renet_netcode::{ClientAuthentication, ConnectToken, NetcodeClientTransport};
 
+use crate::Transform;
 use crate::types::Character;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -19,7 +20,20 @@ pub enum ClientState {
 pub enum ClientEvent {
     Connected,
     Disconnected,
-    EnterGameSuccess { character: Character },
+    EnterGameSuccess {
+        character: Character,
+    },
+
+    MoveEntity {
+        entity_id: u64,
+        transform: Transform,
+    },
+    SpawnEntity {
+        entity_id: u64,
+    },
+    DespawnEntity {
+        entity_id: u64,
+    },
 }
 
 pub struct GameClient {
@@ -63,7 +77,7 @@ impl GameClient {
             ClientState::Connecting => {
                 if self.client.is_connected() {
                     self.state = ClientState::Connected;
-                    return vec![ClientEvent::Connected];
+                    return Vec::from([ClientEvent::Connected]);
                 } else if self.client.is_disconnected() {
                     // TODO: Handle reason
                     self.state = ClientState::Disconnected;
