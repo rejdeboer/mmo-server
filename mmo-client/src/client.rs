@@ -1,8 +1,8 @@
 use std::net::{IpAddr, SocketAddr, UdpSocket};
 use std::time::{Duration, SystemTime};
 
-use flatbuffers::{FlatBufferBuilder, root};
-use renet::{ConnectionConfig, DefaultChannel, RenetClient};
+use flatbuffers::{FlatBufferBuilder, InvalidFlatbuffer, root};
+use renet::{Bytes, ConnectionConfig, DefaultChannel, RenetClient};
 use renet_netcode::{ClientAuthentication, ConnectToken, NetcodeClientTransport};
 
 use crate::Transform;
@@ -123,7 +123,18 @@ impl GameClient {
             .update(dt, &mut self.client)
             .unwrap();
 
-        vec![]
+        let mut events: Vec<GameEvent> = vec![];
+        while let Some(message) = self.client.receive_message(DefaultChannel::ReliableOrdered) {
+            if let Err(error) = read_event_batch(&mut events, message) {
+                tracing::error!(?error, "unexpected reliable message received");
+            };
+        }
+        while let Some(message) = self.client.receive_message(DefaultChannel::Unreliable) {
+            if let Err(error) = read_event_batch(&mut events, message) {
+                tracing::error!(?error, "unexpected unreliable message received");
+            };
+        }
+        events
     }
 
     fn setup_transport(&mut self, authentication: ClientAuthentication) {
@@ -163,6 +174,32 @@ impl GameClient {
 
         self.setup_transport(authentication);
     }
+}
+
+fn read_event_batch(events: &mut Vec<GameEvent>, bytes: Bytes) -> Result<(), InvalidFlatbuffer> {
+    let batch = root::<schemas::mmo::BatchedEvents>(&bytes)?;
+    if let Some(fb_events) = batch.events() {
+        for event in fb_events {
+            match event.data_type() {
+                schemas::mmo::EventData::EntityMoveEvent => {
+                    // TODO: Move event
+                }
+                schemas::mmo::EventData::EntitySpawnEvent => events.push(GameEvent::SpawnEntity {
+                    entity_id: event.data_as_entity_spawn_event().unwrap().entity_id(),
+                }),
+                schemas::mmo::EventData::EntityDespawnEvent => {
+                    events.push(GameEvent::DespawnEntity {
+                        entity_id: event.data_as_entity_despawn_event().unwrap().entity_id(),
+                    })
+                }
+                event_type => {
+                    tracing::warn!(?event_type, "unhandled event type");
+                }
+            }
+        }
+    }
+
+    Ok(())
 }
 
 // Test that can be used to check if connection is successful with local server
