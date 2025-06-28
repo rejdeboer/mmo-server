@@ -17,13 +17,14 @@ pub enum ClientState {
 }
 
 #[derive(Debug, Clone)]
-pub enum ClientEvent {
+pub enum ConnectionEvent {
     Connected,
     Disconnected,
-    EnterGameSuccess {
-        character: Character,
-    },
+    EnterGameSuccess { character: Character },
+}
 
+#[derive(Debug, Clone)]
+pub enum GameEvent {
     MoveEntity {
         entity_id: u64,
         transform: Transform,
@@ -66,24 +67,24 @@ impl GameClient {
         &self.state
     }
 
-    pub fn update(&mut self, dt: Duration) -> Vec<ClientEvent> {
+    /// Poll events on a pending connection request
+    pub fn poll_connection(&mut self, dt: Duration) -> Option<ConnectionEvent> {
         self.client.update(dt);
 
         if let Some(transport) = self.transport.as_mut() {
             transport.update(dt, &mut self.client).unwrap();
         }
 
-        return match self.state {
+        match self.state {
             ClientState::Connecting => {
                 if self.client.is_connected() {
                     self.state = ClientState::Connected;
-                    return vec![ClientEvent::Connected];
+                    return Some(ConnectionEvent::Connected);
                 } else if self.client.is_disconnected() {
                     // TODO: Handle reason
                     self.state = ClientState::Disconnected;
-                    return vec![ClientEvent::Disconnected];
+                    return Some(ConnectionEvent::Disconnected);
                 }
-                vec![]
             }
             ClientState::Connected => {
                 if let Some(message) = self.client.receive_message(DefaultChannel::ReliableOrdered)
@@ -91,25 +92,37 @@ impl GameClient {
                     match root::<schemas::mmo::EnterGameResponse>(&message) {
                         Ok(response) => {
                             self.state = ClientState::InGame;
-                            return vec![ClientEvent::EnterGameSuccess {
+                            return Some(ConnectionEvent::EnterGameSuccess {
                                 character: response.into(),
-                            }];
+                            });
                         }
                         Err(e) => {
                             tracing::error!("received invalid EnterGameResponse {}", e);
                             self.state = ClientState::Disconnected;
-                            return vec![ClientEvent::Disconnected];
+                            return Some(ConnectionEvent::Disconnected);
                         }
                     }
                 }
-                vec![]
             }
-            ClientState::InGame => self.update_game(dt),
-            _ => vec![],
+            ClientState::InGame => {
+                if !self.is_connected() {
+                    return Some(ConnectionEvent::Disconnected);
+                }
+            }
+            _ => (),
         };
+        None
     }
 
-    fn update_game(&mut self, dt: Duration) -> Vec<ClientEvent> {
+    pub fn update_game(&mut self, dt: Duration) -> Vec<GameEvent> {
+        debug_assert!(matches!(self.state, ClientState::InGame));
+        self.client.update(dt);
+        self.transport
+            .as_mut()
+            .expect("this is only called when in game")
+            .update(dt, &mut self.client)
+            .unwrap();
+
         vec![]
     }
 
