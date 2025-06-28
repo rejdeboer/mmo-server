@@ -59,40 +59,56 @@ impl GameClient {
             transport.update(dt, &mut self.client).unwrap();
         }
 
-        let mut events = Vec::new();
-        match self.state {
+        return match self.state {
             ClientState::Connecting => {
                 if self.client.is_connected() {
                     self.state = ClientState::Connected;
-                    events.push(ClientEvent::Connected);
+                    return vec![ClientEvent::Connected];
                 } else if self.client.is_disconnected() {
                     // TODO: Handle reason
                     self.state = ClientState::Disconnected;
-                    events.push(ClientEvent::Disconnected);
+                    return Vec::from([ClientEvent::Disconnected]);
                 }
+                vec![]
             }
             ClientState::Connected => {
                 if let Some(message) = self.client.receive_message(DefaultChannel::ReliableOrdered)
                 {
                     match root::<schemas::mmo::EnterGameResponse>(&message) {
                         Ok(response) => {
-                            events.push(ClientEvent::EnterGameSuccess {
-                                character: response.into(),
-                            });
                             self.state = ClientState::InGame;
+                            return Vec::from([ClientEvent::EnterGameSuccess {
+                                character: response.into(),
+                            }]);
                         }
                         Err(e) => {
                             tracing::error!("received invalid EnterGameResponse {}", e);
-                            events.push(ClientEvent::Disconnected);
                             self.state = ClientState::Disconnected;
+                            return Vec::from([ClientEvent::Disconnected]);
                         }
                     }
                 }
+                vec![]
             }
-            _ => (),
-        }
+            ClientState::InGame => self.update_game(dt),
+            _ => vec![],
+        };
+    }
 
-        events
+    fn update_game(&mut self, dt: Duration) -> Vec<ClientEvent> {
+        vec![]
+    }
+
+    fn setup_transport(&mut self, authentication: ClientAuthentication) {
+        let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+        let current_time = SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap();
+
+        let transport = NetcodeClientTransport::new(current_time, authentication, socket).unwrap();
+
+        self.transport = Some(transport);
+        self.state = ClientState::Connecting;
     }
 
     /// Can be used for testing
@@ -119,18 +135,6 @@ impl GameClient {
         };
 
         self.setup_transport(authentication);
-    }
-
-    fn setup_transport(&mut self, authentication: ClientAuthentication) {
-        let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
-        let current_time = SystemTime::now()
-            .duration_since(SystemTime::UNIX_EPOCH)
-            .unwrap();
-
-        let transport = NetcodeClientTransport::new(current_time, authentication, socket).unwrap();
-
-        self.transport = Some(transport);
-        self.state = ClientState::Connecting;
     }
 }
 
