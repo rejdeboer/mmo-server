@@ -77,11 +77,11 @@ impl GameClient {
             ClientState::Connecting => {
                 if self.client.is_connected() {
                     self.state = ClientState::Connected;
-                    return Vec::from([ClientEvent::Connected]);
+                    return vec![ClientEvent::Connected];
                 } else if self.client.is_disconnected() {
                     // TODO: Handle reason
                     self.state = ClientState::Disconnected;
-                    return Vec::from([ClientEvent::Disconnected]);
+                    return vec![ClientEvent::Disconnected];
                 }
                 vec![]
             }
@@ -91,14 +91,14 @@ impl GameClient {
                     match root::<schemas::mmo::EnterGameResponse>(&message) {
                         Ok(response) => {
                             self.state = ClientState::InGame;
-                            return Vec::from([ClientEvent::EnterGameSuccess {
+                            return vec![ClientEvent::EnterGameSuccess {
                                 character: response.into(),
-                            }]);
+                            }];
                         }
                         Err(e) => {
                             tracing::error!("received invalid EnterGameResponse {}", e);
                             self.state = ClientState::Disconnected;
-                            return Vec::from([ClientEvent::Disconnected]);
+                            return vec![ClientEvent::Disconnected];
                         }
                     }
                 }
