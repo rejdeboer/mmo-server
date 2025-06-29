@@ -24,7 +24,7 @@ pub struct CharacterRow {
 }
 
 impl CharacterRow {
-    fn encode<'a>(
+    pub fn encode<'a>(
         self,
         builder: &mut FlatBufferBuilder<'a>,
     ) -> WIPOffset<schemas::mmo::Character<'a>> {
@@ -107,7 +107,9 @@ fn process_client_connected(
             let db_pool = pool.0.clone();
             let client_id = client_id;
             runtime.spawn_background_task(async move |mut ctx| {
-                let character = load_character_data(db_pool, character_id).await.unwrap();
+                let character = load_character_data(db_pool, character_id)
+                    .await
+                    .expect("player character data retrieved");
                 ctx.run_on_main_thread(move |ctx| {
                     let entity_id = ctx
                         .world
