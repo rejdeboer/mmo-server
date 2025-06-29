@@ -26,17 +26,17 @@
       {
         "ordinal": 4,
         "name": "position_x",
-        "type_info": "Float8"
+        "type_info": "Float4"
       },
       {
         "ordinal": 5,
         "name": "position_y",
-        "type_info": "Float8"
+        "type_info": "Float4"
       },
       {
         "ordinal": 6,
         "name": "position_z",
-        "type_info": "Float8"
+        "type_info": "Float4"
       }
     ],
     "parameters": {
