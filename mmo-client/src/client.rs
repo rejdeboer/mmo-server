@@ -5,8 +5,8 @@ use flatbuffers::{FlatBufferBuilder, InvalidFlatbuffer, root};
 use renet::{Bytes, ConnectionConfig, DefaultChannel, RenetClient};
 use renet_netcode::{ClientAuthentication, ConnectToken, NetcodeClientTransport};
 
-use crate::Transform;
 use crate::types::Character;
+use crate::{Transform, Vec3};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ClientState {
@@ -182,7 +182,14 @@ fn read_event_batch(events: &mut Vec<GameEvent>, bytes: Bytes) -> Result<(), Inv
         for event in fb_events {
             match event.data_type() {
                 schemas::mmo::EventData::EntityMoveEvent => {
-                    // TODO: Move event
+                    let fb_event = event.data_as_entity_move_event().unwrap();
+                    let pos = fb_event.position().unwrap();
+                    events.push(GameEvent::MoveEntity {
+                        entity_id: fb_event.entity_id(),
+                        transform: Transform {
+                            position: Vec3::new(pos.x(), pos.y(), pos.z()),
+                        },
+                    })
                 }
                 schemas::mmo::EventData::EntitySpawnEvent => events.push(GameEvent::SpawnEntity {
                     entity_id: event.data_as_entity_spawn_event().unwrap().entity_id(),
