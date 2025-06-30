@@ -2,6 +2,7 @@ use std::path::Path;
 
 fn main() {
     let schema_files = [
+        "schemas/action.fbs",
         "schemas/common.fbs",
         "schemas/entity.fbs",
         "schemas/event.fbs",

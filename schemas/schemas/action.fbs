@@ -1,0 +1,22 @@
+include "common.fbs";
+
+namespace mmo;
+
+table PlayerMoveAction {
+	position: Vec3; 
+	yaw: float;
+}
+
+union ActionData {
+	PlayerMoveAction,
+}
+
+table Action {
+	data: ActionData (required);
+}
+
+table BatchedActions {
+	actions: [Action];
+}
+
+root_type BatchedActions;

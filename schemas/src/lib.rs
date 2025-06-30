@@ -26,4 +26,13 @@ pub mod mmo {
     pub use event_generated::*;
     mod batched_events_generated;
     pub use batched_events_generated::*;
+
+    mod player_move_action_generated;
+    pub use player_move_action_generated::*;
+    mod action_data_generated;
+    pub use action_data_generated::*;
+    mod action_generated;
+    pub use action_generated::*;
+    mod batched_actions_generated;
+    pub use batched_actions_generated::*;
 } // mmo
