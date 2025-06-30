@@ -1,12 +1,12 @@
 use std::net::{IpAddr, SocketAddr, UdpSocket};
 use std::time::{Duration, SystemTime};
 
-use flatbuffers::{FlatBufferBuilder, InvalidFlatbuffer, root};
+use flatbuffers::{FlatBufferBuilder, InvalidFlatbuffer, WIPOffset, root};
 use renet::{Bytes, ConnectionConfig, DefaultChannel, RenetClient};
 use renet_netcode::{ClientAuthentication, ConnectToken, NetcodeClientTransport};
 
 use crate::types::Character;
-use crate::{Transform, Vec3};
+use crate::{PlayerAction, Transform, Vec3};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ClientState {
@@ -135,6 +135,27 @@ impl GameClient {
             };
         }
         events
+    }
+
+    pub fn send_actions(&mut self, actions: Vec<PlayerAction>) {
+        let mut builder = FlatBufferBuilder::new();
+        let mut fb_actions = Vec::<WIPOffset<schemas::mmo::Action>>::with_capacity(actions.len());
+
+        for action in actions {
+            fb_actions.push(action.encode(&mut builder));
+        }
+
+        let actions_vec = builder.create_vector(fb_actions.as_slice());
+        let fb_batch = schemas::mmo::BatchedActions::create(
+            &mut builder,
+            &schemas::mmo::BatchedActionsArgs {
+                actions: Some(actions_vec),
+            },
+        );
+        builder.finish_minimal(fb_batch);
+        let data = builder.finished_data().to_vec();
+
+        self.client.send_message(DefaultChannel::Unreliable, data);
     }
 
     fn setup_transport(&mut self, authentication: ClientAuthentication) {
