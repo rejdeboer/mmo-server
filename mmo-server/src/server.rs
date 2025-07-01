@@ -11,7 +11,6 @@ use crate::{
 pub fn sync_players(mut server: ResMut<RenetServer>, mut ev_msg: EventReader<OutgoingMessage>) {
     let mut client_events: HashMap<ClientId, Vec<&OutgoingMessageData>> = HashMap::new();
     for event in ev_msg.read() {
-        bevy::log::info!(?event, "sending event");
         client_events
             .entry(event.client_id)
             .or_default()
@@ -73,6 +72,7 @@ pub fn handle_server_messages(
 }
 
 fn process_message(entity: Entity, message: bevy_renet::renet::Bytes, commands: &mut Commands) {
+    // TODO: Why does docker compose crash my shit?
     match root::<schemas::mmo::BatchedActions>(&message) {
         Ok(batch) => {
             for action in batch.actions().unwrap() {
