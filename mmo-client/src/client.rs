@@ -156,6 +156,11 @@ impl GameClient {
         let data = builder.finished_data().to_vec();
 
         self.client.send_message(DefaultChannel::Unreliable, data);
+        self.transport
+            .as_mut()
+            .unwrap()
+            .send_packets(&mut self.client)
+            .unwrap();
     }
 
     fn setup_transport(&mut self, authentication: ClientAuthentication) {
