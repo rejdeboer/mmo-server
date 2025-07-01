@@ -121,7 +121,7 @@ impl GameClient {
             .as_mut()
             .expect("this is only called when in game")
             .update(dt, &mut self.client)
-            .unwrap();
+            .expect("transport updated");
 
         let mut events: Vec<GameEvent> = vec![];
         while let Some(message) = self.client.receive_message(DefaultChannel::ReliableOrdered) {
@@ -158,9 +158,9 @@ impl GameClient {
         self.client.send_message(DefaultChannel::Unreliable, data);
         self.transport
             .as_mut()
-            .unwrap()
+            .expect("actions are only sent while in game")
             .send_packets(&mut self.client)
-            .unwrap();
+            .expect("packet sent to server");
     }
 
     fn setup_transport(&mut self, authentication: ClientAuthentication) {
@@ -208,8 +208,10 @@ fn read_event_batch(events: &mut Vec<GameEvent>, bytes: Bytes) -> Result<(), Inv
         for event in fb_events {
             match event.data_type() {
                 schemas::mmo::EventData::EntityMoveEvent => {
-                    let fb_event = event.data_as_entity_move_event().unwrap();
-                    let transform = fb_event.transform().unwrap();
+                    let fb_event = event
+                        .data_as_entity_move_event()
+                        .expect("event should be some");
+                    let transform = fb_event.transform().expect("transform should be some");
                     let pos = transform.position();
                     events.push(GameEvent::MoveEntity {
                         entity_id: fb_event.entity_id(),
