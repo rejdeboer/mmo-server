@@ -11,6 +11,11 @@ pub struct CharacterIdComponent(pub i32);
 pub struct GridCell(pub IVec2);
 
 #[derive(Debug, Component, Default)]
+pub struct InterestedClients {
+    pub clients: HashSet<ClientId>,
+}
+
+#[derive(Debug, Component, Default)]
 pub struct VisibleEntities {
     pub entities: HashSet<Entity>,
 }

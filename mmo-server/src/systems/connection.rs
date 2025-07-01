@@ -9,7 +9,7 @@ use sqlx::{Pool, Postgres};
 
 use crate::{
     application::DatabasePool,
-    components::{CharacterIdComponent, ClientIdComponent},
+    components::{CharacterIdComponent, ClientIdComponent, InterestedClients, VisibleEntities},
 };
 
 #[derive(Debug, Clone, sqlx::FromRow)]
@@ -117,6 +117,8 @@ fn process_client_connected(
                         .spawn((
                             ClientIdComponent(client_id),
                             CharacterIdComponent(character.id),
+                            VisibleEntities::default(),
+                            InterestedClients::default(),
                             Transform::from_xyz(
                                 character.position_x,
                                 character.position_y,

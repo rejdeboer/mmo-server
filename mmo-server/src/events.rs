@@ -8,12 +8,19 @@ pub struct EntityMoveEvent {
     pub transform: Transform,
 }
 
-#[derive(Event)]
+#[derive(Event, Debug)]
 pub struct OutgoingMessage {
     pub client_id: ClientId,
     pub data: OutgoingMessageData,
 }
 
+impl OutgoingMessage {
+    pub fn new(client_id: ClientId, data: OutgoingMessageData) -> Self {
+        Self { client_id, data }
+    }
+}
+
+#[derive(Debug)]
 pub enum OutgoingMessageData {
     Movement(Entity, Transform),
     Spawn(Entity),

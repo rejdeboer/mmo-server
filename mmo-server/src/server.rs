@@ -4,13 +4,14 @@ use flatbuffers::{FlatBufferBuilder, WIPOffset, root};
 
 use crate::{
     components::ClientIdComponent,
-    events::{EntityMoveEvent, OutgoingMessage, OutgoingMessageData},
+    events::{OutgoingMessage, OutgoingMessageData},
 };
 
 // TODO: Maybe use change detection for transform changes
 pub fn sync_players(mut server: ResMut<RenetServer>, mut ev_msg: EventReader<OutgoingMessage>) {
     let mut client_events: HashMap<ClientId, Vec<&OutgoingMessageData>> = HashMap::new();
     for event in ev_msg.read() {
+        bevy::log::info!(?event, "sending event");
         client_events
             .entry(event.client_id)
             .or_default()
@@ -105,6 +106,4 @@ fn process_player_move_action(
     let transform = Transform::from_xyz(pos.x(), pos.y(), pos.z())
         .with_rotation(Quat::from_rotation_y(fb_transform.yaw()));
     commands.entity(entity).insert(transform);
-    // TODO: This way of writing events is not performant
-    commands.send_event(EntityMoveEvent { entity, transform });
 }
