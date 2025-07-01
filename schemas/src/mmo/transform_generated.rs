@@ -12,17 +12,17 @@ use super::*;
 // struct Transform, aligned to 4
 #[repr(transparent)]
 #[derive(Clone, Copy, PartialEq)]
-pub struct Transform(pub [u8; 24]);
+pub struct Transform(pub [u8; 16]);
 impl Default for Transform { 
   fn default() -> Self { 
-    Self([0; 24])
+    Self([0; 16])
   }
 }
 impl core::fmt::Debug for Transform {
   fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
     f.debug_struct("Transform")
       .field("position", &self.position())
-      .field("rotation", &self.rotation())
+      .field("yaw", &self.yaw())
       .finish()
   }
 }
@@ -69,11 +69,11 @@ impl<'a> Transform {
   #[allow(clippy::too_many_arguments)]
   pub fn new(
     position: &Vec3,
-    rotation: &Vec3,
+    yaw: f32,
   ) -> Self {
-    let mut s = Self([0; 24]);
+    let mut s = Self([0; 16]);
     s.set_position(position);
-    s.set_rotation(rotation);
+    s.set_yaw(yaw);
     s
   }
 
@@ -89,16 +89,33 @@ impl<'a> Transform {
     self.0[0..0 + 12].copy_from_slice(&x.0)
   }
 
-  pub fn rotation(&self) -> &Vec3 {
+  pub fn yaw(&self) -> f32 {
+    let mut mem = core::mem::MaybeUninit::<<f32 as EndianScalar>::Scalar>::uninit();
     // Safety:
     // Created from a valid Table for this object
-    // Which contains a valid struct in this slot
-    unsafe { &*(self.0[12..].as_ptr() as *const Vec3) }
+    // Which contains a valid value in this slot
+    EndianScalar::from_little_endian(unsafe {
+      core::ptr::copy_nonoverlapping(
+        self.0[12..].as_ptr(),
+        mem.as_mut_ptr() as *mut u8,
+        core::mem::size_of::<<f32 as EndianScalar>::Scalar>(),
+      );
+      mem.assume_init()
+    })
   }
 
-  #[allow(clippy::identity_op)]
-  pub fn set_rotation(&mut self, x: &Vec3) {
-    self.0[12..12 + 12].copy_from_slice(&x.0)
+  pub fn set_yaw(&mut self, x: f32) {
+    let x_le = x.to_little_endian();
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    unsafe {
+      core::ptr::copy_nonoverlapping(
+        &x_le as *const _ as *const u8,
+        self.0[12..].as_mut_ptr(),
+        core::mem::size_of::<<f32 as EndianScalar>::Scalar>(),
+      );
+    }
   }
 
 }

@@ -25,8 +25,7 @@ impl<'a> flatbuffers::Follow<'a> for PlayerMoveAction<'a> {
 }
 
 impl<'a> PlayerMoveAction<'a> {
-  pub const VT_POSITION: flatbuffers::VOffsetT = 4;
-  pub const VT_YAW: flatbuffers::VOffsetT = 6;
+  pub const VT_TRANSFORM: flatbuffers::VOffsetT = 4;
 
   #[inline]
   pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
@@ -38,25 +37,17 @@ impl<'a> PlayerMoveAction<'a> {
     args: &'args PlayerMoveActionArgs<'args>
   ) -> flatbuffers::WIPOffset<PlayerMoveAction<'bldr>> {
     let mut builder = PlayerMoveActionBuilder::new(_fbb);
-    builder.add_yaw(args.yaw);
-    if let Some(x) = args.position { builder.add_position(x); }
+    if let Some(x) = args.transform { builder.add_transform(x); }
     builder.finish()
   }
 
 
   #[inline]
-  pub fn position(&self) -> Option<&'a Vec3> {
+  pub fn transform(&self) -> Option<&'a Transform> {
     // Safety:
     // Created from valid Table for this object
     // which contains a valid value in this slot
-    unsafe { self._tab.get::<Vec3>(PlayerMoveAction::VT_POSITION, None)}
-  }
-  #[inline]
-  pub fn yaw(&self) -> f32 {
-    // Safety:
-    // Created from valid Table for this object
-    // which contains a valid value in this slot
-    unsafe { self._tab.get::<f32>(PlayerMoveAction::VT_YAW, Some(0.0)).unwrap()}
+    unsafe { self._tab.get::<Transform>(PlayerMoveAction::VT_TRANSFORM, None)}
   }
 }
 
@@ -67,22 +58,19 @@ impl flatbuffers::Verifiable for PlayerMoveAction<'_> {
   ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
     use self::flatbuffers::Verifiable;
     v.visit_table(pos)?
-     .visit_field::<Vec3>("position", Self::VT_POSITION, false)?
-     .visit_field::<f32>("yaw", Self::VT_YAW, false)?
+     .visit_field::<Transform>("transform", Self::VT_TRANSFORM, false)?
      .finish();
     Ok(())
   }
 }
 pub struct PlayerMoveActionArgs<'a> {
-    pub position: Option<&'a Vec3>,
-    pub yaw: f32,
+    pub transform: Option<&'a Transform>,
 }
 impl<'a> Default for PlayerMoveActionArgs<'a> {
   #[inline]
   fn default() -> Self {
     PlayerMoveActionArgs {
-      position: None,
-      yaw: 0.0,
+      transform: None,
     }
   }
 }
@@ -93,12 +81,8 @@ pub struct PlayerMoveActionBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> {
 }
 impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> PlayerMoveActionBuilder<'a, 'b, A> {
   #[inline]
-  pub fn add_position(&mut self, position: &Vec3) {
-    self.fbb_.push_slot_always::<&Vec3>(PlayerMoveAction::VT_POSITION, position);
-  }
-  #[inline]
-  pub fn add_yaw(&mut self, yaw: f32) {
-    self.fbb_.push_slot::<f32>(PlayerMoveAction::VT_YAW, yaw, 0.0);
+  pub fn add_transform(&mut self, transform: &Transform) {
+    self.fbb_.push_slot_always::<&Transform>(PlayerMoveAction::VT_TRANSFORM, transform);
   }
   #[inline]
   pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> PlayerMoveActionBuilder<'a, 'b, A> {
@@ -118,8 +102,7 @@ impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> PlayerMoveActionBuilder<'a, 'b,
 impl core::fmt::Debug for PlayerMoveAction<'_> {
   fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
     let mut ds = f.debug_struct("PlayerMoveAction");
-      ds.field("position", &self.position());
-      ds.field("yaw", &self.yaw());
+      ds.field("transform", &self.transform());
       ds.finish()
   }
 }

@@ -209,6 +209,7 @@ fn read_event_batch(events: &mut Vec<GameEvent>, bytes: Bytes) -> Result<(), Inv
                         entity_id: fb_event.entity_id(),
                         transform: Transform {
                             position: Vec3::new(pos.x(), pos.y(), pos.z()),
+                            yaw: fb_event.yaw(),
                         },
                     })
                 }

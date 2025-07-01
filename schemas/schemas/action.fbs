@@ -3,8 +3,7 @@ include "common.fbs";
 namespace mmo;
 
 table PlayerMoveAction {
-	position: Vec3; 
-	yaw: float;
+	transform: mmo.Transform;
 }
 
 union ActionData {

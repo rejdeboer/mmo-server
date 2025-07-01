@@ -26,8 +26,7 @@ impl<'a> flatbuffers::Follow<'a> for EntityMoveEvent<'a> {
 
 impl<'a> EntityMoveEvent<'a> {
   pub const VT_ENTITY_ID: flatbuffers::VOffsetT = 4;
-  pub const VT_POSITION: flatbuffers::VOffsetT = 6;
-  pub const VT_DIRECTION: flatbuffers::VOffsetT = 8;
+  pub const VT_TRANSFORM: flatbuffers::VOffsetT = 6;
 
   #[inline]
   pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
@@ -40,8 +39,7 @@ impl<'a> EntityMoveEvent<'a> {
   ) -> flatbuffers::WIPOffset<EntityMoveEvent<'bldr>> {
     let mut builder = EntityMoveEventBuilder::new(_fbb);
     builder.add_entity_id(args.entity_id);
-    if let Some(x) = args.direction { builder.add_direction(x); }
-    if let Some(x) = args.position { builder.add_position(x); }
+    if let Some(x) = args.transform { builder.add_transform(x); }
     builder.finish()
   }
 
@@ -54,18 +52,11 @@ impl<'a> EntityMoveEvent<'a> {
     unsafe { self._tab.get::<u64>(EntityMoveEvent::VT_ENTITY_ID, Some(0)).unwrap()}
   }
   #[inline]
-  pub fn position(&self) -> Option<&'a Vec3> {
+  pub fn transform(&self) -> Option<&'a Transform> {
     // Safety:
     // Created from valid Table for this object
     // which contains a valid value in this slot
-    unsafe { self._tab.get::<Vec3>(EntityMoveEvent::VT_POSITION, None)}
-  }
-  #[inline]
-  pub fn direction(&self) -> Option<&'a Vec2> {
-    // Safety:
-    // Created from valid Table for this object
-    // which contains a valid value in this slot
-    unsafe { self._tab.get::<Vec2>(EntityMoveEvent::VT_DIRECTION, None)}
+    unsafe { self._tab.get::<Transform>(EntityMoveEvent::VT_TRANSFORM, None)}
   }
 }
 
@@ -77,24 +68,21 @@ impl flatbuffers::Verifiable for EntityMoveEvent<'_> {
     use self::flatbuffers::Verifiable;
     v.visit_table(pos)?
      .visit_field::<u64>("entity_id", Self::VT_ENTITY_ID, false)?
-     .visit_field::<Vec3>("position", Self::VT_POSITION, false)?
-     .visit_field::<Vec2>("direction", Self::VT_DIRECTION, false)?
+     .visit_field::<Transform>("transform", Self::VT_TRANSFORM, false)?
      .finish();
     Ok(())
   }
 }
 pub struct EntityMoveEventArgs<'a> {
     pub entity_id: u64,
-    pub position: Option<&'a Vec3>,
-    pub direction: Option<&'a Vec2>,
+    pub transform: Option<&'a Transform>,
 }
 impl<'a> Default for EntityMoveEventArgs<'a> {
   #[inline]
   fn default() -> Self {
     EntityMoveEventArgs {
       entity_id: 0,
-      position: None,
-      direction: None,
+      transform: None,
     }
   }
 }
@@ -109,12 +97,8 @@ impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> EntityMoveEventBuilder<'a, 'b, 
     self.fbb_.push_slot::<u64>(EntityMoveEvent::VT_ENTITY_ID, entity_id, 0);
   }
   #[inline]
-  pub fn add_position(&mut self, position: &Vec3) {
-    self.fbb_.push_slot_always::<&Vec3>(EntityMoveEvent::VT_POSITION, position);
-  }
-  #[inline]
-  pub fn add_direction(&mut self, direction: &Vec2) {
-    self.fbb_.push_slot_always::<&Vec2>(EntityMoveEvent::VT_DIRECTION, direction);
+  pub fn add_transform(&mut self, transform: &Transform) {
+    self.fbb_.push_slot_always::<&Transform>(EntityMoveEvent::VT_TRANSFORM, transform);
   }
   #[inline]
   pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> EntityMoveEventBuilder<'a, 'b, A> {
@@ -135,8 +119,7 @@ impl core::fmt::Debug for EntityMoveEvent<'_> {
   fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
     let mut ds = f.debug_struct("EntityMoveEvent");
       ds.field("entity_id", &self.entity_id());
-      ds.field("position", &self.position());
-      ds.field("direction", &self.direction());
+      ds.field("transform", &self.transform());
       ds.finish()
   }
 }

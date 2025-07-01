@@ -100,9 +100,10 @@ fn process_player_move_action(
     action: schemas::mmo::PlayerMoveAction,
     commands: &mut Commands,
 ) {
-    let pos = action.position().unwrap();
-    // TODO: Rotations
-    let transform = Transform::from_xyz(pos.x(), pos.y(), pos.z());
+    let fb_transform = action.transform().unwrap();
+    let pos = fb_transform.position();
+    let transform = Transform::from_xyz(pos.x(), pos.y(), pos.z())
+        .with_rotation(Quat::from_rotation_y(fb_transform.yaw()));
     commands.entity(entity).insert(transform);
     // TODO: This way of writing events is not performant
     commands.send_event(EntityMoveEvent { entity, transform });

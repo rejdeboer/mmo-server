@@ -30,7 +30,7 @@ impl CharacterRow {
     ) -> WIPOffset<schemas::mmo::Character<'a>> {
         let transform = schemas::mmo::Transform::new(
             &schemas::mmo::Vec3::new(self.position_x, self.position_y, self.position_z),
-            &schemas::mmo::Vec3::new(0., 0., 0.),
+            0.,
         );
         let name = builder.create_string(&self.name);
 

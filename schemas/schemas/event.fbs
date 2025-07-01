@@ -4,8 +4,7 @@ namespace mmo;
 
 table EntityMoveEvent {
 	entity_id: uint64;
-	position: Vec3; 
-	direction: Vec2;
+	transform: mmo.Transform;
 }
 
 table EntitySpawnEvent {

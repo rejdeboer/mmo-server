@@ -13,5 +13,5 @@ struct Vec3 {
 
 struct Transform {
 	position: Vec3;
-	rotation: Vec3;
+	yaw: float;
 }

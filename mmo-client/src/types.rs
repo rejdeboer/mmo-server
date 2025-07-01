@@ -23,6 +23,7 @@ impl Vec3 {
 #[derive(Debug, Clone)]
 pub struct Transform {
     pub position: Vec3,
+    pub yaw: f32,
 }
 
 impl Into<Character> for schemas::mmo::EnterGameResponse<'_> {
@@ -41,6 +42,7 @@ impl Into<Transform> for &schemas::mmo::Transform {
     fn into(self) -> Transform {
         Transform {
             position: self.position().into(),
+            yaw: self.yaw(),
         }
     }
 }

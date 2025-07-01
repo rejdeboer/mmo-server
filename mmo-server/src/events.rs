@@ -28,12 +28,15 @@ impl OutgoingMessageData {
         match self {
             Self::Movement(id, transform) => {
                 let pos = transform.translation;
+                let fb_transform = schemas::mmo::Transform::new(
+                    &schemas::mmo::Vec3::new(pos.x, pos.y, pos.z),
+                    transform.rotation.y,
+                );
                 let event_data = schemas::mmo::EntityMoveEvent::create(
                     builder,
                     &schemas::mmo::EntityMoveEventArgs {
                         entity_id: id.to_bits(),
-                        position: Some(&schemas::mmo::Vec3::new(pos.x, pos.y, pos.z)),
-                        direction: Some(&schemas::mmo::Vec2::new(0., 0.)),
+                        transform: Some(&fb_transform),
                     },
                 );
                 schemas::mmo::Event::create(
