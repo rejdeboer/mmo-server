@@ -1,6 +1,7 @@
 // TODO: Do we need these intermediate structs?
 #[derive(Debug, Clone)]
 pub struct Character {
+    pub entity_id: u64,
     pub name: String,
     pub hp: i32,
     pub level: i32,
@@ -30,6 +31,7 @@ impl Into<Character> for schemas::mmo::EnterGameResponse<'_> {
     fn into(self) -> Character {
         let entity = self.character().unwrap().entity().unwrap();
         Character {
+            entity_id: self.player_entity_id(),
             name: entity.name().to_string(),
             hp: entity.hp(),
             level: entity.level(),
