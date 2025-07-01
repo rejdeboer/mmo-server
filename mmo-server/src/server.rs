@@ -72,14 +72,14 @@ pub fn handle_server_messages(
 }
 
 fn process_message(entity: Entity, message: bevy_renet::renet::Bytes, commands: &mut Commands) {
-    match root::<schemas::mmo::BatchedEvents>(&message) {
+    match root::<schemas::mmo::BatchedActions>(&message) {
         Ok(batch) => {
-            for event in batch.events().unwrap() {
-                match event.data_type() {
-                    schemas::mmo::EventData::EntityMoveEvent => {
-                        process_player_move_event(
+            for action in batch.actions().unwrap() {
+                match action.data_type() {
+                    schemas::mmo::ActionData::PlayerMoveAction => {
+                        process_player_move_action(
                             entity,
-                            event.data_as_entity_move_event().unwrap(),
+                            action.data_as_player_move_action().unwrap(),
                             commands,
                         );
                     }
@@ -95,12 +95,12 @@ fn process_message(entity: Entity, message: bevy_renet::renet::Bytes, commands: 
     }
 }
 
-fn process_player_move_event(
+fn process_player_move_action(
     entity: Entity,
-    event: schemas::mmo::EntityMoveEvent,
+    action: schemas::mmo::PlayerMoveAction,
     commands: &mut Commands,
 ) {
-    let pos = event.position().unwrap();
+    let pos = action.position().unwrap();
     // TODO: Rotations
     let transform = Transform::from_xyz(pos.x(), pos.y(), pos.z());
     commands.entity(entity).insert(transform);
