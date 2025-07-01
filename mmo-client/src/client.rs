@@ -204,12 +204,13 @@ fn read_event_batch(events: &mut Vec<GameEvent>, bytes: Bytes) -> Result<(), Inv
             match event.data_type() {
                 schemas::mmo::EventData::EntityMoveEvent => {
                     let fb_event = event.data_as_entity_move_event().unwrap();
-                    let pos = fb_event.position().unwrap();
+                    let transform = fb_event.transform().unwrap();
+                    let pos = transform.position();
                     events.push(GameEvent::MoveEntity {
                         entity_id: fb_event.entity_id(),
                         transform: Transform {
                             position: Vec3::new(pos.x(), pos.y(), pos.z()),
-                            yaw: fb_event.yaw(),
+                            yaw: transform.yaw(),
                         },
                     })
                 }
