@@ -19,6 +19,7 @@ pub struct CharacterRow {
     pub position_x: f32,
     pub position_y: f32,
     pub position_z: f32,
+    pub rotation_yaw: f32,
     pub level: i32,
     pub experience: i64,
 }
@@ -30,7 +31,7 @@ impl CharacterRow {
     ) -> WIPOffset<schemas::mmo::Character<'a>> {
         let transform = schemas::mmo::Transform::new(
             &schemas::mmo::Vec3::new(self.position_x, self.position_y, self.position_z),
-            0.,
+            self.rotation_yaw,
         );
         let name = builder.create_string(&self.name);
 
@@ -162,7 +163,8 @@ async fn load_character_data(
         CharacterRow,
         r#"
         SELECT id, name, level, experience,
-            position_x, position_y, position_z
+            position_x, position_y, position_z,
+            rotation_yaw
         FROM characters
         WHERE id = $1 
         "#,

@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS characters (
     position_x REAL NOT NULL DEFAULT 0.0,
     position_y REAL NOT NULL DEFAULT 0.0,
     position_z REAL NOT NULL DEFAULT 0.0,
-    rotation_yaw DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+    rotation_yaw REAL NOT NULL DEFAULT 0.0,
 
     is_online BOOLEAN NOT NULL DEFAULT FALSE,
 
