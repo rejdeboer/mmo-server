@@ -13,11 +13,14 @@ impl PlayerAction {
     ) -> WIPOffset<schemas::mmo::Action<'a>> {
         match self {
             Self::Move(pos, yaw) => {
+                let transform = schemas::mmo::Transform::new(
+                    &schemas::mmo::Vec3::new(pos.x, pos.y, pos.z),
+                    *yaw,
+                );
                 let action_data = schemas::mmo::PlayerMoveAction::create(
                     builder,
                     &schemas::mmo::PlayerMoveActionArgs {
-                        position: Some(&schemas::mmo::Vec3::new(pos.x, pos.y, pos.z)),
-                        yaw: *yaw,
+                        transform: Some(&transform),
                     },
                 );
                 schemas::mmo::Action::create(
