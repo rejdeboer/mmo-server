@@ -198,16 +198,19 @@ fn process_client_disconnected(
             runtime.spawn_background_task(async move |_| {
                 // TODO: This pos is probably incorrect
                 let pos = transform.translation;
+                let yaw = transform.rotation.y;
                 if let Err(error) = sqlx::query!(
                     r#"
                     UPDATE CHARACTERS
-                    SET position_x = $2, position_y = $3, position_z = $4
+                    SET position_x = $2, position_y = $3, position_z = $4,
+                        rotation_yaw = $5
                     WHERE id = $1 
                     "#,
                     character_id,
                     pos.x,
                     pos.y,
                     pos.z,
+                    yaw,
                 )
                 .execute(&db_pool)
                 .await
