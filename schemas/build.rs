@@ -1,5 +1,6 @@
 use std::path::Path;
 
+#[allow(clippy::all)]
 fn main() {
     let schema_files = [
         "schemas/action.fbs",
