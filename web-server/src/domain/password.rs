@@ -1,6 +1,6 @@
 use argon2::{
-    password_hash::{rand_core::OsRng, PasswordHashString, PasswordHasher, SaltString},
     Argon2,
+    password_hash::{PasswordHashString, PasswordHasher, SaltString, rand_core::OsRng},
 };
 
 pub const MAX_PASSWORD_LENGTH: usize = 64;
@@ -43,7 +43,7 @@ impl AsRef<str> for SafePassword {
 
 #[cfg(test)]
 mod tests {
-    use crate::domain::{SafePassword, MAX_PASSWORD_LENGTH};
+    use crate::domain::{MAX_PASSWORD_LENGTH, SafePassword};
 
     #[test]
     fn a_32_char_long_pw_is_valid() {

@@ -28,8 +28,8 @@ impl std::fmt::Display for EmailAddress {
 #[cfg(test)]
 mod tests {
     use super::EmailAddress;
-    use fake::faker::internet::en::SafeEmail;
     use fake::Fake;
+    use fake::faker::internet::en::SafeEmail;
 
     #[derive(Debug, Clone)]
     struct ValidEmailFixture(pub String);

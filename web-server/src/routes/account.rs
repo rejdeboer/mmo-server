@@ -1,8 +1,8 @@
 use crate::domain::{EmailAddress, SafePassword, Username};
-use crate::{error::ApiError, ApplicationState};
+use crate::{ApplicationState, error::ApiError};
 use argon2::password_hash::PasswordHashString;
-use axum::extract::State;
 use axum::Json;
+use axum::extract::State;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Deserialize, Serialize)]

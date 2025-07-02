@@ -2,8 +2,8 @@ use secrecy::{ExposeSecret, SecretString};
 use serde::{Deserialize, Deserializer};
 use serde_aux::field_attributes::deserialize_number_from_string;
 use sqlx::{
-    postgres::{PgConnectOptions, PgSslMode},
     ConnectOptions,
+    postgres::{PgConnectOptions, PgSslMode},
 };
 
 pub enum Environment {

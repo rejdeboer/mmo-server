@@ -1,6 +1,6 @@
 use web_server::routes::LoginBody;
 
-use crate::helpers::{spawn_app, TestApp};
+use crate::helpers::{TestApp, spawn_app};
 
 #[tokio::test]
 async fn login_success() {

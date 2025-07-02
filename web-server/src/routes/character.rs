@@ -1,7 +1,7 @@
-use axum::{extract::State, response::Result, Extension, Json};
+use axum::{Extension, Json, extract::State, response::Result};
 use serde::{Deserialize, Serialize};
 
-use crate::{auth::User, domain::CharacterName, error::ApiError, ApplicationState};
+use crate::{ApplicationState, auth::User, domain::CharacterName, error::ApiError};
 
 #[derive(Debug, Clone, sqlx::FromRow, Serialize, Deserialize)]
 pub struct CharacterRow {

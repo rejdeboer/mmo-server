@@ -4,13 +4,12 @@ use crate::{
     routes::{account_create, character_create, character_list, game_entry, login},
 };
 use axum::{
-    middleware,
+    Router, middleware,
     routing::{get, post},
-    Router,
 };
 use secrecy::SecretString;
 use serde::Deserialize;
-use sqlx::{postgres::PgPoolOptions, PgPool};
+use sqlx::{PgPool, postgres::PgPoolOptions};
 use std::net::SocketAddr;
 use tokio::net::TcpListener;
 use tower_http::trace::{DefaultMakeSpan, TraceLayer};

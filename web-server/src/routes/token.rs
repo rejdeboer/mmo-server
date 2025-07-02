@@ -1,9 +1,9 @@
 use crate::auth::encode_jwt;
 use crate::domain::{EmailAddress, LoginPassword};
-use crate::{error::ApiError, ApplicationState};
+use crate::{ApplicationState, error::ApiError};
 use argon2::PasswordHash;
-use axum::extract::State;
 use axum::Json;
+use axum::extract::State;
 use secrecy::ExposeSecret;
 use serde::{Deserialize, Serialize};
 

@@ -1,6 +1,6 @@
 use web_server::routes::{CharacterCreate, CharacterRow, GameEntryRequest};
 
-use crate::helpers::{spawn_app, TestApp};
+use crate::helpers::{TestApp, spawn_app};
 
 #[tokio::test]
 async fn game_entry_success() {
