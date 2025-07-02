@@ -9,6 +9,7 @@ table EntityMoveEvent {
 
 table EntitySpawnEvent {
 	entity_id: uint64;
+	transform: mmo.Transform;
 }
 
 table EntityDespawnEvent {

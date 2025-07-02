@@ -26,6 +26,7 @@ impl<'a> flatbuffers::Follow<'a> for EntitySpawnEvent<'a> {
 
 impl<'a> EntitySpawnEvent<'a> {
   pub const VT_ENTITY_ID: flatbuffers::VOffsetT = 4;
+  pub const VT_TRANSFORM: flatbuffers::VOffsetT = 6;
 
   #[inline]
   pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
@@ -34,10 +35,11 @@ impl<'a> EntitySpawnEvent<'a> {
   #[allow(unused_mut)]
   pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
     _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
-    args: &'args EntitySpawnEventArgs
+    args: &'args EntitySpawnEventArgs<'args>
   ) -> flatbuffers::WIPOffset<EntitySpawnEvent<'bldr>> {
     let mut builder = EntitySpawnEventBuilder::new(_fbb);
     builder.add_entity_id(args.entity_id);
+    if let Some(x) = args.transform { builder.add_transform(x); }
     builder.finish()
   }
 
@@ -49,6 +51,13 @@ impl<'a> EntitySpawnEvent<'a> {
     // which contains a valid value in this slot
     unsafe { self._tab.get::<u64>(EntitySpawnEvent::VT_ENTITY_ID, Some(0)).unwrap()}
   }
+  #[inline]
+  pub fn transform(&self) -> Option<&'a Transform> {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<Transform>(EntitySpawnEvent::VT_TRANSFORM, None)}
+  }
 }
 
 impl flatbuffers::Verifiable for EntitySpawnEvent<'_> {
@@ -59,18 +68,21 @@ impl flatbuffers::Verifiable for EntitySpawnEvent<'_> {
     use self::flatbuffers::Verifiable;
     v.visit_table(pos)?
      .visit_field::<u64>("entity_id", Self::VT_ENTITY_ID, false)?
+     .visit_field::<Transform>("transform", Self::VT_TRANSFORM, false)?
      .finish();
     Ok(())
   }
 }
-pub struct EntitySpawnEventArgs {
+pub struct EntitySpawnEventArgs<'a> {
     pub entity_id: u64,
+    pub transform: Option<&'a Transform>,
 }
-impl<'a> Default for EntitySpawnEventArgs {
+impl<'a> Default for EntitySpawnEventArgs<'a> {
   #[inline]
   fn default() -> Self {
     EntitySpawnEventArgs {
       entity_id: 0,
+      transform: None,
     }
   }
 }
@@ -83,6 +95,10 @@ impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> EntitySpawnEventBuilder<'a, 'b,
   #[inline]
   pub fn add_entity_id(&mut self, entity_id: u64) {
     self.fbb_.push_slot::<u64>(EntitySpawnEvent::VT_ENTITY_ID, entity_id, 0);
+  }
+  #[inline]
+  pub fn add_transform(&mut self, transform: &Transform) {
+    self.fbb_.push_slot_always::<&Transform>(EntitySpawnEvent::VT_TRANSFORM, transform);
   }
   #[inline]
   pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> EntitySpawnEventBuilder<'a, 'b, A> {
@@ -103,6 +119,7 @@ impl core::fmt::Debug for EntitySpawnEvent<'_> {
   fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
     let mut ds = f.debug_struct("EntitySpawnEvent");
       ds.field("entity_id", &self.entity_id());
+      ds.field("transform", &self.transform());
       ds.finish()
   }
 }
