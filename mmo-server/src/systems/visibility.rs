@@ -52,10 +52,15 @@ pub fn update_player_visibility(
             if let Ok(mut interested) = q_interest.get_mut(entity_to_spawn) {
                 interested.clients.insert(client_id.0);
             }
-            writer.write(OutgoingMessage {
-                client_id: client_id.0,
-                data: crate::events::OutgoingMessageData::Spawn(entity_to_spawn),
-            });
+            if let Ok(transform) = q_transform.get(entity_to_spawn) {
+                writer.write(OutgoingMessage {
+                    client_id: client_id.0,
+                    data: crate::events::OutgoingMessageData::Spawn(
+                        entity_to_spawn,
+                        transform.clone(),
+                    ),
+                });
+            }
         }
 
         for &entity_to_despawn in visible.entities.difference(&new_visible_set) {

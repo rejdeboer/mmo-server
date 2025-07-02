@@ -23,7 +23,7 @@ impl OutgoingMessage {
 #[derive(Debug)]
 pub enum OutgoingMessageData {
     Movement(Entity, Transform),
-    Spawn(Entity),
+    Spawn(Entity, Transform),
     Despawn(Entity),
 }
 
@@ -54,11 +54,17 @@ impl OutgoingMessageData {
                     },
                 )
             }
-            Self::Spawn(id) => {
+            Self::Spawn(id, transform) => {
+                let pos = transform.translation;
+                let fb_transform = schemas::mmo::Transform::new(
+                    &schemas::mmo::Vec3::new(pos.x, pos.y, pos.z),
+                    transform.rotation.y,
+                );
                 let event_data = schemas::mmo::EntitySpawnEvent::create(
                     builder,
                     &schemas::mmo::EntitySpawnEventArgs {
                         entity_id: id.to_bits(),
+                        transform: Some(&fb_transform),
                     },
                 );
                 schemas::mmo::Event::create(
