@@ -2,24 +2,33 @@
 // @generated
 extern crate alloc;
 extern crate flatbuffers;
+use self::flatbuffers::{EndianScalar, Follow};
+use super::*;
 use alloc::boxed::Box;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use core::mem;
 use core::cmp::Ordering;
-use self::flatbuffers::{EndianScalar, Follow};
-use super::*;
-#[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
+use core::mem;
+#[deprecated(
+    since = "2.0.0",
+    note = "Use associated constants instead. This will no longer be generated in 2021."
+)]
 pub const ENUM_MIN_EVENT_DATA: u8 = 0;
-#[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
+#[deprecated(
+    since = "2.0.0",
+    note = "Use associated constants instead. This will no longer be generated in 2021."
+)]
 pub const ENUM_MAX_EVENT_DATA: u8 = 3;
-#[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
+#[deprecated(
+    since = "2.0.0",
+    note = "Use associated constants instead. This will no longer be generated in 2021."
+)]
 #[allow(non_camel_case_types)]
 pub const ENUM_VALUES_EVENT_DATA: [EventData; 4] = [
-  EventData::NONE,
-  EventData::EntityMoveEvent,
-  EventData::EntitySpawnEvent,
-  EventData::EntityDespawnEvent,
+    EventData::NONE,
+    EventData::EntityMoveEvent,
+    EventData::EntitySpawnEvent,
+    EventData::EntityDespawnEvent,
 ];
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
@@ -27,46 +36,46 @@ pub const ENUM_VALUES_EVENT_DATA: [EventData; 4] = [
 pub struct EventData(pub u8);
 #[allow(non_upper_case_globals)]
 impl EventData {
-  pub const NONE: Self = Self(0);
-  pub const EntityMoveEvent: Self = Self(1);
-  pub const EntitySpawnEvent: Self = Self(2);
-  pub const EntityDespawnEvent: Self = Self(3);
+    pub const NONE: Self = Self(0);
+    pub const EntityMoveEvent: Self = Self(1);
+    pub const EntitySpawnEvent: Self = Self(2);
+    pub const EntityDespawnEvent: Self = Self(3);
 
-  pub const ENUM_MIN: u8 = 0;
-  pub const ENUM_MAX: u8 = 3;
-  pub const ENUM_VALUES: &'static [Self] = &[
-    Self::NONE,
-    Self::EntityMoveEvent,
-    Self::EntitySpawnEvent,
-    Self::EntityDespawnEvent,
-  ];
-  /// Returns the variant's name or "" if unknown.
-  pub fn variant_name(self) -> Option<&'static str> {
-    match self {
-      Self::NONE => Some("NONE"),
-      Self::EntityMoveEvent => Some("EntityMoveEvent"),
-      Self::EntitySpawnEvent => Some("EntitySpawnEvent"),
-      Self::EntityDespawnEvent => Some("EntityDespawnEvent"),
-      _ => None,
+    pub const ENUM_MIN: u8 = 0;
+    pub const ENUM_MAX: u8 = 3;
+    pub const ENUM_VALUES: &'static [Self] = &[
+        Self::NONE,
+        Self::EntityMoveEvent,
+        Self::EntitySpawnEvent,
+        Self::EntityDespawnEvent,
+    ];
+    /// Returns the variant's name or "" if unknown.
+    pub fn variant_name(self) -> Option<&'static str> {
+        match self {
+            Self::NONE => Some("NONE"),
+            Self::EntityMoveEvent => Some("EntityMoveEvent"),
+            Self::EntitySpawnEvent => Some("EntitySpawnEvent"),
+            Self::EntityDespawnEvent => Some("EntityDespawnEvent"),
+            _ => None,
+        }
     }
-  }
 }
 impl core::fmt::Debug for EventData {
-  fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-    if let Some(name) = self.variant_name() {
-      f.write_str(name)
-    } else {
-      f.write_fmt(format_args!("<UNKNOWN {:?}>", self.0))
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        if let Some(name) = self.variant_name() {
+            f.write_str(name)
+        } else {
+            f.write_fmt(format_args!("<UNKNOWN {:?}>", self.0))
+        }
     }
-  }
 }
 impl<'a> flatbuffers::Follow<'a> for EventData {
-  type Inner = Self;
-  #[inline]
-  unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
-    let b = flatbuffers::read_scalar_at::<u8>(buf, loc);
-    Self(b)
-  }
+    type Inner = Self;
+    #[inline]
+    unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
+        let b = flatbuffers::read_scalar_at::<u8>(buf, loc);
+        Self(b)
+    }
 }
 
 impl flatbuffers::Push for EventData {
@@ -78,29 +87,29 @@ impl flatbuffers::Push for EventData {
 }
 
 impl flatbuffers::EndianScalar for EventData {
-  type Scalar = u8;
-  #[inline]
-  fn to_little_endian(self) -> u8 {
-    self.0.to_le()
-  }
-  #[inline]
-  #[allow(clippy::wrong_self_convention)]
-  fn from_little_endian(v: u8) -> Self {
-    let b = u8::from_le(v);
-    Self(b)
-  }
+    type Scalar = u8;
+    #[inline]
+    fn to_little_endian(self) -> u8 {
+        self.0.to_le()
+    }
+    #[inline]
+    #[allow(clippy::wrong_self_convention)]
+    fn from_little_endian(v: u8) -> Self {
+        let b = u8::from_le(v);
+        Self(b)
+    }
 }
 
 impl<'a> flatbuffers::Verifiable for EventData {
-  #[inline]
-  fn run_verifier(
-    v: &mut flatbuffers::Verifier, pos: usize
-  ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
-    use self::flatbuffers::Verifiable;
-    u8::run_verifier(v, pos)
-  }
+    #[inline]
+    fn run_verifier(
+        v: &mut flatbuffers::Verifier,
+        pos: usize,
+    ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
+        use self::flatbuffers::Verifiable;
+        u8::run_verifier(v, pos)
+    }
 }
 
 impl flatbuffers::SimpleToVerifyInSlice for EventData {}
 pub struct EventDataUnionTableOffset {}
-

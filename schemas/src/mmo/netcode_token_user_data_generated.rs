@@ -2,109 +2,116 @@
 // @generated
 extern crate alloc;
 extern crate flatbuffers;
+use self::flatbuffers::{EndianScalar, Follow};
+use super::*;
 use alloc::boxed::Box;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use core::mem;
 use core::cmp::Ordering;
-use self::flatbuffers::{EndianScalar, Follow};
-use super::*;
+use core::mem;
 pub enum NetcodeTokenUserDataOffset {}
 #[derive(Copy, Clone, PartialEq)]
 
 pub struct NetcodeTokenUserData<'a> {
-  pub _tab: flatbuffers::Table<'a>,
+    pub _tab: flatbuffers::Table<'a>,
 }
 
 impl<'a> flatbuffers::Follow<'a> for NetcodeTokenUserData<'a> {
-  type Inner = NetcodeTokenUserData<'a>;
-  #[inline]
-  unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
-    Self { _tab: flatbuffers::Table::new(buf, loc) }
-  }
+    type Inner = NetcodeTokenUserData<'a>;
+    #[inline]
+    unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
+        Self {
+            _tab: flatbuffers::Table::new(buf, loc),
+        }
+    }
 }
 
 impl<'a> NetcodeTokenUserData<'a> {
-  pub const VT_CHARACTER_ID: flatbuffers::VOffsetT = 4;
+    pub const VT_CHARACTER_ID: flatbuffers::VOffsetT = 4;
 
-  #[inline]
-  pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
-    NetcodeTokenUserData { _tab: table }
-  }
-  #[allow(unused_mut)]
-  pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
-    _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
-    args: &'args NetcodeTokenUserDataArgs
-  ) -> flatbuffers::WIPOffset<NetcodeTokenUserData<'bldr>> {
-    let mut builder = NetcodeTokenUserDataBuilder::new(_fbb);
-    builder.add_character_id(args.character_id);
-    builder.finish()
-  }
+    #[inline]
+    pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
+        NetcodeTokenUserData { _tab: table }
+    }
+    #[allow(unused_mut)]
+    pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
+        _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
+        args: &'args NetcodeTokenUserDataArgs,
+    ) -> flatbuffers::WIPOffset<NetcodeTokenUserData<'bldr>> {
+        let mut builder = NetcodeTokenUserDataBuilder::new(_fbb);
+        builder.add_character_id(args.character_id);
+        builder.finish()
+    }
 
-
-  #[inline]
-  pub fn character_id(&self) -> i32 {
-    // Safety:
-    // Created from valid Table for this object
-    // which contains a valid value in this slot
-    unsafe { self._tab.get::<i32>(NetcodeTokenUserData::VT_CHARACTER_ID, Some(0)).unwrap()}
-  }
+    #[inline]
+    pub fn character_id(&self) -> i32 {
+        // Safety:
+        // Created from valid Table for this object
+        // which contains a valid value in this slot
+        unsafe {
+            self._tab
+                .get::<i32>(NetcodeTokenUserData::VT_CHARACTER_ID, Some(0))
+                .unwrap()
+        }
+    }
 }
 
 impl flatbuffers::Verifiable for NetcodeTokenUserData<'_> {
-  #[inline]
-  fn run_verifier(
-    v: &mut flatbuffers::Verifier, pos: usize
-  ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
-    use self::flatbuffers::Verifiable;
-    v.visit_table(pos)?
-     .visit_field::<i32>("character_id", Self::VT_CHARACTER_ID, false)?
-     .finish();
-    Ok(())
-  }
+    #[inline]
+    fn run_verifier(
+        v: &mut flatbuffers::Verifier,
+        pos: usize,
+    ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
+        use self::flatbuffers::Verifiable;
+        v.visit_table(pos)?
+            .visit_field::<i32>("character_id", Self::VT_CHARACTER_ID, false)?
+            .finish();
+        Ok(())
+    }
 }
 pub struct NetcodeTokenUserDataArgs {
     pub character_id: i32,
 }
 impl<'a> Default for NetcodeTokenUserDataArgs {
-  #[inline]
-  fn default() -> Self {
-    NetcodeTokenUserDataArgs {
-      character_id: 0,
+    #[inline]
+    fn default() -> Self {
+        NetcodeTokenUserDataArgs { character_id: 0 }
     }
-  }
 }
 
 pub struct NetcodeTokenUserDataBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> {
-  fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
-  start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
+    fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
+    start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
 }
 impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> NetcodeTokenUserDataBuilder<'a, 'b, A> {
-  #[inline]
-  pub fn add_character_id(&mut self, character_id: i32) {
-    self.fbb_.push_slot::<i32>(NetcodeTokenUserData::VT_CHARACTER_ID, character_id, 0);
-  }
-  #[inline]
-  pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> NetcodeTokenUserDataBuilder<'a, 'b, A> {
-    let start = _fbb.start_table();
-    NetcodeTokenUserDataBuilder {
-      fbb_: _fbb,
-      start_: start,
+    #[inline]
+    pub fn add_character_id(&mut self, character_id: i32) {
+        self.fbb_
+            .push_slot::<i32>(NetcodeTokenUserData::VT_CHARACTER_ID, character_id, 0);
     }
-  }
-  #[inline]
-  pub fn finish(self) -> flatbuffers::WIPOffset<NetcodeTokenUserData<'a>> {
-    let o = self.fbb_.end_table(self.start_);
-    flatbuffers::WIPOffset::new(o.value())
-  }
+    #[inline]
+    pub fn new(
+        _fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
+    ) -> NetcodeTokenUserDataBuilder<'a, 'b, A> {
+        let start = _fbb.start_table();
+        NetcodeTokenUserDataBuilder {
+            fbb_: _fbb,
+            start_: start,
+        }
+    }
+    #[inline]
+    pub fn finish(self) -> flatbuffers::WIPOffset<NetcodeTokenUserData<'a>> {
+        let o = self.fbb_.end_table(self.start_);
+        flatbuffers::WIPOffset::new(o.value())
+    }
 }
 
 impl core::fmt::Debug for NetcodeTokenUserData<'_> {
-  fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-    let mut ds = f.debug_struct("NetcodeTokenUserData");
-      ds.field("character_id", &self.character_id());
-      ds.finish()
-  }
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let mut ds = f.debug_struct("NetcodeTokenUserData");
+        ds.field("character_id", &self.character_id());
+        ds.finish()
+    }
 }
 #[inline]
 /// Verifies that a buffer of bytes contains a `NetcodeTokenUserData`
@@ -113,8 +120,10 @@ impl core::fmt::Debug for NetcodeTokenUserData<'_> {
 /// catch every error, or be maximally performant. For the
 /// previous, unchecked, behavior use
 /// `root_as_netcode_token_user_data_unchecked`.
-pub fn root_as_netcode_token_user_data(buf: &[u8]) -> Result<NetcodeTokenUserData, flatbuffers::InvalidFlatbuffer> {
-  flatbuffers::root::<NetcodeTokenUserData>(buf)
+pub fn root_as_netcode_token_user_data(
+    buf: &[u8],
+) -> Result<NetcodeTokenUserData, flatbuffers::InvalidFlatbuffer> {
+    flatbuffers::root::<NetcodeTokenUserData>(buf)
 }
 #[inline]
 /// Verifies that a buffer of bytes contains a size prefixed
@@ -123,8 +132,10 @@ pub fn root_as_netcode_token_user_data(buf: &[u8]) -> Result<NetcodeTokenUserDat
 /// catch every error, or be maximally performant. For the
 /// previous, unchecked, behavior use
 /// `size_prefixed_root_as_netcode_token_user_data_unchecked`.
-pub fn size_prefixed_root_as_netcode_token_user_data(buf: &[u8]) -> Result<NetcodeTokenUserData, flatbuffers::InvalidFlatbuffer> {
-  flatbuffers::size_prefixed_root::<NetcodeTokenUserData>(buf)
+pub fn size_prefixed_root_as_netcode_token_user_data(
+    buf: &[u8],
+) -> Result<NetcodeTokenUserData, flatbuffers::InvalidFlatbuffer> {
+    flatbuffers::size_prefixed_root::<NetcodeTokenUserData>(buf)
 }
 #[inline]
 /// Verifies, with the given options, that a buffer of bytes
@@ -134,10 +145,10 @@ pub fn size_prefixed_root_as_netcode_token_user_data(buf: &[u8]) -> Result<Netco
 /// previous, unchecked, behavior use
 /// `root_as_netcode_token_user_data_unchecked`.
 pub fn root_as_netcode_token_user_data_with_opts<'b, 'o>(
-  opts: &'o flatbuffers::VerifierOptions,
-  buf: &'b [u8],
+    opts: &'o flatbuffers::VerifierOptions,
+    buf: &'b [u8],
 ) -> Result<NetcodeTokenUserData<'b>, flatbuffers::InvalidFlatbuffer> {
-  flatbuffers::root_with_opts::<NetcodeTokenUserData<'b>>(opts, buf)
+    flatbuffers::root_with_opts::<NetcodeTokenUserData<'b>>(opts, buf)
 }
 #[inline]
 /// Verifies, with the given verifier options, that a buffer of
@@ -147,33 +158,43 @@ pub fn root_as_netcode_token_user_data_with_opts<'b, 'o>(
 /// previous, unchecked, behavior use
 /// `root_as_netcode_token_user_data_unchecked`.
 pub fn size_prefixed_root_as_netcode_token_user_data_with_opts<'b, 'o>(
-  opts: &'o flatbuffers::VerifierOptions,
-  buf: &'b [u8],
+    opts: &'o flatbuffers::VerifierOptions,
+    buf: &'b [u8],
 ) -> Result<NetcodeTokenUserData<'b>, flatbuffers::InvalidFlatbuffer> {
-  flatbuffers::size_prefixed_root_with_opts::<NetcodeTokenUserData<'b>>(opts, buf)
+    flatbuffers::size_prefixed_root_with_opts::<NetcodeTokenUserData<'b>>(opts, buf)
 }
 #[inline]
 /// Assumes, without verification, that a buffer of bytes contains a NetcodeTokenUserData and returns it.
 /// # Safety
 /// Callers must trust the given bytes do indeed contain a valid `NetcodeTokenUserData`.
 pub unsafe fn root_as_netcode_token_user_data_unchecked(buf: &[u8]) -> NetcodeTokenUserData {
-  flatbuffers::root_unchecked::<NetcodeTokenUserData>(buf)
+    flatbuffers::root_unchecked::<NetcodeTokenUserData>(buf)
 }
 #[inline]
 /// Assumes, without verification, that a buffer of bytes contains a size prefixed NetcodeTokenUserData and returns it.
 /// # Safety
 /// Callers must trust the given bytes do indeed contain a valid size prefixed `NetcodeTokenUserData`.
-pub unsafe fn size_prefixed_root_as_netcode_token_user_data_unchecked(buf: &[u8]) -> NetcodeTokenUserData {
-  flatbuffers::size_prefixed_root_unchecked::<NetcodeTokenUserData>(buf)
+pub unsafe fn size_prefixed_root_as_netcode_token_user_data_unchecked(
+    buf: &[u8],
+) -> NetcodeTokenUserData {
+    flatbuffers::size_prefixed_root_unchecked::<NetcodeTokenUserData>(buf)
 }
 #[inline]
 pub fn finish_netcode_token_user_data_buffer<'a, 'b, A: flatbuffers::Allocator + 'a>(
     fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
-    root: flatbuffers::WIPOffset<NetcodeTokenUserData<'a>>) {
-  fbb.finish(root, None);
+    root: flatbuffers::WIPOffset<NetcodeTokenUserData<'a>>,
+) {
+    fbb.finish(root, None);
 }
 
 #[inline]
-pub fn finish_size_prefixed_netcode_token_user_data_buffer<'a, 'b, A: flatbuffers::Allocator + 'a>(fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>, root: flatbuffers::WIPOffset<NetcodeTokenUserData<'a>>) {
-  fbb.finish_size_prefixed(root, None);
+pub fn finish_size_prefixed_netcode_token_user_data_buffer<
+    'a,
+    'b,
+    A: flatbuffers::Allocator + 'a,
+>(
+    fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
+    root: flatbuffers::WIPOffset<NetcodeTokenUserData<'a>>,
+) {
+    fbb.finish_size_prefixed(root, None);
 }
