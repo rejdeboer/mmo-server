@@ -1,10 +1,8 @@
-use axum::http::{HeaderMap, request};
+use axum::http::HeaderMap;
 use fake::Fake;
 use fake::faker::internet::en::{Password, SafeEmail, Username};
 use once_cell::sync::Lazy;
-use secrecy::{ExposeSecret, SecretString};
 use sqlx::{Connection, Executor, PgConnection, PgPool};
-use web_server::auth::encode_jwt;
 use web_server::configuration::{DatabaseSettings, get_configuration};
 use web_server::domain::SafePassword;
 use web_server::routes::{CharacterCreate, LoginBody, TokenResponse};
@@ -50,22 +48,20 @@ impl TestAccount {
 
 pub struct TestApp {
     pub address: String,
-    pub port: u16,
     pub db_pool: PgPool,
-    pub jwt_signing_key: SecretString,
     pub api_client: reqwest::Client,
     pub account: TestAccount,
 }
 
 impl TestApp {
-    pub fn signed_jwt(&self, account_id: i32) -> String {
-        encode_jwt(
-            account_id,
-            Username().fake(),
-            self.jwt_signing_key.expose_secret().as_ref(),
-        )
-        .expect("JWT encoded")
-    }
+    // pub fn signed_jwt(&self, account_id: i32) -> String {
+    //     encode_jwt(
+    //         account_id,
+    //         Username().fake(),
+    //         self.jwt_signing_key.expose_secret().as_ref(),
+    //     )
+    //     .expect("JWT encoded")
+    // }
 
     pub async fn login(&mut self) {
         let login_response = self
@@ -121,9 +117,8 @@ pub async fn spawn_app() -> TestApp {
 
     let test_app = TestApp {
         address: format!("http://localhost:{}", application_port),
-        port: application_port,
         db_pool: get_connection_pool(&settings.database),
-        jwt_signing_key: settings.application.jwt_signing_key,
+        // jwt_signing_key: settings.application.jwt_signing_key,
         api_client: create_api_client(None),
         account: TestAccount::generate(),
     };
