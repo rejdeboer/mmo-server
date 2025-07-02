@@ -50,8 +50,7 @@ jobs:
           sudo apt-get install libpq-dev -y
           SKIP_DOCKER=true ./scripts/init_db.sh
       - name: Check sqlx-data.json is up-to-date
-        run: |
-          run: cargo sqlx prepare --workspace --check -- --all-targets
+        run: cargo sqlx prepare --workspace --check -- --all-targets
       - name: Run tests
         run: cargo test
 
