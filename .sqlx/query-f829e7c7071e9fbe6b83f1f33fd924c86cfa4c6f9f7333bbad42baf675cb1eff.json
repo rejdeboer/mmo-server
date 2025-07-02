@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT id, name, level, experience,\n            position_x, position_y, position_z,\n            rotation_yaw\n        FROM characters\n        WHERE id = $1 \n        ",
+  "query": "\n        SELECT id, name, level,\n            position_x, position_y, position_z,\n            rotation_yaw\n        FROM characters\n        WHERE id = $1 \n        ",
   "describe": {
     "columns": [
       {
@@ -20,26 +20,21 @@
       },
       {
         "ordinal": 3,
-        "name": "experience",
-        "type_info": "Int8"
-      },
-      {
-        "ordinal": 4,
         "name": "position_x",
         "type_info": "Float4"
       },
       {
-        "ordinal": 5,
+        "ordinal": 4,
         "name": "position_y",
         "type_info": "Float4"
       },
       {
-        "ordinal": 6,
+        "ordinal": 5,
         "name": "position_z",
         "type_info": "Float4"
       },
       {
-        "ordinal": 7,
+        "ordinal": 6,
         "name": "rotation_yaw",
         "type_info": "Float4"
       }
@@ -56,9 +51,8 @@
       false,
       false,
       false,
-      false,
       false
     ]
   },
-  "hash": "cd642a90fd21ec7a788621ef98ab462cf41089f1b8c8729dd517f5756e4b0c98"
+  "hash": "f829e7c7071e9fbe6b83f1f33fd924c86cfa4c6f9f7333bbad42baf675cb1eff"
 }
