@@ -5,6 +5,7 @@ on:
     paths:
       - ".github/workflows/web-server-push.yml"
       - "web-server"
+      - "mmo-server"
   workflow_dispatch:
 
 env:
