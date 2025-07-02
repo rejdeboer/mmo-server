@@ -39,8 +39,7 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     );
     let server_addr: SocketAddr = SocketAddr::new(ip_addr, settings.server.port);
     let socket = UdpSocket::bind(server_addr)?;
-    let mut public_addresses: Vec<SocketAddr> = Vec::new();
-    public_addresses.push(server_addr);
+    let public_addresses: Vec<SocketAddr> = vec![server_addr];
 
     let port = socket.local_addr()?.port();
 
@@ -91,7 +90,7 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
         ),
     );
 
-    return Ok((app, port));
+    Ok((app, port))
 }
 
 pub fn get_connection_pool(settings: &Settings) -> PgPool {

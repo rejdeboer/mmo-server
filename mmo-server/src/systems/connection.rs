@@ -105,7 +105,6 @@ fn process_client_connected(
         Ok(data) => {
             let character_id = data.character_id();
             let db_pool = pool.0.clone();
-            let client_id = client_id;
             runtime.spawn_background_task(async move |mut ctx| {
                 let character = load_character_data(db_pool, character_id)
                     .await
@@ -194,7 +193,7 @@ fn process_client_disconnected(
         if player_client_id.0 == client_id {
             let db_pool = pool.0.clone();
             let character_id = character_id.0;
-            let transform = transform.clone();
+            let transform = *transform;
             commands.entity(entity).despawn();
             runtime.spawn_background_task(async move |_| {
                 // TODO: This pos is probably incorrect

@@ -19,7 +19,7 @@ impl SafePassword {
         let contains_forbidden_characters = s.chars().any(|g| forbidden_characters.contains(&g));
 
         if is_empty_or_whitespace || is_too_long || is_too_short || contains_forbidden_characters {
-            Err(format!("{} is not a valid password", s))
+            Err(format!("{s} is not a valid password"))
         } else {
             Ok(Self(s))
         }

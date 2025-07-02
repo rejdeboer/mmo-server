@@ -23,14 +23,14 @@ pub fn send_transform_updates(
             if let Some(client_id) = client_id_option {
                 writer.write(OutgoingMessage::new(
                     client_id.0,
-                    OutgoingMessageData::Movement(entity, transform.clone()),
+                    OutgoingMessageData::Movement(entity, *transform),
                 ));
             }
 
             for client_id in interested.clients.iter() {
                 writer.write(OutgoingMessage::new(
                     *client_id,
-                    OutgoingMessageData::Movement(entity, transform.clone()),
+                    OutgoingMessageData::Movement(entity, *transform),
                 ));
             }
         })

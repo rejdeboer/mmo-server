@@ -69,8 +69,7 @@ fn generate_connect_token(
             .expect("host should be IPV4 addr"),
     );
     let server_addr: SocketAddr = SocketAddr::new(ip_addr, game_server_settings.port);
-    let mut public_addresses: Vec<SocketAddr> = Vec::new();
-    public_addresses.push(server_addr);
+    let public_addresses: Vec<SocketAddr> = vec![server_addr];
 
     let mut builder = FlatBufferBuilder::new();
     let response_offset = schemas::mmo::NetcodeTokenUserData::create(

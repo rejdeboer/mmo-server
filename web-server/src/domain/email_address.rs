@@ -8,7 +8,7 @@ impl EmailAddress {
         if ValidateEmail::validate_email(&s) {
             Ok(Self(s))
         } else {
-            Err(format!("{} is not a valid email address", s))
+            Err(format!("{s} is not a valid email address"))
         }
     }
 }

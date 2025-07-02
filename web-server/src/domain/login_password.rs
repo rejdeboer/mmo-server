@@ -10,7 +10,7 @@ impl LoginPassword {
         let is_too_long = s.chars().count() > MAX_PASSWORD_LENGTH;
 
         if is_too_long {
-            Err(format!("password {} is too long", s))
+            Err(format!("password {s} is too long"))
         } else {
             Ok(Self(s))
         }

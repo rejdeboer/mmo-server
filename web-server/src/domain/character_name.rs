@@ -11,7 +11,7 @@ impl CharacterName {
         let contains_forbidden_characters = s.chars().any(|g| forbidden_characters.contains(&g));
 
         if is_too_long || is_too_short || contains_forbidden_characters {
-            Err(format!("{} is not a valid username", s))
+            Err(format!("{s} is not a valid username"))
         } else {
             Ok(Self(s.to_lowercase()))
         }

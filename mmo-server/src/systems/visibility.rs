@@ -55,10 +55,7 @@ pub fn update_player_visibility(
             if let Ok(transform) = q_transform.get(entity_to_spawn) {
                 writer.write(OutgoingMessage {
                     client_id: client_id.0,
-                    data: crate::events::OutgoingMessageData::Spawn(
-                        entity_to_spawn,
-                        transform.clone(),
-                    ),
+                    data: crate::events::OutgoingMessageData::Spawn(entity_to_spawn, *transform),
                 });
             }
         }
