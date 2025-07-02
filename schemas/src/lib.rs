@@ -1,3 +1,4 @@
+#![allow(warnings, unused)]
 pub mod mmo {
     use super::*;
     mod vec_2_generated;

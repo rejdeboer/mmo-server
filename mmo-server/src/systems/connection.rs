@@ -21,7 +21,6 @@ pub struct CharacterRow {
     pub position_z: f32,
     pub rotation_yaw: f32,
     pub level: i32,
-    pub experience: i64,
 }
 
 impl CharacterRow {
@@ -164,7 +163,7 @@ async fn load_character_data(
     sqlx::query_as!(
         CharacterRow,
         r#"
-        SELECT id, name, level, experience,
+        SELECT id, name, level,
             position_x, position_y, position_z,
             rotation_yaw
         FROM characters

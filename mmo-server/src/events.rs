@@ -2,12 +2,6 @@ use bevy::prelude::*;
 use bevy_renet::renet::ClientId;
 use flatbuffers::{FlatBufferBuilder, WIPOffset};
 
-#[derive(Event)]
-pub struct EntityMoveEvent {
-    pub entity: Entity,
-    pub transform: Transform,
-}
-
 #[derive(Event, Debug)]
 pub struct OutgoingMessage {
     pub client_id: ClientId,
