@@ -1,4 +1,4 @@
-name: Web server push
+name: Server push
 
 on:
   push:
@@ -51,8 +51,7 @@ jobs:
           SKIP_DOCKER=true ./scripts/init_db.sh
       - name: Check sqlx-data.json is up-to-date
         run: |
-          cargo sqlx prepare
-          cargo sqlx prepare --check -- --bin web-server
+          run: cargo sqlx prepare --workspace --check -- --all-targets
       - name: Run tests
         run: cargo test
 
@@ -166,6 +165,14 @@ jobs:
           push: true
           target: web-server
           tags: rejdeboer/web-server:latest
+          secrets: |
+            GIT_AUTH_TOKEN=${{ secrets.PAT }}
+      - name: Build and push mmo-server
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          target: mmo-server
+          tags: rejdeboer/mmo-server:latest
           secrets: |
             GIT_AUTH_TOKEN=${{ secrets.PAT }}
 
