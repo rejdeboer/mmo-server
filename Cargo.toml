@@ -1,4 +1,5 @@
 [workspace]
 members = ["mmo-client", "mmo-server", "schemas", "web-server"]
+default-members = ["mmo-server", "web-server"]
 
 resolver = "3"
