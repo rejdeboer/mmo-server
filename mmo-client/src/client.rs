@@ -31,6 +31,7 @@ pub enum GameEvent {
     },
     SpawnEntity {
         entity_id: u64,
+        transform: Transform,
     },
     DespawnEntity {
         entity_id: u64,
@@ -221,9 +222,18 @@ fn read_event_batch(events: &mut Vec<GameEvent>, bytes: Bytes) -> Result<(), Inv
                         },
                     })
                 }
-                schemas::mmo::EventData::EntitySpawnEvent => events.push(GameEvent::SpawnEntity {
-                    entity_id: event.data_as_entity_spawn_event().unwrap().entity_id(),
-                }),
+                schemas::mmo::EventData::EntitySpawnEvent => {
+                    let fb_event = event.data_as_entity_spawn_event().unwrap();
+                    let transform = fb_event.transform().expect("transform should be some");
+                    let pos = transform.position();
+                    events.push(GameEvent::SpawnEntity {
+                        entity_id: fb_event.entity_id(),
+                        transform: Transform {
+                            position: Vec3::new(pos.x(), pos.y(), pos.z()),
+                            yaw: transform.yaw(),
+                        },
+                    })
+                }
                 schemas::mmo::EventData::EntityDespawnEvent => {
                     events.push(GameEvent::DespawnEntity {
                         entity_id: event.data_as_entity_despawn_event().unwrap().entity_id(),
