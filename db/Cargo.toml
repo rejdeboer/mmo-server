@@ -1,0 +1,23 @@
+[package]
+name = "db"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0"
+dotenvy = "0.15"
+fake = "2.3"
+tokio = { version = "1", features = ["full"] }
+web-server = { path = "../web-server" }
+
+[dependencies.sqlx]
+version = "0.8.5"
+default-features = false
+features = [
+	"runtime-tokio-native-tls",
+	"macros",
+	"postgres",
+	"uuid",
+	"chrono",
+	"migrate",
+]
