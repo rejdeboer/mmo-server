@@ -13,6 +13,7 @@ use std::time::SystemTime;
 
 use crate::configuration::Settings;
 use crate::events::OutgoingMessage;
+use crate::plugins::AgonesPlugin;
 
 #[derive(Resource, Clone)]
 pub struct DatabasePool(pub PgPool);
@@ -29,6 +30,7 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     app.add_plugins(RenetServerPlugin);
     app.add_plugins(NetcodeServerPlugin);
     app.add_plugins(TokioTasksPlugin::default());
+    app.add_plugins(AgonesPlugin);
 
     let ip_addr = IpAddr::V4(
         settings

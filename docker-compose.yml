@@ -52,3 +52,7 @@ services:
     environment:
       - DATABASE_URL=postgres://postgres:password@postgres:5433/mmo
 
+  agones:
+    image: "us-docker.pkg.dev/agones-images/release/agones-sdk:1.50.0"
+    command: --local 
+    network_mode: service:mmo-server
