@@ -24,6 +24,8 @@ pub struct ApplicationSettings {
     pub port: u16,
     pub host: String,
     pub jwt_signing_key: SecretString,
+    #[serde(deserialize_with = "deserialize_netcode_key")]
+    pub netcode_private_key: NetcodePrivateKey,
 }
 
 #[derive(serde::Deserialize, Clone)]
@@ -42,8 +44,21 @@ pub struct GameServerSettings {
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub port: u16,
     pub host: String,
-    #[serde(deserialize_with = "deserialize_netcode_key")]
-    pub netcode_private_key: NetcodePrivateKey,
+}
+
+#[derive(serde::Deserialize, Clone)]
+#[serde(tag = "type")]
+#[serde(rename_all = "lowercase")]
+pub enum RealmResolverSettings {
+    Kube,
+    Local(LocalResolverSettings),
+}
+
+#[derive(serde::Deserialize, Clone, Debug)]
+pub struct LocalResolverSettings {
+    pub host: String,
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    pub port: u16,
 }
 
 #[derive(Clone)]

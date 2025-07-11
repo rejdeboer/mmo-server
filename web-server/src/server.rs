@@ -1,6 +1,6 @@
 use crate::{
     auth::auth_middleware,
-    configuration::{DatabaseSettings, GameServerSettings, Settings},
+    configuration::{DatabaseSettings, GameServerSettings, NetcodePrivateKey, Settings},
     routes::{account_create, character_create, character_list, game_entry, login},
 };
 use axum::{
@@ -24,7 +24,7 @@ pub struct Application {
 pub struct ApplicationState {
     pub pool: PgPool,
     pub jwt_signing_key: SecretString,
-    pub game_server_settings: GameServerSettings,
+    pub netcode_private_key: NetcodePrivateKey,
 }
 
 #[derive(Deserialize)]
@@ -43,10 +43,12 @@ impl Application {
         let port = listener.local_addr().unwrap().port();
         let connection_pool = get_connection_pool(&settings.database);
 
+        // let resolver =
+
         let application_state = ApplicationState {
             pool: connection_pool,
             jwt_signing_key: settings.application.jwt_signing_key.clone(),
-            game_server_settings: settings.game_server,
+            netcode_private_key: settings.application.netcode_private_key,
         };
 
         let protected_routes = Router::new()

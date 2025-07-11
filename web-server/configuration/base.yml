@@ -6,5 +6,3 @@ database:
   username: "postgres"
   password: "password"
   db_name: "mmo"
-game_server:
-  port: 8000

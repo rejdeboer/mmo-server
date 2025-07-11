@@ -1,0 +1,84 @@
+use async_trait::async_trait;
+use kube::{Api, Client, CustomResource, api::ListParams};
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
+use serde_aux::field_attributes::deserialize_number_from_string;
+use tracing::instrument;
+
+use crate::error::ApiError;
+
+pub struct RealmAddress {
+    pub host: String,
+    pub port: u16,
+}
+
+impl Into<RealmAddress> for GameServer {
+    fn into(self) -> RealmAddress {
+        let status = self
+            .status
+            .expect("realm resource should have status field");
+        RealmAddress {
+            host: status.address,
+            port: status.ports[0].port,
+        }
+    }
+}
+
+#[async_trait]
+pub trait RealmResolver: Send + Sync {
+    async fn resolve(&self, realm_id: &str) -> Result<RealmAddress, ApiError>;
+}
+
+pub struct KubeResolver {
+    api: Api<GameServer>,
+}
+
+impl KubeResolver {
+    pub fn new(client: Client) -> Self {
+        let api = Api::default_namespaced(client);
+        Self { api }
+    }
+}
+
+#[async_trait]
+impl RealmResolver for KubeResolver {
+    #[instrument(skip(self))]
+    async fn resolve(&self, realm_id: &str) -> Result<RealmAddress, ApiError> {
+        tracing::info!("resolving via kube");
+        let params = ListParams::default().labels(&format!("realm={realm_id}"));
+        let results = self.api.list(&params).await.map_err(|err| {
+            tracing::error!(?err, "failed to fetch realm");
+            ApiError::UnexpectedError
+        })?;
+
+        if results.items.is_empty() {
+            tracing::error!("realm not found");
+            return Err(ApiError::UnexpectedError);
+        }
+
+        Ok(results.items[0].to_owned().into())
+    }
+}
+
+#[derive(CustomResource, Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
+#[kube(
+    group = "agones.dev",
+    version = "v1",
+    kind = "GameServer",
+    namespaced,
+    status = "GameServerStatus"
+)]
+pub struct GameServerSpec {}
+
+#[derive(serde::Deserialize, Clone)]
+pub struct GameServerStatus {
+    address: String,
+    ports: Vec<GameServerPort>,
+}
+
+#[derive(serde::Deserialize, Clone)]
+pub struct GameServerPort {
+    name: String,
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    port: u16,
+}
