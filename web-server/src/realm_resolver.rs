@@ -60,7 +60,7 @@ impl RealmResolver for KubeResolver {
     }
 }
 
-#[derive(CustomResource, Debug, Serialize, Deserialize, Default, Clone, JsonSchema)]
+#[derive(CustomResource, Serialize, Debug, Deserialize, Default, Clone, JsonSchema)]
 #[kube(
     group = "agones.dev",
     version = "v1",
@@ -70,13 +70,13 @@ impl RealmResolver for KubeResolver {
 )]
 pub struct GameServerSpec {}
 
-#[derive(serde::Deserialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Default, Clone, JsonSchema)]
 pub struct GameServerStatus {
     address: String,
     ports: Vec<GameServerPort>,
 }
 
-#[derive(serde::Deserialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, Debug, JsonSchema)]
 pub struct GameServerPort {
     name: String,
     #[serde(deserialize_with = "deserialize_number_from_string")]
