@@ -5,7 +5,10 @@ use serde::{Deserialize, Serialize};
 use serde_aux::field_attributes::deserialize_number_from_string;
 use tracing::instrument;
 
-use crate::error::ApiError;
+use crate::{
+    configuration::{LocalResolverSettings, RealmResolverSettings},
+    error::ApiError,
+};
 
 pub struct RealmAddress {
     pub host: String,
@@ -27,6 +30,31 @@ impl Into<RealmAddress> for GameServer {
 #[async_trait]
 pub trait RealmResolver: Send + Sync {
     async fn resolve(&self, realm_id: &str) -> Result<RealmAddress, ApiError>;
+}
+
+pub struct LocalResolver {
+    host: String,
+    port: u16,
+}
+
+impl LocalResolver {
+    pub fn new(settings: LocalResolverSettings) -> Self {
+        Self {
+            host: settings.host,
+            port: settings.port,
+        }
+    }
+}
+
+#[async_trait]
+impl RealmResolver for LocalResolver {
+    async fn resolve(&self, _realm_id: &str) -> Result<RealmAddress, ApiError> {
+        tracing::info!("locally resolving realm");
+        Ok(RealmAddress {
+            host: self.host.clone(),
+            port: self.port,
+        })
+    }
 }
 
 pub struct KubeResolver {
@@ -81,4 +109,16 @@ pub struct GameServerPort {
     name: String,
     #[serde(deserialize_with = "deserialize_number_from_string")]
     port: u16,
+}
+
+pub fn create_resolver(settings: &RealmResolverSettings) -> Result<Box<dyn RealmResolver>> {
+    match settings {
+        RealmResolverSettings::Kube => {
+            let client = Client::new(service, default_namespace)
+            Ok(Box::new(KubeResolver::new(client)))
+        }
+        RealmResolverSettings::Local(local_settings) => {
+            Ok(Box::new(LocalResolver::new(local_settings.clone())))
+        }
+    }
 }
