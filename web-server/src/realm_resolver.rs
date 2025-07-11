@@ -111,14 +111,16 @@ pub struct GameServerPort {
     port: u16,
 }
 
-pub fn create_resolver(settings: &RealmResolverSettings) -> Result<Box<dyn RealmResolver>> {
+pub async fn create_resolver(settings: &RealmResolverSettings) -> Box<dyn RealmResolver> {
     match settings {
         RealmResolverSettings::Kube => {
-            let client = Client::new(service, default_namespace)
-            Ok(Box::new(KubeResolver::new(client)))
+            let client = Client::try_default()
+                .await
+                .expect("failed to create kube client");
+            Box::new(KubeResolver::new(client))
         }
         RealmResolverSettings::Local(local_settings) => {
-            Ok(Box::new(LocalResolver::new(local_settings.clone())))
+            Box::new(LocalResolver::new(local_settings.clone()))
         }
     }
 }
