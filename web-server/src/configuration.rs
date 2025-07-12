@@ -15,7 +15,7 @@ pub enum Environment {
 pub struct Settings {
     pub application: ApplicationSettings,
     pub database: DatabaseSettings,
-    pub game_server: GameServerSettings,
+    pub realm_resolver: RealmResolverSettings,
 }
 
 #[derive(serde::Deserialize, Clone)]
@@ -37,13 +37,6 @@ pub struct DatabaseSettings {
     pub host: String,
     pub db_name: String,
     pub require_ssl: bool,
-}
-
-#[derive(serde::Deserialize, Clone)]
-pub struct GameServerSettings {
-    #[serde(deserialize_with = "deserialize_number_from_string")]
-    pub port: u16,
-    pub host: String,
 }
 
 #[derive(serde::Deserialize, Clone)]

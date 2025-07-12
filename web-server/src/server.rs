@@ -1,6 +1,7 @@
 use crate::{
     auth::auth_middleware,
-    configuration::{DatabaseSettings, GameServerSettings, NetcodePrivateKey, Settings},
+    configuration::{DatabaseSettings, NetcodePrivateKey, Settings},
+    realm_resolution::{RealmResolver, create_realm_resolver},
     routes::{account_create, character_create, character_list, game_entry, login},
 };
 use axum::{
@@ -10,7 +11,7 @@ use axum::{
 use secrecy::SecretString;
 use serde::Deserialize;
 use sqlx::{PgPool, postgres::PgPoolOptions};
-use std::net::SocketAddr;
+use std::{net::SocketAddr, sync::Arc};
 use tokio::net::TcpListener;
 use tower_http::trace::{DefaultMakeSpan, TraceLayer};
 
@@ -25,6 +26,7 @@ pub struct ApplicationState {
     pub pool: PgPool,
     pub jwt_signing_key: SecretString,
     pub netcode_private_key: NetcodePrivateKey,
+    pub realm_resolver: Arc<dyn RealmResolver>,
 }
 
 #[derive(Deserialize)]
@@ -43,12 +45,11 @@ impl Application {
         let port = listener.local_addr().unwrap().port();
         let connection_pool = get_connection_pool(&settings.database);
 
-        // let resolver =
-
         let application_state = ApplicationState {
             pool: connection_pool,
             jwt_signing_key: settings.application.jwt_signing_key.clone(),
             netcode_private_key: settings.application.netcode_private_key,
+            realm_resolver: Arc::from(create_realm_resolver(&settings.realm_resolver).await),
         };
 
         let protected_routes = Router::new()

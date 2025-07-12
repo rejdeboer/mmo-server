@@ -1,3 +1,5 @@
+use std::net::{IpAddr, SocketAddr};
+
 use async_trait::async_trait;
 use kube::{Api, Client, CustomResource, api::ListParams};
 use schemars::JsonSchema;
@@ -10,26 +12,19 @@ use crate::{
     error::ApiError,
 };
 
-pub struct RealmAddress {
-    pub host: String,
-    pub port: u16,
-}
-
-impl Into<RealmAddress> for GameServer {
-    fn into(self) -> RealmAddress {
+impl Into<SocketAddr> for GameServer {
+    fn into(self) -> SocketAddr {
         let status = self
             .status
             .expect("realm resource should have status field");
-        RealmAddress {
-            host: status.address,
-            port: status.ports[0].port,
-        }
+        let ip_addr = IpAddr::V4(status.address.parse().expect("host should be IPV4 addr"));
+        SocketAddr::new(ip_addr, status.ports[0].port)
     }
 }
 
 #[async_trait]
 pub trait RealmResolver: Send + Sync {
-    async fn resolve(&self, realm_id: &str) -> Result<RealmAddress, ApiError>;
+    async fn resolve(&self, realm_id: &str) -> Result<SocketAddr, ApiError>;
 }
 
 pub struct LocalResolver {
@@ -48,12 +43,10 @@ impl LocalResolver {
 
 #[async_trait]
 impl RealmResolver for LocalResolver {
-    async fn resolve(&self, _realm_id: &str) -> Result<RealmAddress, ApiError> {
+    async fn resolve(&self, _realm_id: &str) -> Result<SocketAddr, ApiError> {
         tracing::info!("locally resolving realm");
-        Ok(RealmAddress {
-            host: self.host.clone(),
-            port: self.port,
-        })
+        let ip_addr = IpAddr::V4(self.host.parse().expect("host should be IPV4 addr"));
+        Ok(SocketAddr::new(ip_addr, self.port))
     }
 }
 
@@ -71,7 +64,7 @@ impl KubeResolver {
 #[async_trait]
 impl RealmResolver for KubeResolver {
     #[instrument(skip(self))]
-    async fn resolve(&self, realm_id: &str) -> Result<RealmAddress, ApiError> {
+    async fn resolve(&self, realm_id: &str) -> Result<SocketAddr, ApiError> {
         tracing::info!("resolving via kube");
         let params = ListParams::default().labels(&format!("realm={realm_id}"));
         let results = self.api.list(&params).await.map_err(|err| {
@@ -111,7 +104,7 @@ pub struct GameServerPort {
     port: u16,
 }
 
-pub async fn create_resolver(settings: &RealmResolverSettings) -> Box<dyn RealmResolver> {
+pub async fn create_realm_resolver(settings: &RealmResolverSettings) -> Box<dyn RealmResolver> {
     match settings {
         RealmResolverSettings::Kube => {
             let client = Client::try_default()

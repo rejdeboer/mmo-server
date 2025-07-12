@@ -1,5 +1,5 @@
 use std::{
-    net::{IpAddr, SocketAddr},
+    net::SocketAddr,
     time::{SystemTime, UNIX_EPOCH},
 };
 
@@ -9,7 +9,7 @@ use renetcode::{ConnectToken, NETCODE_USER_DATA_BYTES};
 use serde::{Deserialize, Serialize};
 use tracing::instrument;
 
-use crate::{ApplicationState, auth::User, configuration::GameServerSettings, error::ApiError};
+use crate::{ApplicationState, auth::User, configuration::NetcodePrivateKey, error::ApiError};
 
 #[derive(Serialize, Deserialize)]
 pub struct GameEntryRequest {
@@ -41,11 +41,15 @@ pub async fn game_entry(
         ApiError::BadRequest("user does not have character".to_string())
     })?;
 
+    // TODO: Use more than 1 realm
+    let server_addr = state.realm_resolver.resolve("main").await?;
+
     let mut token_buffer: Vec<u8> = vec![];
     let connect_token = generate_connect_token(
         user.account_id,
         payload.character_id,
-        state.game_server_settings,
+        state.netcode_private_key,
+        server_addr,
     )?;
     connect_token.write(&mut token_buffer).map_err(|error| {
         tracing::error!(?error, "failed to write netcode token to buffer");
@@ -60,15 +64,9 @@ pub async fn game_entry(
 fn generate_connect_token(
     account_id: i32,
     character_id: i32,
-    game_server_settings: GameServerSettings,
+    private_key: NetcodePrivateKey,
+    server_addr: SocketAddr,
 ) -> Result<ConnectToken, ApiError> {
-    let ip_addr = IpAddr::V4(
-        game_server_settings
-            .host
-            .parse()
-            .expect("host should be IPV4 addr"),
-    );
-    let server_addr: SocketAddr = SocketAddr::new(ip_addr, game_server_settings.port);
     let public_addresses: Vec<SocketAddr> = vec![server_addr];
 
     let mut builder = FlatBufferBuilder::new();
@@ -90,7 +88,7 @@ fn generate_connect_token(
         15,
         public_addresses,
         Some(&user_data),
-        game_server_settings.netcode_private_key.as_ref(),
+        private_key.as_ref(),
     )
     .map_err(|error| {
         tracing::error!(?error, "failed to generate netcode token");
