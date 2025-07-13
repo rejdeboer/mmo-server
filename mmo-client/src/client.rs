@@ -73,7 +73,9 @@ impl GameClient {
         self.client.update(dt);
 
         if let Some(transport) = self.transport.as_mut() {
-            transport.update(dt, &mut self.client).unwrap();
+            transport
+                .update(dt, &mut self.client)
+                .expect("failed to update transport");
         }
 
         match self.state {
@@ -170,7 +172,8 @@ impl GameClient {
             .duration_since(SystemTime::UNIX_EPOCH)
             .unwrap();
 
-        let transport = NetcodeClientTransport::new(current_time, authentication, socket).unwrap();
+        let transport = NetcodeClientTransport::new(current_time, authentication, socket)
+            .expect("failed to create transport");
 
         self.transport = Some(transport);
         self.state = ClientState::Connecting;
@@ -223,7 +226,9 @@ fn read_event_batch(events: &mut Vec<GameEvent>, bytes: Bytes) -> Result<(), Inv
                     })
                 }
                 schemas::mmo::EventData::EntitySpawnEvent => {
-                    let fb_event = event.data_as_entity_spawn_event().unwrap();
+                    let fb_event = event
+                        .data_as_entity_spawn_event()
+                        .expect("event should be entity spawn event");
                     let transform = fb_event.transform().expect("transform should be some");
                     let pos = transform.position();
                     events.push(GameEvent::SpawnEntity {
