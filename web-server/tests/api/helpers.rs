@@ -8,7 +8,7 @@ use web_server::configuration::{DatabaseSettings, get_configuration};
 use web_server::domain::SafePassword;
 use web_server::routes::{CharacterCreate, LoginBody, TokenResponse};
 use web_server::server::{Application, get_connection_pool};
-use web_server::telemetry::{get_local_subscriber, get_subscriber, init_subscriber};
+use web_server::telemetry::{get_local_subscriber, init_subscriber};
 
 static TRACING: Lazy<()> = Lazy::new(|| {
     let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
