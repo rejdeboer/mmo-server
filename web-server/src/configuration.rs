@@ -70,6 +70,13 @@ impl Environment {
             Environment::Production => "production",
         }
     }
+
+    pub fn read() -> Self {
+        std::env::var("ENVIRONMENT")
+            .unwrap_or_else(|_| "local".into())
+            .try_into()
+            .expect("parsed ENVIRONMENT")
+    }
 }
 
 impl TryFrom<String> for Environment {
@@ -113,10 +120,7 @@ pub fn get_configuration() -> Result<Settings, config::ConfigError> {
 
     settings.merge(config::File::from(configuration_directory.join("base")).required(true))?;
 
-    let environment: Environment = std::env::var("ENVIRONMENT")
-        .unwrap_or_else(|_| "local".into())
-        .try_into()
-        .expect("parsed ENVIRONMENT");
+    let environment = Environment::read();
 
     settings.merge(
         config::File::from(configuration_directory.join(environment.as_str())).required(true),
