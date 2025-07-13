@@ -12,9 +12,9 @@ use crate::{
     error::ApiError,
 };
 
-impl Into<SocketAddr> for GameServer {
-    fn into(self) -> SocketAddr {
-        let status = self
+impl From<GameServer> for SocketAddr {
+    fn from(value: GameServer) -> Self {
+        let status = value
             .status
             .expect("realm resource should have status field");
         let ip_addr = IpAddr::V4(status.address.parse().expect("host should be IPV4 addr"));
