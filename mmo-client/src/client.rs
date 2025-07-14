@@ -198,7 +198,7 @@ impl GameClient {
 
         let authentication = ClientAuthentication::Unsecure {
             server_addr,
-            client_id: character_id,
+            client_id: character_id as u64,
             user_data: Some(user_data),
             protocol_id: 0,
         };
