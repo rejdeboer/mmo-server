@@ -46,7 +46,10 @@ flatbuffers = "25.2.10"
 
 [dependencies.axum]
 version = "0.8"
-features = ["macros"] # For debug handler
+features = [
+	"macros", # For debug handler
+	"ws",
+]
 
 [dependencies.sqlx]
 version = "0.8.5"
