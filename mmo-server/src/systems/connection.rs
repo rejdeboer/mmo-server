@@ -198,7 +198,7 @@ fn process_client_disconnected(
             runtime.spawn_background_task(async move |_| {
                 // TODO: This pos is probably incorrect
                 let pos = transform.translation;
-                let yaw = transform.rotation.y;
+                let (yaw, _, _) = transform.rotation.to_euler(EulerRot::YXZ);
                 if let Err(error) = sqlx::query!(
                     r#"
                     UPDATE CHARACTERS

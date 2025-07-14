@@ -29,9 +29,10 @@ impl OutgoingMessageData {
         match self {
             Self::Movement(id, transform) => {
                 let pos = transform.translation;
+                let (yaw, _, _) = transform.rotation.to_euler(EulerRot::YXZ);
                 let fb_transform = schemas::mmo::Transform::new(
                     &schemas::mmo::Vec3::new(pos.x, pos.y, pos.z),
-                    transform.rotation.y,
+                    yaw,
                 );
                 let event_data = schemas::mmo::EntityMoveEvent::create(
                     builder,
