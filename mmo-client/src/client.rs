@@ -1,3 +1,4 @@
+use std::char;
 use std::net::{IpAddr, SocketAddr, UdpSocket};
 use std::time::{Duration, SystemTime};
 
@@ -194,7 +195,7 @@ impl GameClient {
 
         let authentication = ClientAuthentication::Unsecure {
             server_addr,
-            client_id: 0,
+            client_id: character_id,
             user_data: Some(user_data),
             protocol_id: 0,
         };

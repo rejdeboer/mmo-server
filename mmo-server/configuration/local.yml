@@ -2,5 +2,5 @@ database:
   require_ssl: false
 server:
   host: 127.0.0.1
-  is_secure: true
+  is_secure: false
   netcode_private_key: Z8ocDNthwK2cWI0XMIOVsEsKErlxSjuw7k0YibAucSk=
