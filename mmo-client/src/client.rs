@@ -1,10 +1,10 @@
-use std::char;
 use std::net::{IpAddr, SocketAddr, UdpSocket};
 use std::time::{Duration, SystemTime};
 
 use flatbuffers::{FlatBufferBuilder, InvalidFlatbuffer, WIPOffset, root};
 use renet::{Bytes, ConnectionConfig, DefaultChannel, RenetClient};
 use renet_netcode::{ClientAuthentication, ConnectToken, NetcodeClientTransport};
+use schemas::mmo::ChannelType;
 
 use crate::types::Character;
 use crate::{PlayerAction, Transform, Vec3};
@@ -26,6 +26,11 @@ pub enum ConnectionEvent {
 
 #[derive(Debug, Clone)]
 pub enum GameEvent {
+    Chat {
+        channel: ChannelType,
+        author_name: String,
+        text: String,
+    },
     MoveEntity {
         entity_id: u64,
         transform: Transform,
@@ -212,6 +217,19 @@ fn read_event_batch(events: &mut Vec<GameEvent>, bytes: Bytes) -> Result<(), Inv
     if let Some(fb_events) = batch.events() {
         for event in fb_events {
             match event.data_type() {
+                schemas::mmo::EventData::mmo_ServerChatMessage => {
+                    let fb_event = event
+                        .data_as_mmo_server_chat_message()
+                        .expect("event should be some");
+                    events.push(GameEvent::Chat {
+                        channel: fb_event.channel(),
+                        author_name: fb_event
+                            .author_name()
+                            .expect("author should exist")
+                            .to_string(),
+                        text: fb_event.text().to_string(),
+                    })
+                }
                 schemas::mmo::EventData::EntityMoveEvent => {
                     let fb_event = event
                         .data_as_entity_move_event()
