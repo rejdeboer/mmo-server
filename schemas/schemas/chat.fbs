@@ -1,0 +1,22 @@
+namespace mmo;
+
+enum ChannelType: ubyte {
+  Say,
+  Yell,
+  Guild,
+  Party,
+  Whisper,
+  Trade,
+}
+
+table ClientChatMessage {
+  channel: ChannelType;
+  target_user: string;
+  text: string (required);
+}
+
+table ServerChatMessage {
+  channel: ChannelType;
+  author_name: string;
+  text: string (required);
+}

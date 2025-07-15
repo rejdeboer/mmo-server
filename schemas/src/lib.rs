@@ -36,4 +36,11 @@ pub mod mmo {
     pub use action_generated::*;
     mod batched_actions_generated;
     pub use batched_actions_generated::*;
+
+    mod channel_type_generated;
+    pub use self::channel_type_generated::*;
+    mod client_chat_message_generated;
+    pub use self::client_chat_message_generated::*;
+    mod server_chat_message_generated;
+    pub use self::server_chat_message_generated::*;
 } // mmo

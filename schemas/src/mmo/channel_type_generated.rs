@@ -10,44 +10,56 @@ use core::cmp::Ordering;
 use self::flatbuffers::{EndianScalar, Follow};
 use super::*;
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
-pub const ENUM_MIN_ACTION_DATA: u8 = 0;
+pub const ENUM_MIN_CHANNEL_TYPE: u8 = 0;
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
-pub const ENUM_MAX_ACTION_DATA: u8 = 2;
+pub const ENUM_MAX_CHANNEL_TYPE: u8 = 5;
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
 #[allow(non_camel_case_types)]
-pub const ENUM_VALUES_ACTION_DATA: [ActionData; 3] = [
-  ActionData::NONE,
-  ActionData::mmo_ClientChatMessage,
-  ActionData::PlayerMoveAction,
+pub const ENUM_VALUES_CHANNEL_TYPE: [ChannelType; 6] = [
+  ChannelType::Say,
+  ChannelType::Yell,
+  ChannelType::Guild,
+  ChannelType::Party,
+  ChannelType::Whisper,
+  ChannelType::Trade,
 ];
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[repr(transparent)]
-pub struct ActionData(pub u8);
+pub struct ChannelType(pub u8);
 #[allow(non_upper_case_globals)]
-impl ActionData {
-  pub const NONE: Self = Self(0);
-  pub const mmo_ClientChatMessage: Self = Self(1);
-  pub const PlayerMoveAction: Self = Self(2);
+impl ChannelType {
+  pub const Say: Self = Self(0);
+  pub const Yell: Self = Self(1);
+  pub const Guild: Self = Self(2);
+  pub const Party: Self = Self(3);
+  pub const Whisper: Self = Self(4);
+  pub const Trade: Self = Self(5);
 
   pub const ENUM_MIN: u8 = 0;
-  pub const ENUM_MAX: u8 = 2;
+  pub const ENUM_MAX: u8 = 5;
   pub const ENUM_VALUES: &'static [Self] = &[
-    Self::NONE,
-    Self::mmo_ClientChatMessage,
-    Self::PlayerMoveAction,
+    Self::Say,
+    Self::Yell,
+    Self::Guild,
+    Self::Party,
+    Self::Whisper,
+    Self::Trade,
   ];
   /// Returns the variant's name or "" if unknown.
   pub fn variant_name(self) -> Option<&'static str> {
     match self {
-      Self::NONE => Some("NONE"),
-      Self::mmo_ClientChatMessage => Some("mmo_ClientChatMessage"),
-      Self::PlayerMoveAction => Some("PlayerMoveAction"),
+      Self::Say => Some("Say"),
+      Self::Yell => Some("Yell"),
+      Self::Guild => Some("Guild"),
+      Self::Party => Some("Party"),
+      Self::Whisper => Some("Whisper"),
+      Self::Trade => Some("Trade"),
       _ => None,
     }
   }
 }
-impl core::fmt::Debug for ActionData {
+impl core::fmt::Debug for ChannelType {
   fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
     if let Some(name) = self.variant_name() {
       f.write_str(name)
@@ -56,7 +68,7 @@ impl core::fmt::Debug for ActionData {
     }
   }
 }
-impl<'a> flatbuffers::Follow<'a> for ActionData {
+impl<'a> flatbuffers::Follow<'a> for ChannelType {
   type Inner = Self;
   #[inline]
   unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
@@ -65,15 +77,15 @@ impl<'a> flatbuffers::Follow<'a> for ActionData {
   }
 }
 
-impl flatbuffers::Push for ActionData {
-    type Output = ActionData;
+impl flatbuffers::Push for ChannelType {
+    type Output = ChannelType;
     #[inline]
     unsafe fn push(&self, dst: &mut [u8], _written_len: usize) {
         flatbuffers::emplace_scalar::<u8>(dst, self.0);
     }
 }
 
-impl flatbuffers::EndianScalar for ActionData {
+impl flatbuffers::EndianScalar for ChannelType {
   type Scalar = u8;
   #[inline]
   fn to_little_endian(self) -> u8 {
@@ -87,7 +99,7 @@ impl flatbuffers::EndianScalar for ActionData {
   }
 }
 
-impl<'a> flatbuffers::Verifiable for ActionData {
+impl<'a> flatbuffers::Verifiable for ChannelType {
   #[inline]
   fn run_verifier(
     v: &mut flatbuffers::Verifier, pos: usize
@@ -97,6 +109,4 @@ impl<'a> flatbuffers::Verifiable for ActionData {
   }
 }
 
-impl flatbuffers::SimpleToVerifyInSlice for ActionData {}
-pub struct ActionDataUnionTableOffset {}
-
+impl flatbuffers::SimpleToVerifyInSlice for ChannelType {}
