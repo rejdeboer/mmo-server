@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use bevy_renet::renet::ClientId;
 use flatbuffers::{FlatBufferBuilder, WIPOffset};
+use schemas::mmo::ChannelType;
 
 #[derive(Event, Debug)]
 pub struct OutgoingMessage {
@@ -16,9 +17,10 @@ impl OutgoingMessage {
 
 #[derive(Debug)]
 pub enum OutgoingMessageData {
+    ChatMessage(ChannelType, String, String),
+    Despawn(Entity),
     Movement(Entity, Transform),
     Spawn(Entity, Transform),
-    Despawn(Entity),
 }
 
 impl OutgoingMessageData {
@@ -27,6 +29,25 @@ impl OutgoingMessageData {
         builder: &mut FlatBufferBuilder<'a>,
     ) -> WIPOffset<schemas::mmo::Event<'a>> {
         match self {
+            Self::ChatMessage(channel, author, msg) => {
+                let fb_author = builder.create_string(author);
+                let fb_msg = builder.create_string(msg);
+                let event_data = schemas::mmo::ServerChatMessage::create(
+                    builder,
+                    &schemas::mmo::ServerChatMessageArgs {
+                        channel: *channel,
+                        author_name: Some(fb_author),
+                        text: Some(fb_msg),
+                    },
+                );
+                schemas::mmo::Event::create(
+                    builder,
+                    &schemas::mmo::EventArgs {
+                        data_type: schemas::mmo::EventData::mmo_ServerChatMessage,
+                        data: Some(event_data.as_union_value()),
+                    },
+                )
+            }
             Self::Movement(id, transform) => {
                 let pos = transform.translation;
                 let (yaw, _, _) = transform.rotation.to_euler(EulerRot::YXZ);
