@@ -12,7 +12,7 @@ use std::net::{IpAddr, SocketAddr, UdpSocket};
 use std::time::SystemTime;
 
 use crate::configuration::Settings;
-use crate::events::OutgoingMessage;
+use crate::events::{IncomingChatMessage, OutgoingMessage};
 use crate::plugins::AgonesPlugin;
 
 #[derive(Resource, Clone)]
@@ -76,6 +76,7 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     app.insert_resource(settings);
     app.insert_resource(SpatialGrid::default());
 
+    app.add_event::<IncomingChatMessage>();
     app.add_event::<OutgoingMessage>();
 
     // TODO: Implement server tick of 20Hz?
@@ -87,6 +88,7 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
             crate::systems::update_spatial_grid,
             crate::systems::update_player_visibility,
             crate::systems::send_transform_updates,
+            crate::systems::process_incoming_chat,
             crate::server::handle_server_messages,
             crate::server::sync_players,
         ),

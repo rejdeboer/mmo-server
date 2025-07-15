@@ -15,6 +15,9 @@ pub struct InterestedClients {
     pub clients: HashSet<ClientId>,
 }
 
+#[derive(Debug, Component)]
+pub struct NameComponent(pub String);
+
 #[derive(Debug, Component, Default)]
 pub struct VisibleEntities {
     pub entities: HashSet<Entity>,
