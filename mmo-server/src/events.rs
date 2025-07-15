@@ -4,6 +4,13 @@ use flatbuffers::{FlatBufferBuilder, WIPOffset};
 use schemas::mmo::ChannelType;
 
 #[derive(Event, Debug)]
+pub struct IncomingChatMessage {
+    pub author: Entity,
+    pub channel: ChannelType,
+    pub text: String,
+}
+
+#[derive(Event, Debug)]
 pub struct OutgoingMessage {
     pub client_id: ClientId,
     pub data: OutgoingMessageData,

@@ -4,7 +4,7 @@ use flatbuffers::{FlatBufferBuilder, WIPOffset, root};
 
 use crate::{
     components::ClientIdComponent,
-    events::{OutgoingMessage, OutgoingMessageData},
+    events::{IncomingChatMessage, OutgoingMessage, OutgoingMessageData},
 };
 
 // TODO: Maybe use change detection for transform changes
@@ -72,11 +72,18 @@ pub fn handle_server_messages(
 }
 
 fn process_message(entity: Entity, message: bevy_renet::renet::Bytes, commands: &mut Commands) {
-    // TODO: Why does docker compose crash my shit?
     match root::<schemas::mmo::BatchedActions>(&message) {
         Ok(batch) => {
             for action in batch.actions().unwrap() {
                 match action.data_type() {
+                    schemas::mmo::ActionData::mmo_ClientChatMessage => {
+                        let chat_message = action.data_as_mmo_client_chat_message().unwrap();
+                        commands.send_event(IncomingChatMessage {
+                            author: entity,
+                            channel: chat_message.channel(),
+                            text: chat_message.text().to_string(),
+                        });
+                    }
                     schemas::mmo::ActionData::PlayerMoveAction => {
                         process_player_move_action(
                             entity,
