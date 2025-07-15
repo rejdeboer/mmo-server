@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use bevy::prelude::*;
 use bevy_renet::{
     netcode::NetcodeServerTransport,
@@ -118,7 +120,7 @@ fn process_client_connected(
                     let entity_id = ctx
                         .world
                         .spawn((
-                            NameComponent(character.name),
+                            NameComponent(Arc::from(character.name)),
                             ClientIdComponent(client_id),
                             CharacterIdComponent(character.id),
                             VisibleEntities::default(),

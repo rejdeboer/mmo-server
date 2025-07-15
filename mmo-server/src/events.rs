@@ -3,6 +3,8 @@ use bevy_renet::renet::ClientId;
 use flatbuffers::{FlatBufferBuilder, WIPOffset};
 use schemas::mmo::ChannelType;
 
+use crate::components::NameComponent;
+
 #[derive(Event, Debug)]
 pub struct IncomingChatMessage {
     pub author: Entity,
@@ -24,7 +26,7 @@ impl OutgoingMessage {
 
 #[derive(Debug)]
 pub enum OutgoingMessageData {
-    ChatMessage(ChannelType, String, String),
+    ChatMessage(ChannelType, NameComponent, String),
     Despawn(Entity),
     Movement(Entity, Transform),
     Spawn(Entity, Transform),
@@ -37,7 +39,7 @@ impl OutgoingMessageData {
     ) -> WIPOffset<schemas::mmo::Event<'a>> {
         match self {
             Self::ChatMessage(channel, author, msg) => {
-                let fb_author = builder.create_string(author);
+                let fb_author = builder.create_string(&author.0);
                 let fb_msg = builder.create_string(msg);
                 let event_data = schemas::mmo::ServerChatMessage::create(
                     builder,

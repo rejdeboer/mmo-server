@@ -34,10 +34,10 @@ pub fn process_incoming_chat(
                 continue;
             }
 
-            // TODO: Do we have to clone here? Probably should use arc
+            // TODO: Do we have to clone text here? Probably should use Arc
             writer.write(OutgoingMessage::new(
                 recipient_id.0,
-                OutgoingMessageData::ChatMessage(event.channel, name.0.clone(), event.text.clone()),
+                OutgoingMessageData::ChatMessage(event.channel, name.clone(), event.text.clone()),
             ));
         }
     }
