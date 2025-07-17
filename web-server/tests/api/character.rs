@@ -13,3 +13,26 @@ async fn create_character_success() {
         .await;
     assert_eq!(response.status().as_u16(), 200);
 }
+
+#[tokio::test]
+async fn create_character_with_character_token_success() {
+    let mut app = spawn_app().await;
+    app.login_character().await;
+    let response = app
+        .create_character(CharacterCreate {
+            name: "rejdeboer".to_string(),
+        })
+        .await;
+    assert_eq!(response.status().as_u16(), 200);
+}
+
+#[tokio::test]
+async fn create_character_without_token_failure() {
+    let mut app = spawn_app().await;
+    let response = app
+        .create_character(CharacterCreate {
+            name: "rejdeboer".to_string(),
+        })
+        .await;
+    assert_eq!(response.status().as_u16(), 401);
+}
