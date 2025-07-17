@@ -1,16 +1,62 @@
+use std::ops::ControlFlow;
+
 use axum::{
     Extension,
-    extract::{State, WebSocketUpgrade, ws::WebSocket},
+    extract::{
+        State, WebSocketUpgrade,
+        ws::{Message, WebSocket},
+    },
     response::{Response, Result},
 };
 
 use crate::{ApplicationState, auth::CharacterContext, error::ApiError};
 
-struct ChatContext {
+pub struct ChatContext {
     pub account_id: i32,
     pub username: String,
     pub character_id: i32,
     pub character_name: String,
+}
+
+pub struct Client {
+    pub ctx: ChatContext,
+    pub socket: WebSocket,
+}
+
+impl Client {
+    pub fn new(ctx: ChatContext, socket: WebSocket) -> Self {
+        Self { ctx, socket }
+    }
+
+    pub async fn run(mut self) {
+        while let Some(Ok(msg)) = self.socket.recv().await {
+            if self.read_message(msg).is_break() {
+                break;
+            }
+        }
+    }
+
+    fn read_message(&mut self, msg: Message) -> ControlFlow<(), ()> {
+        match msg {
+            Message::Text(text) => {
+                tracing::warn!(?text, "received text message");
+            }
+            Message::Binary(_) => {
+                tracing::info!("Received binary data (unsupported in this example)");
+            }
+            Message::Ping(_) => {
+                tracing::info!("Received ping");
+            }
+            Message::Pong(_) => {
+                tracing::info!("Received pong");
+            }
+            Message::Close(_) => {
+                tracing::info!("Client disconnected.");
+                return ControlFlow::Break(());
+            }
+        };
+        ControlFlow::Continue(())
+    }
 }
 
 impl ChatContext {
@@ -48,4 +94,7 @@ pub async fn chat(
     Ok(ws.on_upgrade(move |socket| handle_socket(socket, chat_ctx)))
 }
 
-async fn handle_socket(socket: WebSocket, ctx: ChatContext) {}
+async fn handle_socket(socket: WebSocket, ctx: ChatContext) {
+    let client = Client::new(ctx, socket);
+    client.run().await;
+}
