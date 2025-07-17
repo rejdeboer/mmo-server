@@ -9,7 +9,7 @@ use axum_extra::TypedHeader;
 use headers::authorization::Bearer;
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, TokenData, Validation};
 use secrecy::{ExposeSecret, SecretString};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use serde_aux::field_attributes::deserialize_number_from_string;
 
 use crate::error::ApiError;
@@ -17,43 +17,65 @@ use crate::error::ApiError;
 const TOKEN_DURATION_SEC: u64 = 7200;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Claims {
+pub struct Claims<T> {
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub exp: u64,
-    // TODO: Might be more secure to store some external account ID instead
+    #[serde(flatten)]
+    pub ctx: T,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct AccountContext {
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub account_id: i32,
     pub username: String,
 }
 
-#[derive(Debug, Clone)]
-pub struct User {
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct CharacterContext {
+    #[serde(deserialize_with = "deserialize_number_from_string")]
     pub account_id: i32,
+    pub username: String,
+    pub character_id: i32,
 }
 
-pub async fn auth_middleware(
+pub async fn account_auth_middleware(
     auth_header_option: Option<TypedHeader<headers::Authorization<Bearer>>>,
     State(jwt_signing_key): State<SecretString>,
     mut req: Request,
     next: Next,
 ) -> Result<Response, ApiError> {
     let auth_header = auth_header_option.ok_or(ApiError::AuthError("no auth token".to_string()))?;
-    let token = decode_jwt(auth_header.token(), jwt_signing_key).map_err(|e| {
-        tracing::error!(?e, "JWT decoding error");
-        ApiError::AuthError("invalid token".to_string())
-    })?;
-
-    let user = User {
-        account_id: token.claims.account_id,
-    };
-    req.extensions_mut().insert(user);
-
+    let token =
+        decode_jwt::<AccountContext>(auth_header.token(), jwt_signing_key).map_err(|e| {
+            tracing::error!(?e, "JWT decoding error");
+            ApiError::AuthError("invalid token".to_string())
+        })?;
+    req.extensions_mut().insert(token.claims.ctx);
     Ok(next.run(req).await)
 }
 
-pub fn encode_jwt(
-    account_id: i32,
-    username: String,
+pub async fn character_auth_middleware(
+    auth_header_option: Option<TypedHeader<headers::Authorization<Bearer>>>,
+    State(jwt_signing_key): State<SecretString>,
+    mut req: Request,
+    next: Next,
+) -> Result<Response, ApiError> {
+    let auth_header = auth_header_option.ok_or(ApiError::AuthError("no auth token".to_string()))?;
+    let token =
+        decode_jwt::<CharacterContext>(auth_header.token(), jwt_signing_key).map_err(|e| {
+            tracing::error!(?e, "JWT decoding error");
+            ApiError::AuthError(
+                "invalid token, make sure you are logged in and have selected a character"
+                    .to_string(),
+            )
+        })?;
+    req.extensions_mut().insert(token.claims.ctx);
+    Ok(next.run(req).await)
+}
+
+pub fn encode_jwt<T: Serialize + DeserializeOwned>(
+    ctx: T,
     signing_key: &str,
 ) -> jsonwebtoken::errors::Result<String> {
     let exp = SystemTime::now()
@@ -61,11 +83,7 @@ pub fn encode_jwt(
         .unwrap()
         .as_secs();
 
-    let claims = Claims {
-        account_id,
-        username,
-        exp,
-    };
+    let claims = Claims { ctx, exp };
 
     jsonwebtoken::encode(
         &Header::default(),
@@ -74,10 +92,10 @@ pub fn encode_jwt(
     )
 }
 
-pub fn decode_jwt(
+pub fn decode_jwt<T: Serialize + DeserializeOwned>(
     token: &str,
     signing_key: SecretString,
-) -> jsonwebtoken::errors::Result<TokenData<Claims>> {
+) -> jsonwebtoken::errors::Result<TokenData<Claims<T>>> {
     jsonwebtoken::decode(
         token,
         &DecodingKey::from_secret(signing_key.expose_secret().as_ref()),

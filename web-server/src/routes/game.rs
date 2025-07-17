@@ -9,7 +9,9 @@ use renetcode::{ConnectToken, NETCODE_USER_DATA_BYTES};
 use serde::{Deserialize, Serialize};
 use tracing::instrument;
 
-use crate::{ApplicationState, auth::User, configuration::NetcodePrivateKey, error::ApiError};
+use crate::{
+    ApplicationState, auth::AccountContext, configuration::NetcodePrivateKey, error::ApiError,
+};
 
 #[derive(Serialize, Deserialize)]
 pub struct GameEntryRequest {
@@ -24,7 +26,7 @@ pub struct GameEntryResponse {
 #[instrument(skip(state, payload))]
 pub async fn game_entry(
     State(state): State<ApplicationState>,
-    Extension(user): Extension<User>,
+    Extension(ctx): Extension<AccountContext>,
     Json(payload): Json<GameEntryRequest>,
 ) -> Result<Json<GameEntryResponse>, ApiError> {
     let has_character = sqlx::query!(
@@ -32,7 +34,7 @@ pub async fn game_entry(
         SELECT EXISTS(SELECT 1 FROM characters WHERE id = $1 AND account_id = $2)
         "#,
         payload.character_id,
-        user.account_id
+        ctx.account_id
     )
     .fetch_one(&state.pool)
     .await
@@ -53,7 +55,7 @@ pub async fn game_entry(
 
     let mut token_buffer: Vec<u8> = vec![];
     let connect_token = generate_connect_token(
-        user.account_id,
+        ctx.account_id,
         payload.character_id,
         state.netcode_private_key,
         server_addr,

@@ -1,7 +1,7 @@
 use axum::{Extension, Json, extract::State, response::Result};
 use serde::{Deserialize, Serialize};
 
-use crate::{ApplicationState, auth::User, domain::CharacterName, error::ApiError};
+use crate::{ApplicationState, auth::AccountContext, domain::CharacterName, error::ApiError};
 
 #[derive(Debug, Clone, sqlx::FromRow, Serialize, Deserialize)]
 pub struct CharacterRow {
@@ -19,7 +19,7 @@ pub struct CharacterCreate {
 // TODO: Implement more validation: character limits, etc...
 pub async fn character_create(
     State(state): State<ApplicationState>,
-    Extension(user): Extension<User>,
+    Extension(ctx): Extension<AccountContext>,
     Json(payload): Json<CharacterCreate>,
 ) -> Result<Json<CharacterRow>, ApiError> {
     let name = CharacterName::parse(payload.name).map_err(ApiError::BadRequest)?;
@@ -31,12 +31,12 @@ pub async fn character_create(
         RETURNING id, name, level, experience
         "#,
         name.as_ref(),
-        user.account_id
+        ctx.account_id
     )
     .fetch_one(&state.pool)
     .await
     .map_err(|error| {
-        tracing::error!(?error, ?user, "error creating character");
+        tracing::error!(?error, ?ctx, "error creating character");
         ApiError::UnexpectedError
     })?;
 
@@ -45,7 +45,7 @@ pub async fn character_create(
 
 pub async fn character_list(
     State(state): State<ApplicationState>,
-    Extension(user): Extension<User>,
+    Extension(ctx): Extension<AccountContext>,
 ) -> Result<Json<Vec<CharacterRow>>, ApiError> {
     let rows = sqlx::query_as!(
         CharacterRow,
@@ -54,12 +54,12 @@ pub async fn character_list(
         FROM characters
         WHERE account_id = $1 
         "#,
-        user.account_id
+        ctx.account_id
     )
     .fetch_all(&state.pool)
     .await
     .map_err(|error| {
-        tracing::error!(?error, ?user, "error fetching characters");
+        tracing::error!(?error, ?ctx, "error fetching characters");
         ApiError::UnexpectedError
     })?;
 

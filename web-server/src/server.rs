@@ -1,5 +1,5 @@
 use crate::{
-    auth::auth_middleware,
+    auth::account_auth_middleware,
     configuration::{DatabaseSettings, NetcodePrivateKey, Settings},
     realm_resolution::{RealmResolver, create_realm_resolver},
     routes::{account_create, character_create, character_list, game_entry, login},
@@ -57,7 +57,7 @@ impl Application {
             .route("/game/request-entry", post(game_entry))
             .route_layer(middleware::from_fn_with_state(
                 settings.application.jwt_signing_key,
-                auth_middleware,
+                account_auth_middleware,
             ));
 
         let router = Router::new()

@@ -1,4 +1,4 @@
-use crate::auth::encode_jwt;
+use crate::auth::{AccountContext, encode_jwt};
 use crate::domain::{EmailAddress, LoginPassword};
 use crate::{ApplicationState, error::ApiError};
 use argon2::PasswordHash;
@@ -77,12 +77,15 @@ pub async fn login(
         }
     })?;
 
-    let token = encode_jwt(row.id, row.username, state.jwt_signing_key.expose_secret()).map_err(
-        |error| {
-            tracing::error!(?error, "failed to encode jwt");
-            ApiError::UnexpectedError
-        },
-    )?;
+    let ctx = AccountContext {
+        account_id: row.id,
+        username: row.username,
+    };
+
+    let token = encode_jwt(ctx, state.jwt_signing_key.expose_secret()).map_err(|error| {
+        tracing::error!(?error, "failed to encode jwt");
+        ApiError::UnexpectedError
+    })?;
 
     Ok(Json(TokenResponse { token }))
 }
