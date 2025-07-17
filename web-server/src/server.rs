@@ -1,8 +1,8 @@
 use crate::{
-    auth::account_auth_middleware,
+    auth::{account_auth_middleware, character_auth_middleware},
     configuration::{DatabaseSettings, NetcodePrivateKey, Settings},
     realm_resolution::{RealmResolver, create_realm_resolver},
-    routes::{account_create, character_create, character_list, game_entry, login},
+    routes::{account_create, character_create, character_list, chat, game_entry, login},
 };
 use axum::{
     Router, middleware,
@@ -52,16 +52,25 @@ impl Application {
             realm_resolver: Arc::from(create_realm_resolver(&settings.realm_resolver).await),
         };
 
-        let protected_routes = Router::new()
+        let account_routes = Router::new()
             .route("/character", get(character_list).post(character_create))
             .route("/game/request-entry", post(game_entry))
             .route_layer(middleware::from_fn_with_state(
-                settings.application.jwt_signing_key,
+                settings.application.jwt_signing_key.clone(),
                 account_auth_middleware,
             ));
 
+        let character_routes =
+            Router::new()
+                .route("/chat", get(chat))
+                .route_layer(middleware::from_fn_with_state(
+                    settings.application.jwt_signing_key,
+                    character_auth_middleware,
+                ));
+
         let router = Router::new()
-            .merge(protected_routes)
+            .merge(character_routes)
+            .merge(account_routes)
             .route("/account", post(account_create))
             .route("/token", post(login))
             .layer(
