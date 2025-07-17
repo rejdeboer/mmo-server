@@ -108,7 +108,7 @@ impl TestApp {
         let mut headers = HeaderMap::new();
         headers.insert(
             reqwest::header::AUTHORIZATION,
-            format!("Bearer {}", login_response.token).parse().unwrap(),
+            format!("Bearer {}", login_response.jwt).parse().unwrap(),
         );
 
         self.api_client = create_api_client(Some(headers));
