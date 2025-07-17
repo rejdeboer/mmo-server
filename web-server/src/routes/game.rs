@@ -27,7 +27,7 @@ pub async fn game_entry(
     Extension(user): Extension<User>,
     Json(payload): Json<GameEntryRequest>,
 ) -> Result<Json<GameEntryResponse>, ApiError> {
-    sqlx::query!(
+    let has_character = sqlx::query!(
         r#"
         SELECT EXISTS(SELECT 1 FROM characters WHERE id = $1 AND account_id = $2)
         "#,
@@ -37,9 +37,16 @@ pub async fn game_entry(
     .fetch_one(&state.pool)
     .await
     .map_err(|error| {
-        tracing::error!(?error, "user does not have character");
-        ApiError::BadRequest("user does not have character".to_string())
+        tracing::error!(?error, "failed to check character ownership");
+        ApiError::UnexpectedError
     })?;
+
+    if !has_character.exists.unwrap_or(false) {
+        tracing::info!("user does not have character");
+        return Err(ApiError::BadRequest(
+            "user does not have character".to_string(),
+        ));
+    }
 
     // TODO: Use more than 1 realm
     let server_addr = state.realm_resolver.resolve("main").await?;
