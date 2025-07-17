@@ -15,7 +15,7 @@ pub struct LoginBody {
 
 #[derive(Serialize, Deserialize)]
 pub struct TokenResponse {
-    pub token: String,
+    pub jwt: String,
 }
 
 struct LoginAttempt {
@@ -82,10 +82,10 @@ pub async fn login(
         username: row.username,
     };
 
-    let token = encode_jwt(ctx, state.jwt_signing_key.expose_secret()).map_err(|error| {
+    let jwt = encode_jwt(ctx, state.jwt_signing_key.expose_secret()).map_err(|error| {
         tracing::error!(?error, "failed to encode jwt");
         ApiError::UnexpectedError
     })?;
 
-    Ok(Json(TokenResponse { token }))
+    Ok(Json(TokenResponse { jwt }))
 }
