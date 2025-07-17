@@ -6,7 +6,9 @@ use sqlx::{Connection, Executor, PgConnection, PgPool};
 use tracing_subscriber::EnvFilter;
 use web_server::configuration::{DatabaseSettings, get_configuration};
 use web_server::domain::SafePassword;
-use web_server::routes::{CharacterCreate, LoginBody, TokenResponse};
+use web_server::routes::{
+    CharacterCreate, GameEntryRequest, GameEntryResponse, LoginBody, TokenResponse,
+};
 use web_server::server::{Application, get_connection_pool};
 use web_server::telemetry::{get_local_subscriber, init_subscriber};
 
@@ -31,19 +33,42 @@ impl TestAccount {
         }
     }
 
-    async fn store(&self, pool: &PgPool) {
+    async fn store(&self, pool: &PgPool) -> i32 {
         let password = SafePassword::parse(self.password.clone()).expect("password parsed");
         let passhash = password.hash().expect("password hashed");
         sqlx::query!(
             "INSERT INTO accounts (username, email, passhash)
-            VALUES ($1, $2, $3)",
+            VALUES ($1, $2, $3) RETURNING id",
             &self.username,
             &self.email,
             passhash.as_str(),
         )
-        .execute(pool)
+        .fetch_one(pool)
         .await
-        .expect("Failed to store test user.");
+        .expect("Failed to store test user.")
+        .id
+    }
+}
+
+#[derive(sqlx::FromRow)]
+pub struct TestCharacter {
+    pub id: i32,
+    pub name: String,
+}
+
+impl TestCharacter {
+    async fn create(pool: &PgPool, account_id: i32) -> Self {
+        let name: String = Username().fake();
+        sqlx::query_as!(
+            TestCharacter,
+            "INSERT INTO characters (name, account_id)
+            VALUES ($1, $2) RETURNING id, name",
+            &name,
+            account_id,
+        )
+        .fetch_one(pool)
+        .await
+        .expect("Failed to store test character.")
     }
 }
 
@@ -52,6 +77,7 @@ pub struct TestApp {
     pub db_pool: PgPool,
     pub api_client: reqwest::Client,
     pub account: TestAccount,
+    pub character: TestCharacter,
 }
 
 impl TestApp {
@@ -64,7 +90,7 @@ impl TestApp {
     //     .expect("JWT encoded")
     // }
 
-    pub async fn login(&mut self) {
+    pub async fn login_account(&mut self) {
         let login_response = self
             .api_client
             .post(&format!("{}/token", &self.address))
@@ -83,6 +109,31 @@ impl TestApp {
         headers.insert(
             reqwest::header::AUTHORIZATION,
             format!("Bearer {}", login_response.token).parse().unwrap(),
+        );
+
+        self.api_client = create_api_client(Some(headers));
+    }
+
+    pub async fn login_character(&mut self) {
+        self.login_account().await;
+
+        let login_response = self
+            .api_client
+            .post(&format!("{}/game/request-entry", &self.address))
+            .json(&GameEntryRequest {
+                character_id: self.character.id,
+            })
+            .send()
+            .await
+            .expect("Failed to execute request.")
+            .json::<GameEntryResponse>()
+            .await
+            .unwrap();
+
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            reqwest::header::AUTHORIZATION,
+            format!("Bearer {}", login_response.jwt).parse().unwrap(),
         );
 
         self.api_client = create_api_client(Some(headers));
@@ -116,16 +167,19 @@ pub async fn spawn_app() -> TestApp {
     let application_port = application.port();
     let _ = tokio::spawn(application.run_until_stopped());
 
-    let test_app = TestApp {
+    let pool = get_connection_pool(&settings.database);
+    let account = TestAccount::generate();
+    let account_id = account.store(&pool).await;
+    let character = TestCharacter::create(&pool, account_id).await;
+
+    TestApp {
         address: format!("http://localhost:{}", application_port),
-        db_pool: get_connection_pool(&settings.database),
+        db_pool: pool,
         // jwt_signing_key: settings.application.jwt_signing_key,
         api_client: create_api_client(None),
-        account: TestAccount::generate(),
-    };
-
-    test_app.account.store(&test_app.db_pool).await;
-    test_app
+        account,
+        character,
+    }
 }
 
 fn create_api_client(default_headers: Option<HeaderMap>) -> reqwest::Client {

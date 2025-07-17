@@ -6,11 +6,15 @@ use std::{
 use axum::{Extension, Json, extract::State, response::Result};
 use flatbuffers::FlatBufferBuilder;
 use renetcode::{ConnectToken, NETCODE_USER_DATA_BYTES};
+use secrecy::ExposeSecret;
 use serde::{Deserialize, Serialize};
 use tracing::instrument;
 
 use crate::{
-    ApplicationState, auth::AccountContext, configuration::NetcodePrivateKey, error::ApiError,
+    ApplicationState,
+    auth::{AccountContext, CharacterContext, encode_jwt},
+    configuration::NetcodePrivateKey,
+    error::ApiError,
 };
 
 #[derive(Serialize, Deserialize)]
@@ -18,9 +22,10 @@ pub struct GameEntryRequest {
     pub character_id: i32,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct GameEntryResponse {
-    pub token: String,
+    pub connect_token: String,
+    pub jwt: String,
 }
 
 #[instrument(skip(state, payload))]
@@ -64,9 +69,21 @@ pub async fn game_entry(
         tracing::error!(?error, "failed to write netcode token to buffer");
         ApiError::UnexpectedError
     })?;
-    let token = base64::encode_config(token_buffer, base64::STANDARD);
 
-    Ok(Json(GameEntryResponse { token }))
+    let character_ctx = CharacterContext {
+        account_id: ctx.account_id,
+        username: ctx.username,
+        character_id: payload.character_id,
+    };
+    let jwt = encode_jwt(character_ctx, state.jwt_signing_key.expose_secret()).map_err(|err| {
+        tracing::error!(?err, "failed to encode character JWT");
+        ApiError::UnexpectedError
+    })?;
+
+    Ok(Json(GameEntryResponse {
+        connect_token: base64::encode_config(token_buffer, base64::STANDARD),
+        jwt,
+    }))
 }
 
 // TODO: These parameters are arbitrary for now

@@ -5,7 +5,7 @@ use crate::helpers::{TestApp, spawn_app};
 #[tokio::test]
 async fn game_entry_success() {
     let mut app = spawn_app().await;
-    app.login().await;
+    app.login_account().await;
 
     let character = app
         .create_character(CharacterCreate {
