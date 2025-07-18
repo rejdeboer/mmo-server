@@ -49,7 +49,7 @@ jobs:
       - name: Migrate database
         run: |
           sudo apt-get install libpq-dev -y
-          SKIP_DOCKER=true ./scripts/init_db.sh
+          SKIP_DOCKER=true SEED=false ./scripts/init_db.sh
       - name: Check sqlx-data.json is up-to-date
         run: cargo sqlx prepare --workspace --check -- --all-targets
       - name: Run tests
@@ -130,7 +130,7 @@ jobs:
           GRANT_QUERY="ALTER USER ${APP_USER} CREATEDB;"
           PGPASSWORD="password" psql -U "postgres" -h "localhost" -c "${GRANT_QUERY}"
       - name: Migrate database
-        run: SKIP_DOCKER=true ./scripts/init_db.sh
+        run: SKIP_DOCKER=true SEED=false ./scripts/init_db.sh
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
       - name: Generate code coverage
