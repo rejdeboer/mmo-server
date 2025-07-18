@@ -42,7 +42,7 @@ impl Client {
                 tracing::warn!(?text, "received text message");
             }
             Message::Binary(_) => {
-                tracing::info!("Received binary data (unsupported in this example)");
+                todo!("read flatbuffer");
             }
             Message::Ping(_) => {
                 tracing::info!("Received ping");
