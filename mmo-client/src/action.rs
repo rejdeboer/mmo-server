@@ -3,9 +3,39 @@ use schemas::mmo::ChannelType;
 
 use crate::Vec3;
 
+// NOTE: We handle move actions separately, since they can be sent unreliably
+pub struct MoveAction {
+    pub pos: Vec3,
+    pub yaw: f32,
+}
+
+impl MoveAction {
+    pub fn encode<'a>(
+        &self,
+        builder: &mut FlatBufferBuilder<'a>,
+    ) -> WIPOffset<schemas::mmo::Action<'a>> {
+        let transform = schemas::mmo::Transform::new(
+            &schemas::mmo::Vec3::new(self.pos.x, self.pos.y, self.pos.z),
+            self.yaw,
+        );
+        let action_data = schemas::mmo::PlayerMoveAction::create(
+            builder,
+            &schemas::mmo::PlayerMoveActionArgs {
+                transform: Some(&transform),
+            },
+        );
+        schemas::mmo::Action::create(
+            builder,
+            &schemas::mmo::ActionArgs {
+                data_type: schemas::mmo::ActionData::PlayerMoveAction,
+                data: Some(action_data.as_union_value()),
+            },
+        )
+    }
+}
+
 pub enum PlayerAction {
     Chat(ChannelType, String),
-    Move(Vec3, f32),
 }
 
 impl PlayerAction {
@@ -28,25 +58,6 @@ impl PlayerAction {
                     builder,
                     &schemas::mmo::ActionArgs {
                         data_type: schemas::mmo::ActionData::mmo_ClientChatMessage,
-                        data: Some(action_data.as_union_value()),
-                    },
-                )
-            }
-            Self::Move(pos, yaw) => {
-                let transform = schemas::mmo::Transform::new(
-                    &schemas::mmo::Vec3::new(pos.x, pos.y, pos.z),
-                    *yaw,
-                );
-                let action_data = schemas::mmo::PlayerMoveAction::create(
-                    builder,
-                    &schemas::mmo::PlayerMoveActionArgs {
-                        transform: Some(&transform),
-                    },
-                );
-                schemas::mmo::Action::create(
-                    builder,
-                    &schemas::mmo::ActionArgs {
-                        data_type: schemas::mmo::ActionData::PlayerMoveAction,
                         data: Some(action_data.as_union_value()),
                     },
                 )

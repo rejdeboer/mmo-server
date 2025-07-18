@@ -6,6 +6,7 @@ use renet::{Bytes, ConnectionConfig, DefaultChannel, RenetClient};
 use renet_netcode::{ClientAuthentication, ConnectToken, NetcodeClientTransport};
 use schemas::mmo::ChannelType;
 
+use crate::action::MoveAction;
 use crate::types::Character;
 use crate::{PlayerAction, Transform, Vec3};
 
@@ -146,9 +147,18 @@ impl GameClient {
         events
     }
 
-    pub fn send_actions(&mut self, actions: Vec<PlayerAction>) {
+    pub fn send_actions(&mut self, movement: Option<MoveAction>, actions: Vec<PlayerAction>) {
+        if movement.is_none() && actions.is_empty() {
+            return;
+        }
+        let can_be_unreliable = actions.is_empty();
+
         let mut builder = FlatBufferBuilder::new();
         let mut fb_actions = Vec::<WIPOffset<schemas::mmo::Action>>::with_capacity(actions.len());
+
+        if let Some(movement) = movement {
+            fb_actions.push(movement.encode(&mut builder));
+        }
 
         for action in actions {
             fb_actions.push(action.encode(&mut builder));
@@ -164,7 +174,13 @@ impl GameClient {
         builder.finish_minimal(fb_batch);
         let data = builder.finished_data().to_vec();
 
-        self.client.send_message(DefaultChannel::Unreliable, data);
+        if can_be_unreliable {
+            self.client.send_message(DefaultChannel::Unreliable, data);
+        } else {
+            self.client
+                .send_message(DefaultChannel::ReliableOrdered, data);
+        }
+
         self.transport
             .as_mut()
             .expect("actions are only sent while in game")
