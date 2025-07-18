@@ -34,6 +34,7 @@ impl MoveAction {
     }
 }
 
+#[derive(Debug)]
 pub enum PlayerAction {
     Chat(ChannelType, String),
 }

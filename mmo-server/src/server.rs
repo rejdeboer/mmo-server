@@ -67,6 +67,10 @@ pub fn handle_server_messages(
     for (entity, client_id) in clients.iter() {
         if let Some(message) = server.receive_message(client_id.0, DefaultChannel::Unreliable) {
             process_message(entity, message, &mut commands);
+        } else if let Some(message) =
+            server.receive_message(client_id.0, DefaultChannel::ReliableOrdered)
+        {
+            process_message(entity, message, &mut commands);
         }
     }
 }
