@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-pub enum ChatMessage {
+pub enum HubCommand {
     Whisper(WhisperMessage),
     Guild(GuildMessage),
 }

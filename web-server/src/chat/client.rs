@@ -1,11 +1,8 @@
-use std::{
-    ops::ControlFlow,
-    sync::{Arc, mpsc::SendError},
-};
+use std::{ops::ControlFlow, sync::Arc};
 
 use crate::chat::{
+    command::{GuildMessage, HubCommand, WhisperMessage},
     error::ChatClientError,
-    message::{ChatMessage, GuildMessage, WhisperMessage},
 };
 
 use super::ChatContext;
@@ -59,13 +56,13 @@ impl Client {
             .map_err(ChatClientError::DecodeError)?;
 
         let msg = match fb_msg.channel() {
-            ChannelType::Whisper => Ok(ChatMessage::Whisper(WhisperMessage {
+            ChannelType::Whisper => Ok(HubCommand::Whisper(WhisperMessage {
                 author_id: self.ctx.character_id,
                 author_name: self.ctx.character_name.clone(),
                 text: Arc::from(fb_msg.text()),
                 recipient_id: fb_msg.recipient_id(),
             })),
-            ChannelType::Guild => Ok(ChatMessage::Guild(GuildMessage {
+            ChannelType::Guild => Ok(HubCommand::Guild(GuildMessage {
                 author_id: self.ctx.character_id,
                 author_name: self.ctx.character_name.clone(),
                 text: Arc::from(fb_msg.text()),

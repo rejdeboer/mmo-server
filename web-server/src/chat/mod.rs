@@ -1,9 +1,11 @@
 mod client;
+mod command;
 mod error;
 mod hub;
-mod message;
 
 pub use client::Client;
+pub use command::HubCommand;
+pub use hub::Hub;
 
 use crate::auth::CharacterContext;
 
