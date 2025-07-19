@@ -11,7 +11,7 @@ enum ChannelType: ubyte {
 
 table ClientChatMessage {
   channel: ChannelType;
-  target_user: string;
+  recipient_id: int32;
   text: string (required);
 }
 
