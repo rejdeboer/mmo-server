@@ -1,4 +1,5 @@
 pub mod auth;
+mod chat;
 pub mod configuration;
 pub mod domain;
 pub mod error;
