@@ -4,8 +4,14 @@ use tracing::{Instrument, instrument};
 
 use crate::chat::command::HubCommand;
 
+struct ConnectedClient {
+    character_name: String,
+    guild_id: Option<i32>,
+    tx: Sender<Vec<u8>>,
+}
+
 pub struct Hub {
-    clients: HashMap<i32, Sender<Vec<u8>>>,
+    clients: HashMap<i32, ConnectedClient>,
     rx: Receiver<HubCommand>,
 }
 
@@ -39,7 +45,24 @@ impl Hub {
     }
 
     async fn process_message(&mut self, msg: HubCommand) -> ControlFlow<(), ()> {
-        match msg {};
+        match msg {
+            HubCommand::Connect {
+                character_id,
+                character_name,
+                tx,
+            } => {
+                self.clients.insert(
+                    character_id,
+                    ConnectedClient {
+                        character_name,
+                        guild_id: None,
+                        tx,
+                    },
+                );
+            }
+            HubCommand::Guild { text } => {}
+            HubCommand::Whisper { recipient_id, text } => {}
+        };
         ControlFlow::Continue(())
     }
 }

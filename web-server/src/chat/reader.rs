@@ -1,34 +1,33 @@
 use std::{ops::ControlFlow, sync::Arc};
 
-use crate::chat::{
-    command::{GuildMessage, HubCommand, WhisperMessage},
-    error::ChatClientError,
-};
+use crate::chat::{command::HubCommand, error::ChatReceiveError};
 
-use super::ChatContext;
 use axum::extract::ws::{Message, WebSocket};
 use flatbuffers::root;
+use futures::{StreamExt, stream::SplitStream};
 use schemas::mmo::ChannelType;
+use tokio::sync::mpsc::Sender;
 
-pub struct Client {
-    pub ctx: ChatContext,
-    pub socket: WebSocket,
+pub struct SocketReader {
+    pub socket_rx: SplitStream<WebSocket>,
+    pub hub_tx: Sender<HubCommand>,
 }
 
-impl Client {
-    pub fn new(ctx: ChatContext, socket: WebSocket) -> Self {
-        Self { ctx, socket }
+impl SocketReader {
+    pub fn new(socket_rx: SplitStream<WebSocket>, hub_tx: Sender<HubCommand>) -> Self {
+        Self { socket_rx, hub_tx }
     }
 
     pub async fn run(mut self) {
-        while let Some(Ok(msg)) = self.socket.recv().await {
-            if self.read_message(msg).is_break() {
+        while let Some(Ok(msg)) = self.socket_rx.next().await {
+            if self.read_message(msg).await.is_break() {
                 break;
             }
         }
+        // TODO: Send disconnect message to hub
     }
 
-    fn read_message(&mut self, msg: Message) -> ControlFlow<(), ()> {
+    async fn read_message(&mut self, msg: Message) -> ControlFlow<(), ()> {
         match msg {
             Message::Binary(_) => {
                 todo!("read flatbuffer");
@@ -51,26 +50,25 @@ impl Client {
         ControlFlow::Continue(())
     }
 
-    fn read_binary_message(&mut self, bytes: Vec<u8>) -> Result<(), ChatClientError> {
+    async fn read_binary_message(&mut self, bytes: Vec<u8>) -> Result<(), ChatReceiveError> {
         let fb_msg = root::<schemas::mmo::ClientChatMessage>(&bytes)
-            .map_err(ChatClientError::DecodeError)?;
+            .map_err(ChatReceiveError::InvalidSchema)?;
 
         let msg = match fb_msg.channel() {
-            ChannelType::Whisper => Ok(HubCommand::Whisper(WhisperMessage {
-                author_id: self.ctx.character_id,
-                author_name: self.ctx.character_name.clone(),
+            ChannelType::Whisper => Ok(HubCommand::Whisper {
                 text: Arc::from(fb_msg.text()),
                 recipient_id: fb_msg.recipient_id(),
-            })),
-            ChannelType::Guild => Ok(HubCommand::Guild(GuildMessage {
-                author_id: self.ctx.character_id,
-                author_name: self.ctx.character_name.clone(),
+            }),
+            ChannelType::Guild => Ok(HubCommand::Guild {
                 text: Arc::from(fb_msg.text()),
-            })),
-            channel => Err(ChatClientError::InvalidChannel(channel)),
+            }),
+            channel => Err(ChatReceiveError::InvalidChannel(channel)),
         }?;
 
-        // TODO: Send to hub
+        self.hub_tx
+            .send(msg)
+            .await
+            .map_err(ChatReceiveError::HubSendFailure)?;
 
         Ok(())
     }

@@ -1,19 +1,17 @@
 use std::sync::Arc;
+use tokio::sync::mpsc::Sender;
 
 pub enum HubCommand {
-    Whisper(WhisperMessage),
-    Guild(GuildMessage),
-}
-
-pub struct WhisperMessage {
-    pub author_id: i32,
-    pub author_name: String,
-    pub recipient_id: i32,
-    pub text: Arc<str>,
-}
-
-pub struct GuildMessage {
-    pub author_id: i32,
-    pub author_name: String,
-    pub text: Arc<str>,
+    Connect {
+        character_id: i32,
+        character_name: String,
+        tx: Sender<Vec<u8>>,
+    },
+    Whisper {
+        recipient_id: i32,
+        text: Arc<str>,
+    },
+    Guild {
+        text: Arc<str>,
+    },
 }

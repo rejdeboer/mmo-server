@@ -3,11 +3,13 @@ use axum::{
     extract::{State, WebSocketUpgrade, ws::WebSocket},
     response::{Response, Result},
 };
+use futures::StreamExt;
+use tokio::sync::mpsc::{Sender, channel};
 
 use crate::{
     ApplicationState,
     auth::CharacterContext,
-    chat::{ChatContext, Client},
+    chat::{HubCommand, SocketReader, SocketWriter},
     error::ApiError,
 };
 
@@ -31,11 +33,33 @@ pub async fn chat(
         ApiError::UnexpectedError
     })?;
 
-    let chat_ctx = ChatContext::new(ctx, row.name);
-    Ok(ws.on_upgrade(move |socket| handle_socket(socket, chat_ctx)))
+    Ok(ws.on_upgrade(move |socket| handle_socket(socket, ctx, row.name, state.chat_handle)))
 }
 
-async fn handle_socket(socket: WebSocket, ctx: ChatContext) {
-    let client = Client::new(ctx, socket);
-    client.run().await;
+async fn handle_socket(
+    socket: WebSocket,
+    ctx: CharacterContext,
+    character_name: String,
+    hub_tx: Sender<HubCommand>,
+) {
+    let (client_tx, hub_rx) = channel::<Vec<u8>>(128);
+    hub_tx
+        .send(HubCommand::Connect {
+            character_id: ctx.character_id,
+            character_name,
+            tx: client_tx,
+        })
+        .await
+        .expect("client connects to hub");
+
+    let (socket_tx, socket_rx) = socket.split();
+
+    let writer = SocketWriter::new(socket_tx, hub_rx);
+    let reader = SocketReader::new(socket_rx, hub_tx);
+
+    tokio::spawn(async move {
+        writer.run().await;
+    });
+
+    reader.run();
 }

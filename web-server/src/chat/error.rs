@@ -1,9 +1,18 @@
 use flatbuffers::InvalidFlatbuffer;
 use schemas::mmo::ChannelType;
+use tokio::sync::mpsc::error::SendError;
+
+use crate::chat::HubCommand;
 
 #[derive(Debug)]
-pub enum ChatClientError {
-    DecodeError(InvalidFlatbuffer),
+pub enum ChatReceiveError {
+    InvalidSchema(InvalidFlatbuffer),
     InvalidChannel(ChannelType),
-    Unexpected,
+    HubSendFailure(SendError<HubCommand>),
+}
+
+#[derive(Debug)]
+pub enum ChatSendError {
+    RecipientNotOnline,
+    SenderNotInGuild,
 }
