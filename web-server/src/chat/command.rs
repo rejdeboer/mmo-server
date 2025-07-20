@@ -8,10 +8,12 @@ pub enum HubCommand {
         tx: Sender<Vec<u8>>,
     },
     Whisper {
+        sender_id: i32,
         recipient_id: i32,
         text: Arc<str>,
     },
     Guild {
+        sender_id: i32,
         text: Arc<str>,
     },
 }

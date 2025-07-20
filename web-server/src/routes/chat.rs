@@ -55,11 +55,11 @@ async fn handle_socket(
     let (socket_tx, socket_rx) = socket.split();
 
     let writer = SocketWriter::new(socket_tx, hub_rx);
-    let reader = SocketReader::new(socket_rx, hub_tx);
+    let reader = SocketReader::new(ctx.character_id, socket_rx, hub_tx);
 
     tokio::spawn(async move {
         writer.run().await;
     });
 
-    reader.run();
+    reader.run().await;
 }

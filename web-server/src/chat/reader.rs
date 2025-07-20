@@ -9,13 +9,22 @@ use schemas::mmo::ChannelType;
 use tokio::sync::mpsc::Sender;
 
 pub struct SocketReader {
+    pub character_id: i32,
     pub socket_rx: SplitStream<WebSocket>,
     pub hub_tx: Sender<HubCommand>,
 }
 
 impl SocketReader {
-    pub fn new(socket_rx: SplitStream<WebSocket>, hub_tx: Sender<HubCommand>) -> Self {
-        Self { socket_rx, hub_tx }
+    pub fn new(
+        character_id: i32,
+        socket_rx: SplitStream<WebSocket>,
+        hub_tx: Sender<HubCommand>,
+    ) -> Self {
+        Self {
+            character_id,
+            socket_rx,
+            hub_tx,
+        }
     }
 
     pub async fn run(mut self) {
@@ -56,10 +65,12 @@ impl SocketReader {
 
         let msg = match fb_msg.channel() {
             ChannelType::Whisper => Ok(HubCommand::Whisper {
+                sender_id: self.character_id,
                 text: Arc::from(fb_msg.text()),
                 recipient_id: fb_msg.recipient_id(),
             }),
             ChannelType::Guild => Ok(HubCommand::Guild {
+                sender_id: self.character_id,
                 text: Arc::from(fb_msg.text()),
             }),
             channel => Err(ChatReceiveError::InvalidChannel(channel)),
