@@ -5,9 +5,9 @@ use tracing::{Instrument, instrument};
 use crate::chat::command::HubCommand;
 
 struct ConnectedClient {
-    character_name: String,
-    guild_id: Option<i32>,
-    tx: Sender<Vec<u8>>,
+    pub character_name: String,
+    pub guild_id: Option<i32>,
+    pub tx: Sender<Vec<u8>>,
 }
 
 pub struct Hub {
