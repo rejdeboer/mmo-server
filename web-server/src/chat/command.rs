@@ -5,6 +5,7 @@ pub enum HubCommand {
     Connect {
         character_id: i32,
         character_name: String,
+        guild_id: Option<i32>,
         tx: Sender<Vec<u8>>,
     },
     Whisper {
@@ -15,5 +16,8 @@ pub enum HubCommand {
     Guild {
         sender_id: i32,
         text: Arc<str>,
+    },
+    Disconnect {
+        character_id: i32,
     },
 }

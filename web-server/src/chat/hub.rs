@@ -1,6 +1,6 @@
 use flatbuffers::FlatBufferBuilder;
 use schemas::mmo::ChannelType;
-use std::{collections::HashMap, ops::ControlFlow};
+use std::collections::HashMap;
 use tokio::sync::mpsc::{Receiver, Sender, channel};
 use tracing::{Instrument, instrument};
 
@@ -15,6 +15,7 @@ struct ConnectedClient {
 pub struct Hub {
     clients: HashMap<i32, ConnectedClient>,
     rx: Receiver<HubCommand>,
+    guilds: HashMap<i32, Vec<i32>>,
 }
 
 impl Hub {
@@ -25,6 +26,7 @@ impl Hub {
             Self {
                 clients: HashMap::new(),
                 rx,
+                guilds: HashMap::new(),
             },
             tx,
         )
@@ -37,37 +39,56 @@ impl Hub {
                 tracing::info!("starting hub");
                 let mut builder = FlatBufferBuilder::new();
                 while let Some(message) = self.rx.recv().await {
-                    if self.process_message(message, &mut builder).await.is_break() {
-                        tracing::info!("stopping hub");
-                        break;
-                    };
+                    self.process_message(message, &mut builder).await;
                 }
             }
             .instrument(tracing::Span::current()),
         );
     }
 
-    async fn process_message(
-        &mut self,
-        msg: HubCommand,
-        builder: &mut FlatBufferBuilder<'_>,
-    ) -> ControlFlow<(), ()> {
+    async fn process_message(&mut self, msg: HubCommand, builder: &mut FlatBufferBuilder<'_>) {
         match msg {
             HubCommand::Connect {
                 character_id,
                 character_name,
+                guild_id,
                 tx,
             } => {
                 self.clients.insert(
                     character_id,
                     ConnectedClient {
                         character_name,
-                        guild_id: None,
+                        guild_id,
                         tx,
                     },
                 );
+
+                if let Some(guild_id) = guild_id {
+                    self.guilds.entry(guild_id).or_default().push(character_id);
+                }
             }
-            HubCommand::Guild { sender_id, text } => {}
+            HubCommand::Disconnect { character_id } => {
+                if let Some(client) = self.clients.remove(&character_id) {
+                    if let Some(gid) = client.guild_id {
+                        if let Some(members) = self.guilds.get_mut(&gid) {
+                            members.retain(|&id| id != character_id);
+                            if members.is_empty() {
+                                self.guilds.remove(&gid);
+                            }
+                        }
+                    }
+                }
+            }
+            HubCommand::Guild { sender_id, text } => {
+                let Some(client) = self.clients.get(&sender_id) else {
+                    return tracing::error!(?sender_id, "failed to get sender client");
+                };
+
+                let Some(gid) = client.guild_id else {
+                    return tracing::error!(?sender_id, "sender is not in guild");
+                    // TODO: Send error back to client
+                };
+            }
             HubCommand::Whisper {
                 sender_id,
                 recipient_id,
@@ -108,6 +129,5 @@ impl Hub {
             }
         };
         builder.reset();
-        ControlFlow::Continue(())
     }
 }

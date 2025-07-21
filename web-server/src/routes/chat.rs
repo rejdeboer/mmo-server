@@ -47,6 +47,7 @@ async fn handle_socket(
         .send(HubCommand::Connect {
             character_id: ctx.character_id,
             character_name,
+            guild_id: None,
             tx: client_tx,
         })
         .await
