@@ -45,38 +45,37 @@ impl PlayerAction {
         &self,
         builder: &mut FlatBufferBuilder<'a>,
     ) -> WIPOffset<schemas::mmo::Action<'a>> {
-        match self {
+        let data_type;
+        let data = match self {
             Self::Chat(channel, msg) => {
+                data_type = schemas::mmo::ActionData::mmo_ClientChatMessage;
                 let fb_msg = builder.create_string(msg);
-                let action_data = schemas::mmo::ClientChatMessage::create(
+                schemas::mmo::ClientChatMessage::create(
                     builder,
                     &schemas::mmo::ClientChatMessageArgs {
                         channel: *channel,
                         recipient_id: 0,
                         text: Some(fb_msg),
                     },
-                );
-                schemas::mmo::Action::create(
-                    builder,
-                    &schemas::mmo::ActionArgs {
-                        data_type: schemas::mmo::ActionData::mmo_ClientChatMessage,
-                        data: Some(action_data.as_union_value()),
-                    },
                 )
+                .as_union_value()
             }
             Self::Jump => {
-                let action_data = schemas::mmo::PlayerJumpAction::create(
+                data_type = schemas::mmo::ActionData::PlayerJumpAction;
+                schemas::mmo::PlayerJumpAction::create(
                     builder,
                     &schemas::mmo::PlayerJumpActionArgs {},
-                );
-                schemas::mmo::Action::create(
-                    builder,
-                    &schemas::mmo::ActionArgs {
-                        data_type: schemas::mmo::ActionData::PlayerJumpAction,
-                        data: Some(action_data.as_union_value()),
-                    },
                 )
+                .as_union_value()
             }
-        }
+        };
+
+        schemas::mmo::Action::create(
+            builder,
+            &schemas::mmo::ActionArgs {
+                data_type,
+                data: Some(data),
+            },
+        )
     }
 }
