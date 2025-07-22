@@ -86,6 +86,20 @@ impl<'a> Action<'a> {
     }
   }
 
+  #[inline]
+  #[allow(non_snake_case)]
+  pub fn data_as_player_jump_action(&self) -> Option<PlayerJumpAction<'a>> {
+    if self.data_type() == ActionData::PlayerJumpAction {
+      let u = self.data();
+      // Safety:
+      // Created from a valid Table for this object
+      // Which contains a valid union in this slot
+      Some(unsafe { PlayerJumpAction::init_from_table(u) })
+    } else {
+      None
+    }
+  }
+
 }
 
 impl flatbuffers::Verifiable for Action<'_> {
@@ -99,6 +113,7 @@ impl flatbuffers::Verifiable for Action<'_> {
         match key {
           ActionData::mmo_ClientChatMessage => v.verify_union_variant::<flatbuffers::ForwardsUOffset<ClientChatMessage>>("ActionData::mmo_ClientChatMessage", pos),
           ActionData::PlayerMoveAction => v.verify_union_variant::<flatbuffers::ForwardsUOffset<PlayerMoveAction>>("ActionData::PlayerMoveAction", pos),
+          ActionData::PlayerJumpAction => v.verify_union_variant::<flatbuffers::ForwardsUOffset<PlayerJumpAction>>("ActionData::PlayerJumpAction", pos),
           _ => Ok(()),
         }
      })?
@@ -163,6 +178,13 @@ impl core::fmt::Debug for Action<'_> {
         },
         ActionData::PlayerMoveAction => {
           if let Some(x) = self.data_as_player_move_action() {
+            ds.field("data", &x)
+          } else {
+            ds.field("data", &"InvalidFlatbuffer: Union discriminant does not match value.")
+          }
+        },
+        ActionData::PlayerJumpAction => {
+          if let Some(x) = self.data_as_player_jump_action() {
             ds.field("data", &x)
           } else {
             ds.field("data", &"InvalidFlatbuffer: Union discriminant does not match value.")

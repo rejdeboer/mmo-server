@@ -7,9 +7,12 @@ table PlayerMoveAction {
 	transform: mmo.Transform;
 }
 
+table PlayerJumpAction {}
+
 union ActionData {
 	mmo.ClientChatMessage,
 	PlayerMoveAction,
+	PlayerJumpAction,
 }
 
 table Action {

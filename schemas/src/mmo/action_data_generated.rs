@@ -12,13 +12,14 @@ use super::*;
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
 pub const ENUM_MIN_ACTION_DATA: u8 = 0;
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
-pub const ENUM_MAX_ACTION_DATA: u8 = 2;
+pub const ENUM_MAX_ACTION_DATA: u8 = 3;
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
 #[allow(non_camel_case_types)]
-pub const ENUM_VALUES_ACTION_DATA: [ActionData; 3] = [
+pub const ENUM_VALUES_ACTION_DATA: [ActionData; 4] = [
   ActionData::NONE,
   ActionData::mmo_ClientChatMessage,
   ActionData::PlayerMoveAction,
+  ActionData::PlayerJumpAction,
 ];
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
@@ -29,13 +30,15 @@ impl ActionData {
   pub const NONE: Self = Self(0);
   pub const mmo_ClientChatMessage: Self = Self(1);
   pub const PlayerMoveAction: Self = Self(2);
+  pub const PlayerJumpAction: Self = Self(3);
 
   pub const ENUM_MIN: u8 = 0;
-  pub const ENUM_MAX: u8 = 2;
+  pub const ENUM_MAX: u8 = 3;
   pub const ENUM_VALUES: &'static [Self] = &[
     Self::NONE,
     Self::mmo_ClientChatMessage,
     Self::PlayerMoveAction,
+    Self::PlayerJumpAction,
   ];
   /// Returns the variant's name or "" if unknown.
   pub fn variant_name(self) -> Option<&'static str> {
@@ -43,6 +46,7 @@ impl ActionData {
       Self::NONE => Some("NONE"),
       Self::mmo_ClientChatMessage => Some("mmo_ClientChatMessage"),
       Self::PlayerMoveAction => Some("PlayerMoveAction"),
+      Self::PlayerJumpAction => Some("PlayerJumpAction"),
       _ => None,
     }
   }

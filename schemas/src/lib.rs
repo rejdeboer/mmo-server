@@ -30,6 +30,8 @@ pub mod mmo {
 
     mod player_move_action_generated;
     pub use player_move_action_generated::*;
+    mod player_jump_action_generated;
+    pub use player_jump_action_generated::*;
     mod action_data_generated;
     pub use action_data_generated::*;
     mod action_generated;
