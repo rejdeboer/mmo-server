@@ -37,84 +37,73 @@ impl OutgoingMessageData {
         &self,
         builder: &mut FlatBufferBuilder<'a>,
     ) -> WIPOffset<schemas::mmo::Event<'a>> {
-        match self {
+        let data_type;
+        let data = match self {
             Self::ChatMessage(channel, author, msg) => {
+                data_type = schemas::mmo::EventData::mmo_ServerChatMessage;
                 let fb_author = builder.create_string(&author.0);
                 let fb_msg = builder.create_string(msg);
-                let event_data = schemas::mmo::ServerChatMessage::create(
+                schemas::mmo::ServerChatMessage::create(
                     builder,
                     &schemas::mmo::ServerChatMessageArgs {
                         channel: *channel,
                         author_name: Some(fb_author),
                         text: Some(fb_msg),
                     },
-                );
-                schemas::mmo::Event::create(
-                    builder,
-                    &schemas::mmo::EventArgs {
-                        data_type: schemas::mmo::EventData::mmo_ServerChatMessage,
-                        data: Some(event_data.as_union_value()),
-                    },
                 )
+                .as_union_value()
             }
             Self::Movement(id, transform) => {
+                data_type = schemas::mmo::EventData::EntityMoveEvent;
                 let pos = transform.translation;
                 let (yaw, _, _) = transform.rotation.to_euler(EulerRot::YXZ);
                 let fb_transform = schemas::mmo::Transform::new(
                     &schemas::mmo::Vec3::new(pos.x, pos.y, pos.z),
                     yaw,
                 );
-                let event_data = schemas::mmo::EntityMoveEvent::create(
+                schemas::mmo::EntityMoveEvent::create(
                     builder,
                     &schemas::mmo::EntityMoveEventArgs {
                         entity_id: id.to_bits(),
                         transform: Some(&fb_transform),
                     },
-                );
-                schemas::mmo::Event::create(
-                    builder,
-                    &schemas::mmo::EventArgs {
-                        data_type: schemas::mmo::EventData::EntityMoveEvent,
-                        data: Some(event_data.as_union_value()),
-                    },
                 )
+                .as_union_value()
             }
             Self::Spawn(id, transform) => {
+                data_type = schemas::mmo::EventData::EntitySpawnEvent;
                 let pos = transform.translation;
                 let fb_transform = schemas::mmo::Transform::new(
                     &schemas::mmo::Vec3::new(pos.x, pos.y, pos.z),
                     transform.rotation.y,
                 );
-                let event_data = schemas::mmo::EntitySpawnEvent::create(
+                schemas::mmo::EntitySpawnEvent::create(
                     builder,
                     &schemas::mmo::EntitySpawnEventArgs {
                         entity_id: id.to_bits(),
                         transform: Some(&fb_transform),
                     },
-                );
-                schemas::mmo::Event::create(
-                    builder,
-                    &schemas::mmo::EventArgs {
-                        data_type: schemas::mmo::EventData::EntitySpawnEvent,
-                        data: Some(event_data.as_union_value()),
-                    },
                 )
+                .as_union_value()
             }
             Self::Despawn(id) => {
-                let event_data = schemas::mmo::EntityDespawnEvent::create(
+                data_type = schemas::mmo::EventData::EntityDespawnEvent;
+                schemas::mmo::EntityDespawnEvent::create(
                     builder,
                     &schemas::mmo::EntityDespawnEventArgs {
                         entity_id: id.to_bits(),
                     },
-                );
-                schemas::mmo::Event::create(
-                    builder,
-                    &schemas::mmo::EventArgs {
-                        data_type: schemas::mmo::EventData::EntityDespawnEvent,
-                        data: Some(event_data.as_union_value()),
-                    },
                 )
+                .as_union_value()
             }
-        }
+        };
+
+        schemas::mmo::Event::create(
+            builder,
+            &schemas::mmo::EventArgs {
+                data_type,
+                data: Some(data),
+            },
+        )
     }
 }
