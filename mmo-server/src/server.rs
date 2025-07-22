@@ -96,13 +96,13 @@ fn process_message(entity: Entity, message: bevy_renet::renet::Bytes, commands: 
                         );
                     }
                     _ => {
-                        bevy::log::warn!("unhandled event data type");
+                        warn!("unhandled event data type");
                     }
                 }
             }
         }
         Err(error) => {
-            bevy::log::error!(?error, "message does not follow event schema");
+            error!(?error, "message does not follow event schema");
         }
     }
 }
