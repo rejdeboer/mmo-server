@@ -90,7 +90,7 @@ impl Hub {
                     // TODO: Send error back to client
                 };
             }
-            HubCommand::Whisper {
+            HubCommand::WhisperById {
                 sender_id,
                 recipient_id,
                 text,
@@ -104,17 +104,28 @@ impl Hub {
                     .get(&recipient_id)
                     .expect("failed to get recipient client");
 
-                let fb_author = builder.create_string(&sender_client.character_name);
+                let fb_sender = builder.create_string(&sender_client.character_name);
+                let fb_recipient = builder.create_string(&recipient_client.character_name);
                 let fb_text = builder.create_string(&text);
-                let fb_msg = schema::ServerChatMessage::create(
+                let fb_msg = schema::ServerWhisper::create(
                     builder,
-                    &schema::ServerChatMessageArgs {
-                        channel: ChannelType::Whisper,
-                        sender_name: Some(fb_author),
+                    &schema::ServerWhisperArgs {
+                        sender_id,
+                        sender_name: Some(fb_sender),
+                        recipient_id,
+                        recipient_name: Some(fb_recipient),
                         text: Some(fb_text),
                     },
+                )
+                .as_union_value();
+                let fb_event = schema::Event::create(
+                    builder,
+                    &schema::EventArgs {
+                        data_type: schema::EventData::ServerWhisper,
+                        data: Some(fb_msg),
+                    },
                 );
-                builder.finish_minimal(fb_msg);
+                builder.finish_minimal(fb_event);
                 let bytes = builder.finished_data().to_vec();
 
                 sender_client
