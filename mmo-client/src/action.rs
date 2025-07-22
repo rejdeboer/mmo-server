@@ -37,6 +37,7 @@ impl MoveAction {
 #[derive(Debug)]
 pub enum PlayerAction {
     Chat(ChannelType, String),
+    Jump,
 }
 
 impl PlayerAction {
@@ -51,7 +52,7 @@ impl PlayerAction {
                     builder,
                     &schemas::mmo::ClientChatMessageArgs {
                         channel: *channel,
-                        target_user: None,
+                        recipient_id: 0,
                         text: Some(fb_msg),
                     },
                 );
@@ -59,6 +60,19 @@ impl PlayerAction {
                     builder,
                     &schemas::mmo::ActionArgs {
                         data_type: schemas::mmo::ActionData::mmo_ClientChatMessage,
+                        data: Some(action_data.as_union_value()),
+                    },
+                )
+            }
+            Self::Jump => {
+                let action_data = schemas::mmo::PlayerJumpAction::create(
+                    builder,
+                    &schemas::mmo::PlayerJumpActionArgs {},
+                );
+                schemas::mmo::Action::create(
+                    builder,
+                    &schemas::mmo::ActionArgs {
+                        data_type: schemas::mmo::ActionData::PlayerJumpAction,
                         data: Some(action_data.as_union_value()),
                     },
                 )
