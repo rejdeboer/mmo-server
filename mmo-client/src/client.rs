@@ -4,7 +4,8 @@ use std::time::{Duration, SystemTime};
 use flatbuffers::{FlatBufferBuilder, InvalidFlatbuffer, WIPOffset, root};
 use renet::{Bytes, ConnectionConfig, DefaultChannel, RenetClient};
 use renet_netcode::{ClientAuthentication, ConnectToken, NetcodeClientTransport};
-use schemas::mmo::ChannelType;
+use schemas::game as schema;
+use schemas::game::ChannelType;
 
 use crate::action::MoveAction;
 use crate::types::Character;
@@ -29,7 +30,7 @@ pub enum ConnectionEvent {
 pub enum GameEvent {
     Chat {
         channel: ChannelType,
-        author_name: String,
+        sender_name: String,
         text: String,
     },
     MoveEntity {
@@ -99,7 +100,7 @@ impl GameClient {
             ClientState::Connected => {
                 if let Some(message) = self.client.receive_message(DefaultChannel::ReliableOrdered)
                 {
-                    match root::<schemas::mmo::EnterGameResponse>(&message) {
+                    match root::<schema::EnterGameResponse>(&message) {
                         Ok(response) => {
                             self.state = ClientState::InGame;
                             return Some(ConnectionEvent::EnterGameSuccess {
@@ -154,7 +155,7 @@ impl GameClient {
         let can_be_unreliable = actions.is_empty();
 
         let mut builder = FlatBufferBuilder::new();
-        let mut fb_actions = Vec::<WIPOffset<schemas::mmo::Action>>::with_capacity(actions.len());
+        let mut fb_actions = Vec::<WIPOffset<schema::Action>>::with_capacity(actions.len());
 
         if let Some(movement) = movement {
             fb_actions.push(movement.encode(&mut builder));
@@ -165,9 +166,9 @@ impl GameClient {
         }
 
         let actions_vec = builder.create_vector(fb_actions.as_slice());
-        let fb_batch = schemas::mmo::BatchedActions::create(
+        let fb_batch = schema::BatchedActions::create(
             &mut builder,
-            &schemas::mmo::BatchedActionsArgs {
+            &schema::BatchedActionsArgs {
                 actions: Some(actions_vec),
             },
         );
@@ -207,9 +208,9 @@ impl GameClient {
         let server_addr: SocketAddr = SocketAddr::new(ip_addr, port);
 
         let mut builder = FlatBufferBuilder::new();
-        let response_offset = schemas::mmo::NetcodeTokenUserData::create(
+        let response_offset = schema::NetcodeTokenUserData::create(
             &mut builder,
-            &schemas::mmo::NetcodeTokenUserDataArgs { character_id },
+            &schema::NetcodeTokenUserDataArgs { character_id },
         );
         builder.finish_minimal(response_offset);
 
@@ -229,27 +230,24 @@ impl GameClient {
 }
 
 fn read_event_batch(events: &mut Vec<GameEvent>, bytes: Bytes) -> Result<(), InvalidFlatbuffer> {
-    let batch = root::<schemas::mmo::BatchedEvents>(&bytes)?;
+    let batch = root::<schema::BatchedEvents>(&bytes)?;
     let Some(fb_events) = batch.events() else {
         return Ok(());
     };
 
     for event in fb_events {
         match event.data_type() {
-            schemas::mmo::EventData::mmo_ServerChatMessage => {
+            schema::EventData::game_ServerChatMessage => {
                 let fb_event = event
-                    .data_as_mmo_server_chat_message()
+                    .data_as_game_server_chat_message()
                     .expect("event should be some");
                 events.push(GameEvent::Chat {
                     channel: fb_event.channel(),
-                    author_name: fb_event
-                        .author_name()
-                        .expect("author should exist")
-                        .to_string(),
+                    sender_name: fb_event.sender_name().to_string(),
                     text: fb_event.text().to_string(),
                 })
             }
-            schemas::mmo::EventData::EntityMoveEvent => {
+            schema::EventData::EntityMoveEvent => {
                 let fb_event = event
                     .data_as_entity_move_event()
                     .expect("event should be some");
@@ -263,7 +261,7 @@ fn read_event_batch(events: &mut Vec<GameEvent>, bytes: Bytes) -> Result<(), Inv
                     },
                 })
             }
-            schemas::mmo::EventData::EntitySpawnEvent => {
+            schema::EventData::EntitySpawnEvent => {
                 let fb_event = event
                     .data_as_entity_spawn_event()
                     .expect("event should be entity spawn event");
@@ -277,7 +275,7 @@ fn read_event_batch(events: &mut Vec<GameEvent>, bytes: Bytes) -> Result<(), Inv
                     },
                 })
             }
-            schemas::mmo::EventData::EntityDespawnEvent => events.push(GameEvent::DespawnEntity {
+            schema::EventData::EntityDespawnEvent => events.push(GameEvent::DespawnEntity {
                 entity_id: event.data_as_entity_despawn_event().unwrap().entity_id(),
             }),
             event_type => {

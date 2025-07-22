@@ -1,5 +1,6 @@
 use flatbuffers::{FlatBufferBuilder, WIPOffset};
-use schemas::mmo::ChannelType;
+use schema::ChannelType;
+use schemas::game as schema;
 
 use crate::Vec3;
 
@@ -10,24 +11,21 @@ pub struct MoveAction {
 }
 
 impl MoveAction {
-    pub fn encode<'a>(
-        &self,
-        builder: &mut FlatBufferBuilder<'a>,
-    ) -> WIPOffset<schemas::mmo::Action<'a>> {
-        let transform = schemas::mmo::Transform::new(
-            &schemas::mmo::Vec3::new(self.pos.x, self.pos.y, self.pos.z),
+    pub fn encode<'a>(&self, builder: &mut FlatBufferBuilder<'a>) -> WIPOffset<schema::Action<'a>> {
+        let transform = schema::Transform::new(
+            &schema::Vec3::new(self.pos.x, self.pos.y, self.pos.z),
             self.yaw,
         );
-        let action_data = schemas::mmo::PlayerMoveAction::create(
+        let action_data = schema::PlayerMoveAction::create(
             builder,
-            &schemas::mmo::PlayerMoveActionArgs {
+            &schema::PlayerMoveActionArgs {
                 transform: Some(&transform),
             },
         );
-        schemas::mmo::Action::create(
+        schema::Action::create(
             builder,
-            &schemas::mmo::ActionArgs {
-                data_type: schemas::mmo::ActionData::PlayerMoveAction,
+            &schema::ActionArgs {
+                data_type: schema::ActionData::PlayerMoveAction,
                 data: Some(action_data.as_union_value()),
             },
         )
@@ -41,38 +39,31 @@ pub enum PlayerAction {
 }
 
 impl PlayerAction {
-    pub fn encode<'a>(
-        &self,
-        builder: &mut FlatBufferBuilder<'a>,
-    ) -> WIPOffset<schemas::mmo::Action<'a>> {
+    pub fn encode<'a>(&self, builder: &mut FlatBufferBuilder<'a>) -> WIPOffset<schema::Action<'a>> {
         let data_type;
         let data = match self {
             Self::Chat(channel, msg) => {
-                data_type = schemas::mmo::ActionData::mmo_ClientChatMessage;
+                data_type = schema::ActionData::game_ClientChatMessage;
                 let fb_msg = builder.create_string(msg);
-                schemas::mmo::ClientChatMessage::create(
+                schema::ClientChatMessage::create(
                     builder,
-                    &schemas::mmo::ClientChatMessageArgs {
+                    &schema::ClientChatMessageArgs {
                         channel: *channel,
-                        recipient_id: 0,
                         text: Some(fb_msg),
                     },
                 )
                 .as_union_value()
             }
             Self::Jump => {
-                data_type = schemas::mmo::ActionData::PlayerJumpAction;
-                schemas::mmo::PlayerJumpAction::create(
-                    builder,
-                    &schemas::mmo::PlayerJumpActionArgs {},
-                )
-                .as_union_value()
+                data_type = schema::ActionData::PlayerJumpAction;
+                schema::PlayerJumpAction::create(builder, &schema::PlayerJumpActionArgs {})
+                    .as_union_value()
             }
         };
 
-        schemas::mmo::Action::create(
+        schema::Action::create(
             builder,
-            &schemas::mmo::ActionArgs {
+            &schema::ActionArgs {
                 data_type,
                 data: Some(data),
             },

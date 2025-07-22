@@ -1,7 +1,8 @@
 use bevy::prelude::*;
 use bevy_renet::renet::ClientId;
 use flatbuffers::{FlatBufferBuilder, WIPOffset};
-use schemas::mmo::ChannelType;
+use schema::ChannelType;
+use schemas::game as schema;
 
 use crate::components::NameComponent;
 
@@ -33,37 +34,32 @@ pub enum OutgoingMessageData {
 }
 
 impl OutgoingMessageData {
-    pub fn encode<'a>(
-        &self,
-        builder: &mut FlatBufferBuilder<'a>,
-    ) -> WIPOffset<schemas::mmo::Event<'a>> {
+    pub fn encode<'a>(&self, builder: &mut FlatBufferBuilder<'a>) -> WIPOffset<schema::Event<'a>> {
         let data_type;
         let data = match self {
             Self::ChatMessage(channel, author, msg) => {
-                data_type = schemas::mmo::EventData::mmo_ServerChatMessage;
+                data_type = schema::EventData::game_ServerChatMessage;
                 let fb_author = builder.create_string(&author.0);
                 let fb_msg = builder.create_string(msg);
-                schemas::mmo::ServerChatMessage::create(
+                schema::ServerChatMessage::create(
                     builder,
-                    &schemas::mmo::ServerChatMessageArgs {
+                    &schema::ServerChatMessageArgs {
                         channel: *channel,
-                        author_name: Some(fb_author),
+                        sender_name: Some(fb_author),
                         text: Some(fb_msg),
                     },
                 )
                 .as_union_value()
             }
             Self::Movement(id, transform) => {
-                data_type = schemas::mmo::EventData::EntityMoveEvent;
+                data_type = schema::EventData::EntityMoveEvent;
                 let pos = transform.translation;
                 let (yaw, _, _) = transform.rotation.to_euler(EulerRot::YXZ);
-                let fb_transform = schemas::mmo::Transform::new(
-                    &schemas::mmo::Vec3::new(pos.x, pos.y, pos.z),
-                    yaw,
-                );
-                schemas::mmo::EntityMoveEvent::create(
+                let fb_transform =
+                    schema::Transform::new(&schema::Vec3::new(pos.x, pos.y, pos.z), yaw);
+                schema::EntityMoveEvent::create(
                     builder,
-                    &schemas::mmo::EntityMoveEventArgs {
+                    &schema::EntityMoveEventArgs {
                         entity_id: id.to_bits(),
                         transform: Some(&fb_transform),
                     },
@@ -71,15 +67,15 @@ impl OutgoingMessageData {
                 .as_union_value()
             }
             Self::Spawn(id, transform) => {
-                data_type = schemas::mmo::EventData::EntitySpawnEvent;
+                data_type = schema::EventData::EntitySpawnEvent;
                 let pos = transform.translation;
-                let fb_transform = schemas::mmo::Transform::new(
-                    &schemas::mmo::Vec3::new(pos.x, pos.y, pos.z),
+                let fb_transform = schema::Transform::new(
+                    &schema::Vec3::new(pos.x, pos.y, pos.z),
                     transform.rotation.y,
                 );
-                schemas::mmo::EntitySpawnEvent::create(
+                schema::EntitySpawnEvent::create(
                     builder,
-                    &schemas::mmo::EntitySpawnEventArgs {
+                    &schema::EntitySpawnEventArgs {
                         entity_id: id.to_bits(),
                         transform: Some(&fb_transform),
                     },
@@ -87,10 +83,10 @@ impl OutgoingMessageData {
                 .as_union_value()
             }
             Self::Despawn(id) => {
-                data_type = schemas::mmo::EventData::EntityDespawnEvent;
-                schemas::mmo::EntityDespawnEvent::create(
+                data_type = schema::EventData::EntityDespawnEvent;
+                schema::EntityDespawnEvent::create(
                     builder,
-                    &schemas::mmo::EntityDespawnEventArgs {
+                    &schema::EntityDespawnEventArgs {
                         entity_id: id.to_bits(),
                     },
                 )
@@ -98,9 +94,9 @@ impl OutgoingMessageData {
             }
         };
 
-        schemas::mmo::Event::create(
+        schema::Event::create(
             builder,
-            &schemas::mmo::EventArgs {
+            &schema::EventArgs {
                 data_type,
                 data: Some(data),
             },

@@ -10,48 +10,44 @@ use core::cmp::Ordering;
 use self::flatbuffers::{EndianScalar, Follow};
 use super::*;
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
-pub const ENUM_MIN_ACTION_DATA: u8 = 0;
+pub const ENUM_MIN_EVENT_DATA: u8 = 0;
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
-pub const ENUM_MAX_ACTION_DATA: u8 = 3;
+pub const ENUM_MAX_EVENT_DATA: u8 = 2;
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
 #[allow(non_camel_case_types)]
-pub const ENUM_VALUES_ACTION_DATA: [ActionData; 4] = [
-  ActionData::NONE,
-  ActionData::mmo_ClientChatMessage,
-  ActionData::PlayerMoveAction,
-  ActionData::PlayerJumpAction,
+pub const ENUM_VALUES_EVENT_DATA: [EventData; 3] = [
+  EventData::NONE,
+  EventData::ServerChatMessage,
+  EventData::ServerWhisper,
 ];
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[repr(transparent)]
-pub struct ActionData(pub u8);
+pub struct EventData(pub u8);
 #[allow(non_upper_case_globals)]
-impl ActionData {
+impl EventData {
   pub const NONE: Self = Self(0);
-  pub const mmo_ClientChatMessage: Self = Self(1);
-  pub const PlayerMoveAction: Self = Self(2);
-  pub const PlayerJumpAction: Self = Self(3);
+  pub const ServerChatMessage: Self = Self(1);
+  pub const ServerWhisper: Self = Self(2);
 
   pub const ENUM_MIN: u8 = 0;
-  pub const ENUM_MAX: u8 = 3;
+  pub const ENUM_MAX: u8 = 2;
   pub const ENUM_VALUES: &'static [Self] = &[
     Self::NONE,
-    Self::mmo_ClientChatMessage,
-    Self::PlayerMoveAction,
-    Self::PlayerJumpAction,
+    Self::ServerChatMessage,
+    Self::ServerWhisper,
   ];
   /// Returns the variant's name or "" if unknown.
   pub fn variant_name(self) -> Option<&'static str> {
     match self {
       Self::NONE => Some("NONE"),
-      Self::mmo_ClientChatMessage => Some("mmo_ClientChatMessage"),
-      Self::PlayerMoveAction => Some("PlayerMoveAction"),
-      Self::PlayerJumpAction => Some("PlayerJumpAction"),
+      Self::ServerChatMessage => Some("ServerChatMessage"),
+      Self::ServerWhisper => Some("ServerWhisper"),
       _ => None,
     }
   }
 }
-impl core::fmt::Debug for ActionData {
+impl core::fmt::Debug for EventData {
   fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
     if let Some(name) = self.variant_name() {
       f.write_str(name)
@@ -60,7 +56,7 @@ impl core::fmt::Debug for ActionData {
     }
   }
 }
-impl<'a> flatbuffers::Follow<'a> for ActionData {
+impl<'a> flatbuffers::Follow<'a> for EventData {
   type Inner = Self;
   #[inline]
   unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
@@ -69,15 +65,15 @@ impl<'a> flatbuffers::Follow<'a> for ActionData {
   }
 }
 
-impl flatbuffers::Push for ActionData {
-    type Output = ActionData;
+impl flatbuffers::Push for EventData {
+    type Output = EventData;
     #[inline]
     unsafe fn push(&self, dst: &mut [u8], _written_len: usize) {
         flatbuffers::emplace_scalar::<u8>(dst, self.0);
     }
 }
 
-impl flatbuffers::EndianScalar for ActionData {
+impl flatbuffers::EndianScalar for EventData {
   type Scalar = u8;
   #[inline]
   fn to_little_endian(self) -> u8 {
@@ -91,7 +87,7 @@ impl flatbuffers::EndianScalar for ActionData {
   }
 }
 
-impl<'a> flatbuffers::Verifiable for ActionData {
+impl<'a> flatbuffers::Verifiable for EventData {
   #[inline]
   fn run_verifier(
     v: &mut flatbuffers::Verifier, pos: usize
@@ -101,6 +97,6 @@ impl<'a> flatbuffers::Verifiable for ActionData {
   }
 }
 
-impl flatbuffers::SimpleToVerifyInSlice for ActionData {}
-pub struct ActionDataUnionTableOffset {}
+impl flatbuffers::SimpleToVerifyInSlice for EventData {}
+pub struct EventDataUnionTableOffset {}
 

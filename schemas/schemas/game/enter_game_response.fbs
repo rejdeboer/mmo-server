@@ -1,10 +1,10 @@
 include "character.fbs";
 
-namespace mmo;
+namespace game;
 
 table EnterGameResponse {
 	player_entity_id: uint64;
-	character: mmo.Character;
+	character: game.Character;
 }
 
 root_type EnterGameResponse;

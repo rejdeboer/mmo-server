@@ -1,5 +1,6 @@
 use flatbuffers::FlatBufferBuilder;
-use schemas::mmo::ChannelType;
+use schema::ChannelType;
+use schemas::social as schema;
 use std::collections::HashMap;
 use tokio::sync::mpsc::{Receiver, Sender, channel};
 use tracing::{Instrument, instrument};
@@ -105,11 +106,11 @@ impl Hub {
 
                 let fb_author = builder.create_string(&sender_client.character_name);
                 let fb_text = builder.create_string(&text);
-                let fb_msg = schemas::mmo::ServerChatMessage::create(
+                let fb_msg = schema::ServerChatMessage::create(
                     builder,
-                    &schemas::mmo::ServerChatMessageArgs {
+                    &schema::ServerChatMessageArgs {
                         channel: ChannelType::Whisper,
-                        author_name: Some(fb_author),
+                        sender_name: Some(fb_author),
                         text: Some(fb_text),
                     },
                 );

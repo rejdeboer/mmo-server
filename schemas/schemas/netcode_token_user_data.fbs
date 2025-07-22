@@ -1,7 +1,0 @@
-namespace mmo;
-
-table NetcodeTokenUserData {
-	character_id: int32;
-}
-
-root_type NetcodeTokenUserData;

@@ -9,38 +9,38 @@ use core::mem;
 use core::cmp::Ordering;
 use self::flatbuffers::{EndianScalar, Follow};
 use super::*;
-pub enum ClientChatMessageOffset {}
+pub enum ServerChatMessageOffset {}
 #[derive(Copy, Clone, PartialEq)]
 
-pub struct ClientChatMessage<'a> {
+pub struct ServerChatMessage<'a> {
   pub _tab: flatbuffers::Table<'a>,
 }
 
-impl<'a> flatbuffers::Follow<'a> for ClientChatMessage<'a> {
-  type Inner = ClientChatMessage<'a>;
+impl<'a> flatbuffers::Follow<'a> for ServerChatMessage<'a> {
+  type Inner = ServerChatMessage<'a>;
   #[inline]
   unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
     Self { _tab: flatbuffers::Table::new(buf, loc) }
   }
 }
 
-impl<'a> ClientChatMessage<'a> {
+impl<'a> ServerChatMessage<'a> {
   pub const VT_CHANNEL: flatbuffers::VOffsetT = 4;
-  pub const VT_RECIPIENT_ID: flatbuffers::VOffsetT = 6;
+  pub const VT_SENDER_NAME: flatbuffers::VOffsetT = 6;
   pub const VT_TEXT: flatbuffers::VOffsetT = 8;
 
   #[inline]
   pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
-    ClientChatMessage { _tab: table }
+    ServerChatMessage { _tab: table }
   }
   #[allow(unused_mut)]
   pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
     _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
-    args: &'args ClientChatMessageArgs<'args>
-  ) -> flatbuffers::WIPOffset<ClientChatMessage<'bldr>> {
-    let mut builder = ClientChatMessageBuilder::new(_fbb);
+    args: &'args ServerChatMessageArgs<'args>
+  ) -> flatbuffers::WIPOffset<ServerChatMessage<'bldr>> {
+    let mut builder = ServerChatMessageBuilder::new(_fbb);
     if let Some(x) = args.text { builder.add_text(x); }
-    builder.add_recipient_id(args.recipient_id);
+    if let Some(x) = args.sender_name { builder.add_sender_name(x); }
     builder.add_channel(args.channel);
     builder.finish()
   }
@@ -51,25 +51,25 @@ impl<'a> ClientChatMessage<'a> {
     // Safety:
     // Created from valid Table for this object
     // which contains a valid value in this slot
-    unsafe { self._tab.get::<ChannelType>(ClientChatMessage::VT_CHANNEL, Some(ChannelType::Say)).unwrap()}
+    unsafe { self._tab.get::<ChannelType>(ServerChatMessage::VT_CHANNEL, Some(ChannelType::Guild)).unwrap()}
   }
   #[inline]
-  pub fn recipient_id(&self) -> i32 {
+  pub fn sender_name(&self) -> &'a str {
     // Safety:
     // Created from valid Table for this object
     // which contains a valid value in this slot
-    unsafe { self._tab.get::<i32>(ClientChatMessage::VT_RECIPIENT_ID, Some(0)).unwrap()}
+    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<&str>>(ServerChatMessage::VT_SENDER_NAME, None).unwrap()}
   }
   #[inline]
   pub fn text(&self) -> &'a str {
     // Safety:
     // Created from valid Table for this object
     // which contains a valid value in this slot
-    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<&str>>(ClientChatMessage::VT_TEXT, None).unwrap()}
+    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<&str>>(ServerChatMessage::VT_TEXT, None).unwrap()}
   }
 }
 
-impl flatbuffers::Verifiable for ClientChatMessage<'_> {
+impl flatbuffers::Verifiable for ServerChatMessage<'_> {
   #[inline]
   fn run_verifier(
     v: &mut flatbuffers::Verifier, pos: usize
@@ -77,66 +77,67 @@ impl flatbuffers::Verifiable for ClientChatMessage<'_> {
     use self::flatbuffers::Verifiable;
     v.visit_table(pos)?
      .visit_field::<ChannelType>("channel", Self::VT_CHANNEL, false)?
-     .visit_field::<i32>("recipient_id", Self::VT_RECIPIENT_ID, false)?
+     .visit_field::<flatbuffers::ForwardsUOffset<&str>>("sender_name", Self::VT_SENDER_NAME, true)?
      .visit_field::<flatbuffers::ForwardsUOffset<&str>>("text", Self::VT_TEXT, true)?
      .finish();
     Ok(())
   }
 }
-pub struct ClientChatMessageArgs<'a> {
+pub struct ServerChatMessageArgs<'a> {
     pub channel: ChannelType,
-    pub recipient_id: i32,
+    pub sender_name: Option<flatbuffers::WIPOffset<&'a str>>,
     pub text: Option<flatbuffers::WIPOffset<&'a str>>,
 }
-impl<'a> Default for ClientChatMessageArgs<'a> {
+impl<'a> Default for ServerChatMessageArgs<'a> {
   #[inline]
   fn default() -> Self {
-    ClientChatMessageArgs {
-      channel: ChannelType::Say,
-      recipient_id: 0,
+    ServerChatMessageArgs {
+      channel: ChannelType::Guild,
+      sender_name: None, // required field
       text: None, // required field
     }
   }
 }
 
-pub struct ClientChatMessageBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> {
+pub struct ServerChatMessageBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> {
   fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
   start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
 }
-impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> ClientChatMessageBuilder<'a, 'b, A> {
+impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> ServerChatMessageBuilder<'a, 'b, A> {
   #[inline]
   pub fn add_channel(&mut self, channel: ChannelType) {
-    self.fbb_.push_slot::<ChannelType>(ClientChatMessage::VT_CHANNEL, channel, ChannelType::Say);
+    self.fbb_.push_slot::<ChannelType>(ServerChatMessage::VT_CHANNEL, channel, ChannelType::Guild);
   }
   #[inline]
-  pub fn add_recipient_id(&mut self, recipient_id: i32) {
-    self.fbb_.push_slot::<i32>(ClientChatMessage::VT_RECIPIENT_ID, recipient_id, 0);
+  pub fn add_sender_name(&mut self, sender_name: flatbuffers::WIPOffset<&'b  str>) {
+    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(ServerChatMessage::VT_SENDER_NAME, sender_name);
   }
   #[inline]
   pub fn add_text(&mut self, text: flatbuffers::WIPOffset<&'b  str>) {
-    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(ClientChatMessage::VT_TEXT, text);
+    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(ServerChatMessage::VT_TEXT, text);
   }
   #[inline]
-  pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> ClientChatMessageBuilder<'a, 'b, A> {
+  pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> ServerChatMessageBuilder<'a, 'b, A> {
     let start = _fbb.start_table();
-    ClientChatMessageBuilder {
+    ServerChatMessageBuilder {
       fbb_: _fbb,
       start_: start,
     }
   }
   #[inline]
-  pub fn finish(self) -> flatbuffers::WIPOffset<ClientChatMessage<'a>> {
+  pub fn finish(self) -> flatbuffers::WIPOffset<ServerChatMessage<'a>> {
     let o = self.fbb_.end_table(self.start_);
-    self.fbb_.required(o, ClientChatMessage::VT_TEXT,"text");
+    self.fbb_.required(o, ServerChatMessage::VT_SENDER_NAME,"sender_name");
+    self.fbb_.required(o, ServerChatMessage::VT_TEXT,"text");
     flatbuffers::WIPOffset::new(o.value())
   }
 }
 
-impl core::fmt::Debug for ClientChatMessage<'_> {
+impl core::fmt::Debug for ServerChatMessage<'_> {
   fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-    let mut ds = f.debug_struct("ClientChatMessage");
+    let mut ds = f.debug_struct("ServerChatMessage");
       ds.field("channel", &self.channel());
-      ds.field("recipient_id", &self.recipient_id());
+      ds.field("sender_name", &self.sender_name());
       ds.field("text", &self.text());
       ds.finish()
   }

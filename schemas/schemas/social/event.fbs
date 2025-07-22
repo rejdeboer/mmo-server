@@ -1,0 +1,28 @@
+include "common.fbs";
+
+namespace social;
+
+table ServerChatMessage {
+  channel: ChannelType;
+  sender_name: string (required);
+  text: string (required);
+}
+
+table ServerWhisper {
+  sender_name: string (required);
+  sender_id: int32;
+  recipient_name: string (required);
+  recipient_id: int32;
+  text: string (required);
+}
+
+union EventData {
+	ServerChatMessage,
+	ServerWhisper,
+}
+
+table Event {
+	data: EventData (required);
+}
+
+root_type Event;

@@ -26,7 +26,7 @@ impl<'a> flatbuffers::Follow<'a> for ServerChatMessage<'a> {
 
 impl<'a> ServerChatMessage<'a> {
   pub const VT_CHANNEL: flatbuffers::VOffsetT = 4;
-  pub const VT_AUTHOR_NAME: flatbuffers::VOffsetT = 6;
+  pub const VT_SENDER_NAME: flatbuffers::VOffsetT = 6;
   pub const VT_TEXT: flatbuffers::VOffsetT = 8;
 
   #[inline]
@@ -40,7 +40,7 @@ impl<'a> ServerChatMessage<'a> {
   ) -> flatbuffers::WIPOffset<ServerChatMessage<'bldr>> {
     let mut builder = ServerChatMessageBuilder::new(_fbb);
     if let Some(x) = args.text { builder.add_text(x); }
-    if let Some(x) = args.author_name { builder.add_author_name(x); }
+    if let Some(x) = args.sender_name { builder.add_sender_name(x); }
     builder.add_channel(args.channel);
     builder.finish()
   }
@@ -54,11 +54,11 @@ impl<'a> ServerChatMessage<'a> {
     unsafe { self._tab.get::<ChannelType>(ServerChatMessage::VT_CHANNEL, Some(ChannelType::Say)).unwrap()}
   }
   #[inline]
-  pub fn author_name(&self) -> Option<&'a str> {
+  pub fn sender_name(&self) -> &'a str {
     // Safety:
     // Created from valid Table for this object
     // which contains a valid value in this slot
-    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<&str>>(ServerChatMessage::VT_AUTHOR_NAME, None)}
+    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<&str>>(ServerChatMessage::VT_SENDER_NAME, None).unwrap()}
   }
   #[inline]
   pub fn text(&self) -> &'a str {
@@ -77,7 +77,7 @@ impl flatbuffers::Verifiable for ServerChatMessage<'_> {
     use self::flatbuffers::Verifiable;
     v.visit_table(pos)?
      .visit_field::<ChannelType>("channel", Self::VT_CHANNEL, false)?
-     .visit_field::<flatbuffers::ForwardsUOffset<&str>>("author_name", Self::VT_AUTHOR_NAME, false)?
+     .visit_field::<flatbuffers::ForwardsUOffset<&str>>("sender_name", Self::VT_SENDER_NAME, true)?
      .visit_field::<flatbuffers::ForwardsUOffset<&str>>("text", Self::VT_TEXT, true)?
      .finish();
     Ok(())
@@ -85,7 +85,7 @@ impl flatbuffers::Verifiable for ServerChatMessage<'_> {
 }
 pub struct ServerChatMessageArgs<'a> {
     pub channel: ChannelType,
-    pub author_name: Option<flatbuffers::WIPOffset<&'a str>>,
+    pub sender_name: Option<flatbuffers::WIPOffset<&'a str>>,
     pub text: Option<flatbuffers::WIPOffset<&'a str>>,
 }
 impl<'a> Default for ServerChatMessageArgs<'a> {
@@ -93,7 +93,7 @@ impl<'a> Default for ServerChatMessageArgs<'a> {
   fn default() -> Self {
     ServerChatMessageArgs {
       channel: ChannelType::Say,
-      author_name: None,
+      sender_name: None, // required field
       text: None, // required field
     }
   }
@@ -109,8 +109,8 @@ impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> ServerChatMessageBuilder<'a, 'b
     self.fbb_.push_slot::<ChannelType>(ServerChatMessage::VT_CHANNEL, channel, ChannelType::Say);
   }
   #[inline]
-  pub fn add_author_name(&mut self, author_name: flatbuffers::WIPOffset<&'b  str>) {
-    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(ServerChatMessage::VT_AUTHOR_NAME, author_name);
+  pub fn add_sender_name(&mut self, sender_name: flatbuffers::WIPOffset<&'b  str>) {
+    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(ServerChatMessage::VT_SENDER_NAME, sender_name);
   }
   #[inline]
   pub fn add_text(&mut self, text: flatbuffers::WIPOffset<&'b  str>) {
@@ -127,6 +127,7 @@ impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> ServerChatMessageBuilder<'a, 'b
   #[inline]
   pub fn finish(self) -> flatbuffers::WIPOffset<ServerChatMessage<'a>> {
     let o = self.fbb_.end_table(self.start_);
+    self.fbb_.required(o, ServerChatMessage::VT_SENDER_NAME,"sender_name");
     self.fbb_.required(o, ServerChatMessage::VT_TEXT,"text");
     flatbuffers::WIPOffset::new(o.value())
   }
@@ -136,7 +137,7 @@ impl core::fmt::Debug for ServerChatMessage<'_> {
   fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
     let mut ds = f.debug_struct("ServerChatMessage");
       ds.field("channel", &self.channel());
-      ds.field("author_name", &self.author_name());
+      ds.field("sender_name", &self.sender_name());
       ds.field("text", &self.text());
       ds.finish()
   }

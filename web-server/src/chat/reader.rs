@@ -5,7 +5,8 @@ use crate::chat::{command::HubCommand, error::ChatReceiveError};
 use axum::extract::ws::{Message, WebSocket};
 use flatbuffers::root;
 use futures::{StreamExt, stream::SplitStream};
-use schemas::mmo::ChannelType;
+use schema::ChannelType;
+use schemas::social as schema;
 use tokio::sync::mpsc::Sender;
 
 pub struct SocketReader {
@@ -60,8 +61,8 @@ impl SocketReader {
     }
 
     async fn read_binary_message(&mut self, bytes: Vec<u8>) -> Result<(), ChatReceiveError> {
-        let fb_msg = root::<schemas::mmo::ClientChatMessage>(&bytes)
-            .map_err(ChatReceiveError::InvalidSchema)?;
+        let fb_msg =
+            root::<schema::ClientChatMessage>(&bytes).map_err(ChatReceiveError::InvalidSchema)?;
 
         let msg = match fb_msg.channel() {
             ChannelType::Whisper => Ok(HubCommand::Whisper {

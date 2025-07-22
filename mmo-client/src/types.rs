@@ -1,3 +1,5 @@
+use schemas::game as schema;
+
 // TODO: Do we need these intermediate structs?
 #[derive(Debug, Clone)]
 pub struct Character {
@@ -27,7 +29,7 @@ pub struct Transform {
     pub yaw: f32,
 }
 
-impl Into<Character> for schemas::mmo::EnterGameResponse<'_> {
+impl Into<Character> for schema::EnterGameResponse<'_> {
     fn into(self) -> Character {
         let entity = self.character().unwrap().entity().unwrap();
         Character {
@@ -40,7 +42,7 @@ impl Into<Character> for schemas::mmo::EnterGameResponse<'_> {
     }
 }
 
-impl Into<Transform> for &schemas::mmo::Transform {
+impl Into<Transform> for &schema::Transform {
     fn into(self) -> Transform {
         Transform {
             position: self.position().into(),
@@ -49,7 +51,7 @@ impl Into<Transform> for &schemas::mmo::Transform {
     }
 }
 
-impl Into<Vec3> for &schemas::mmo::Vec3 {
+impl Into<Vec3> for &schema::Vec3 {
     fn into(self) -> Vec3 {
         Vec3 {
             x: self.x(),

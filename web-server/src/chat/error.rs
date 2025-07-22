@@ -1,5 +1,5 @@
 use flatbuffers::InvalidFlatbuffer;
-use schemas::mmo::ChannelType;
+use schemas::social::ChannelType;
 use tokio::sync::mpsc::error::SendError;
 
 use crate::chat::HubCommand;

@@ -1,16 +1,16 @@
 include "chat.fbs";
 include "common.fbs";
 
-namespace mmo;
+namespace game;
 
 table EntityMoveEvent {
 	entity_id: uint64;
-	transform: mmo.Transform;
+	transform: game.Transform;
 }
 
 table EntitySpawnEvent {
 	entity_id: uint64;
-	transform: mmo.Transform;
+	transform: game.Transform;
 }
 
 table EntityDespawnEvent {
@@ -21,7 +21,7 @@ union EventData {
 	EntityMoveEvent,
 	EntitySpawnEvent,
 	EntityDespawnEvent,
-	mmo.ServerChatMessage,
+	game.ServerChatMessage,
 }
 
 table Event {

@@ -1,10 +1,10 @@
 include "common.fbs";
 
-namespace mmo;
+namespace game;
 
 table Entity {
 	name: string (required);
-	transform: mmo.Transform (required);
+	transform: game.Transform (required);
 	hp: int32;
 	level: int32;
 }

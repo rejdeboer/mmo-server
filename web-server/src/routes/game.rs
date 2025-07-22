@@ -6,6 +6,7 @@ use std::{
 use axum::{Extension, Json, extract::State, response::Result};
 use flatbuffers::FlatBufferBuilder;
 use renetcode::{ConnectToken, NETCODE_USER_DATA_BYTES};
+use schemas::protocol::{TokenUserData, TokenUserDataArgs};
 use secrecy::ExposeSecret;
 use serde::{Deserialize, Serialize};
 use tracing::instrument;
@@ -96,10 +97,7 @@ fn generate_connect_token(
     let public_addresses: Vec<SocketAddr> = vec![server_addr];
 
     let mut builder = FlatBufferBuilder::new();
-    let response_offset = schemas::mmo::NetcodeTokenUserData::create(
-        &mut builder,
-        &schemas::mmo::NetcodeTokenUserDataArgs { character_id },
-    );
+    let response_offset = TokenUserData::create(&mut builder, &TokenUserDataArgs { character_id });
     builder.finish_minimal(response_offset);
 
     let mut user_data: [u8; NETCODE_USER_DATA_BYTES] = [0; NETCODE_USER_DATA_BYTES];

@@ -1,5 +1,5 @@
 #![allow(warnings, unused)]
-pub mod mmo {
+pub mod game {
     use super::*;
     mod vec_2_generated;
     pub use self::vec_2_generated::*;
@@ -13,8 +13,6 @@ pub mod mmo {
     pub use self::character_generated::*;
     mod enter_game_response_generated;
     pub use self::enter_game_response_generated::*;
-    mod netcode_token_user_data_generated;
-    pub use self::netcode_token_user_data_generated::*;
     mod entity_move_event_generated;
     pub use entity_move_event_generated::*;
     mod entity_spawn_event_generated;
@@ -46,3 +44,35 @@ pub mod mmo {
     mod server_chat_message_generated;
     pub use self::server_chat_message_generated::*;
 } // mmo
+
+pub mod social {
+    use super::*;
+    mod channel_type_generated;
+    pub use channel_type_generated::*;
+
+    mod client_chat_message_generated;
+    pub use client_chat_message_generated::*;
+    mod client_whisper_by_id_generated;
+    pub use client_whisper_by_id_generated::*;
+    mod client_whisper_by_name_generated;
+    pub use client_whisper_by_name_generated::*;
+    mod action_data_generated;
+    pub use action_data_generated::*;
+    mod action_generated;
+    pub use action_generated::*;
+
+    mod server_chat_message_generated;
+    pub use server_chat_message_generated::*;
+    mod server_whisper_generated;
+    pub use server_whisper_generated::*;
+    mod event_data_generated;
+    pub use event_data_generated::*;
+    mod event_generated;
+    pub use event_generated::*;
+}
+
+pub mod protocol {
+    use super::*;
+    mod token_user_data_generated;
+    pub use token_user_data_generated::*;
+}

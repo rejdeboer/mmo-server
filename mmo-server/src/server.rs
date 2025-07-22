@@ -1,6 +1,7 @@
 use bevy::{platform::collections::HashMap, prelude::*};
 use bevy_renet::renet::{ClientId, DefaultChannel, RenetServer};
 use flatbuffers::{FlatBufferBuilder, WIPOffset, root};
+use schemas::game as schema;
 
 use crate::{
     components::ClientIdComponent,
@@ -25,7 +26,7 @@ pub fn sync_players(mut server: ResMut<RenetServer>, mut ev_msg: EventReader<Out
 
     // TODO: Parallelism?
     for (client_id, events) in client_events {
-        let mut player_events = Vec::<WIPOffset<schemas::mmo::Event>>::with_capacity(events.len());
+        let mut player_events = Vec::<WIPOffset<schema::Event>>::with_capacity(events.len());
         let mut can_be_unreliable = true;
 
         for event in events {
@@ -40,9 +41,9 @@ pub fn sync_players(mut server: ResMut<RenetServer>, mut ev_msg: EventReader<Out
         }
 
         let fb_events = builder.create_vector(player_events.as_slice());
-        let batch = schemas::mmo::BatchedEvents::create(
+        let batch = schema::BatchedEvents::create(
             &mut builder,
-            &schemas::mmo::BatchedEventsArgs {
+            &schema::BatchedEventsArgs {
                 events: Some(fb_events),
             },
         );
@@ -76,19 +77,19 @@ pub fn handle_server_messages(
 }
 
 fn process_message(entity: Entity, message: bevy_renet::renet::Bytes, commands: &mut Commands) {
-    match root::<schemas::mmo::BatchedActions>(&message) {
+    match root::<schema::BatchedActions>(&message) {
         Ok(batch) => {
             for action in batch.actions().unwrap() {
                 match action.data_type() {
-                    schemas::mmo::ActionData::mmo_ClientChatMessage => {
-                        let chat_message = action.data_as_mmo_client_chat_message().unwrap();
+                    schema::ActionData::game_ClientChatMessage => {
+                        let chat_message = action.data_as_game_client_chat_message().unwrap();
                         commands.send_event(IncomingChatMessage {
                             author: entity,
                             channel: chat_message.channel(),
                             text: chat_message.text().to_string(),
                         });
                     }
-                    schemas::mmo::ActionData::PlayerMoveAction => {
+                    schema::ActionData::PlayerMoveAction => {
                         process_player_move_action(
                             entity,
                             action.data_as_player_move_action().unwrap(),
@@ -109,7 +110,7 @@ fn process_message(entity: Entity, message: bevy_renet::renet::Bytes, commands: 
 
 fn process_player_move_action(
     entity: Entity,
-    action: schemas::mmo::PlayerMoveAction,
+    action: schema::PlayerMoveAction,
     commands: &mut Commands,
 ) {
     let fb_transform = action.transform().unwrap();

@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use schemas::mmo::ChannelType;
+use schemas::game::ChannelType;
 
 use crate::{
     components::{ClientIdComponent, NameComponent, VisibleEntities},

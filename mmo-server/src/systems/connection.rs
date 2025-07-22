@@ -7,6 +7,8 @@ use bevy_renet::{
 };
 use bevy_tokio_tasks::TokioTasksRuntime;
 use flatbuffers::{FlatBufferBuilder, WIPOffset, root};
+use schemas::game as schema;
+use schemas::protocol::TokenUserData;
 use sqlx::{Pool, Postgres};
 
 use crate::{
@@ -31,16 +33,16 @@ impl CharacterRow {
     pub fn encode<'a>(
         &self,
         builder: &mut FlatBufferBuilder<'a>,
-    ) -> WIPOffset<schemas::mmo::Character<'a>> {
-        let transform = schemas::mmo::Transform::new(
-            &schemas::mmo::Vec3::new(self.position_x, self.position_y, self.position_z),
+    ) -> WIPOffset<schema::Character<'a>> {
+        let transform = schema::Transform::new(
+            &schema::Vec3::new(self.position_x, self.position_y, self.position_z),
             self.rotation_yaw,
         );
         let name = builder.create_string(&self.name);
 
-        let entity = schemas::mmo::Entity::create(
+        let entity = schema::Entity::create(
             builder,
-            &schemas::mmo::EntityArgs {
+            &schema::EntityArgs {
                 name: Some(name),
                 // TODO: Fill this in
                 hp: 0,
@@ -49,9 +51,9 @@ impl CharacterRow {
             },
         );
 
-        schemas::mmo::Character::create(
+        schema::Character::create(
             builder,
-            &schemas::mmo::CharacterArgs {
+            &schema::CharacterArgs {
                 entity: Some(entity),
             },
         )
@@ -105,7 +107,7 @@ fn process_client_connected(
     }
     let user_data = user_data_option.unwrap();
 
-    match root::<schemas::mmo::NetcodeTokenUserData>(&user_data) {
+    match root::<TokenUserData>(&user_data) {
         Ok(data) => {
             let character_id = data.character_id();
             let db_pool = pool.0.clone();
@@ -133,9 +135,9 @@ fn process_client_connected(
                         ))
                         .id();
 
-                    let response_offset = schemas::mmo::EnterGameResponse::create(
+                    let response_offset = schema::EnterGameResponse::create(
                         &mut builder,
-                        &schemas::mmo::EnterGameResponseArgs {
+                        &schema::EnterGameResponseArgs {
                             player_entity_id: entity_id.to_bits(),
                             character: Some(character_offset),
                         },

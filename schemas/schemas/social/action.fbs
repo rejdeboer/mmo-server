@@ -1,0 +1,30 @@
+include "common.fbs";
+
+namespace social;
+
+table ClientChatMessage {
+  channel: social.ChannelType;
+  text: string (required);
+}
+
+table ClientWhisperByName {
+  recipient_name: string (required);
+  text: string (required);
+}
+
+table ClientWhisperById {
+  recipient_id: int32;
+  text: string (required);
+}
+
+union ActionData {
+	ClientChatMessage,
+	ClientWhisperByName,
+	ClientWhisperById,
+}
+
+table Action {
+	data: ActionData (required);
+}
+
+root_type Action;

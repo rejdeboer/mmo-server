@@ -1,4 +1,4 @@
-namespace mmo;
+namespace game;
 
 struct Vec2 {
   x: float;

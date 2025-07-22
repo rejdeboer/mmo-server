@@ -10,52 +10,44 @@ use core::cmp::Ordering;
 use self::flatbuffers::{EndianScalar, Follow};
 use super::*;
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
-pub const ENUM_MIN_EVENT_DATA: u8 = 0;
+pub const ENUM_MIN_CHANNEL_TYPE: u8 = 0;
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
-pub const ENUM_MAX_EVENT_DATA: u8 = 4;
+pub const ENUM_MAX_CHANNEL_TYPE: u8 = 2;
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
 #[allow(non_camel_case_types)]
-pub const ENUM_VALUES_EVENT_DATA: [EventData; 5] = [
-  EventData::NONE,
-  EventData::EntityMoveEvent,
-  EventData::EntitySpawnEvent,
-  EventData::EntityDespawnEvent,
-  EventData::mmo_ServerChatMessage,
+pub const ENUM_VALUES_CHANNEL_TYPE: [ChannelType; 3] = [
+  ChannelType::Say,
+  ChannelType::Yell,
+  ChannelType::Zone,
 ];
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[repr(transparent)]
-pub struct EventData(pub u8);
+pub struct ChannelType(pub u8);
 #[allow(non_upper_case_globals)]
-impl EventData {
-  pub const NONE: Self = Self(0);
-  pub const EntityMoveEvent: Self = Self(1);
-  pub const EntitySpawnEvent: Self = Self(2);
-  pub const EntityDespawnEvent: Self = Self(3);
-  pub const mmo_ServerChatMessage: Self = Self(4);
+impl ChannelType {
+  pub const Say: Self = Self(0);
+  pub const Yell: Self = Self(1);
+  pub const Zone: Self = Self(2);
 
   pub const ENUM_MIN: u8 = 0;
-  pub const ENUM_MAX: u8 = 4;
+  pub const ENUM_MAX: u8 = 2;
   pub const ENUM_VALUES: &'static [Self] = &[
-    Self::NONE,
-    Self::EntityMoveEvent,
-    Self::EntitySpawnEvent,
-    Self::EntityDespawnEvent,
-    Self::mmo_ServerChatMessage,
+    Self::Say,
+    Self::Yell,
+    Self::Zone,
   ];
   /// Returns the variant's name or "" if unknown.
   pub fn variant_name(self) -> Option<&'static str> {
     match self {
-      Self::NONE => Some("NONE"),
-      Self::EntityMoveEvent => Some("EntityMoveEvent"),
-      Self::EntitySpawnEvent => Some("EntitySpawnEvent"),
-      Self::EntityDespawnEvent => Some("EntityDespawnEvent"),
-      Self::mmo_ServerChatMessage => Some("mmo_ServerChatMessage"),
+      Self::Say => Some("Say"),
+      Self::Yell => Some("Yell"),
+      Self::Zone => Some("Zone"),
       _ => None,
     }
   }
 }
-impl core::fmt::Debug for EventData {
+impl core::fmt::Debug for ChannelType {
   fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
     if let Some(name) = self.variant_name() {
       f.write_str(name)
@@ -64,7 +56,7 @@ impl core::fmt::Debug for EventData {
     }
   }
 }
-impl<'a> flatbuffers::Follow<'a> for EventData {
+impl<'a> flatbuffers::Follow<'a> for ChannelType {
   type Inner = Self;
   #[inline]
   unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
@@ -73,15 +65,15 @@ impl<'a> flatbuffers::Follow<'a> for EventData {
   }
 }
 
-impl flatbuffers::Push for EventData {
-    type Output = EventData;
+impl flatbuffers::Push for ChannelType {
+    type Output = ChannelType;
     #[inline]
     unsafe fn push(&self, dst: &mut [u8], _written_len: usize) {
         flatbuffers::emplace_scalar::<u8>(dst, self.0);
     }
 }
 
-impl flatbuffers::EndianScalar for EventData {
+impl flatbuffers::EndianScalar for ChannelType {
   type Scalar = u8;
   #[inline]
   fn to_little_endian(self) -> u8 {
@@ -95,7 +87,7 @@ impl flatbuffers::EndianScalar for EventData {
   }
 }
 
-impl<'a> flatbuffers::Verifiable for EventData {
+impl<'a> flatbuffers::Verifiable for ChannelType {
   #[inline]
   fn run_verifier(
     v: &mut flatbuffers::Verifier, pos: usize
@@ -105,6 +97,4 @@ impl<'a> flatbuffers::Verifiable for EventData {
   }
 }
 
-impl flatbuffers::SimpleToVerifyInSlice for EventData {}
-pub struct EventDataUnionTableOffset {}
-
+impl flatbuffers::SimpleToVerifyInSlice for ChannelType {}

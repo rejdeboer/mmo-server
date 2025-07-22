@@ -1,16 +1,16 @@
 include "chat.fbs";
 include "common.fbs";
 
-namespace mmo;
+namespace game;
 
 table PlayerMoveAction {
-	transform: mmo.Transform;
+	transform: game.Transform;
 }
 
 table PlayerJumpAction {}
 
 union ActionData {
-	mmo.ClientChatMessage,
+	game.ClientChatMessage,
 	PlayerMoveAction,
 	PlayerJumpAction,
 }

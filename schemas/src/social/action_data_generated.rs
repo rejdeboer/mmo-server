@@ -10,56 +10,48 @@ use core::cmp::Ordering;
 use self::flatbuffers::{EndianScalar, Follow};
 use super::*;
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
-pub const ENUM_MIN_CHANNEL_TYPE: u8 = 0;
+pub const ENUM_MIN_ACTION_DATA: u8 = 0;
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
-pub const ENUM_MAX_CHANNEL_TYPE: u8 = 5;
+pub const ENUM_MAX_ACTION_DATA: u8 = 3;
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
 #[allow(non_camel_case_types)]
-pub const ENUM_VALUES_CHANNEL_TYPE: [ChannelType; 6] = [
-  ChannelType::Say,
-  ChannelType::Yell,
-  ChannelType::Guild,
-  ChannelType::Party,
-  ChannelType::Whisper,
-  ChannelType::Trade,
+pub const ENUM_VALUES_ACTION_DATA: [ActionData; 4] = [
+  ActionData::NONE,
+  ActionData::ClientChatMessage,
+  ActionData::ClientWhisperByName,
+  ActionData::ClientWhisperById,
 ];
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[repr(transparent)]
-pub struct ChannelType(pub u8);
+pub struct ActionData(pub u8);
 #[allow(non_upper_case_globals)]
-impl ChannelType {
-  pub const Say: Self = Self(0);
-  pub const Yell: Self = Self(1);
-  pub const Guild: Self = Self(2);
-  pub const Party: Self = Self(3);
-  pub const Whisper: Self = Self(4);
-  pub const Trade: Self = Self(5);
+impl ActionData {
+  pub const NONE: Self = Self(0);
+  pub const ClientChatMessage: Self = Self(1);
+  pub const ClientWhisperByName: Self = Self(2);
+  pub const ClientWhisperById: Self = Self(3);
 
   pub const ENUM_MIN: u8 = 0;
-  pub const ENUM_MAX: u8 = 5;
+  pub const ENUM_MAX: u8 = 3;
   pub const ENUM_VALUES: &'static [Self] = &[
-    Self::Say,
-    Self::Yell,
-    Self::Guild,
-    Self::Party,
-    Self::Whisper,
-    Self::Trade,
+    Self::NONE,
+    Self::ClientChatMessage,
+    Self::ClientWhisperByName,
+    Self::ClientWhisperById,
   ];
   /// Returns the variant's name or "" if unknown.
   pub fn variant_name(self) -> Option<&'static str> {
     match self {
-      Self::Say => Some("Say"),
-      Self::Yell => Some("Yell"),
-      Self::Guild => Some("Guild"),
-      Self::Party => Some("Party"),
-      Self::Whisper => Some("Whisper"),
-      Self::Trade => Some("Trade"),
+      Self::NONE => Some("NONE"),
+      Self::ClientChatMessage => Some("ClientChatMessage"),
+      Self::ClientWhisperByName => Some("ClientWhisperByName"),
+      Self::ClientWhisperById => Some("ClientWhisperById"),
       _ => None,
     }
   }
 }
-impl core::fmt::Debug for ChannelType {
+impl core::fmt::Debug for ActionData {
   fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
     if let Some(name) = self.variant_name() {
       f.write_str(name)
@@ -68,7 +60,7 @@ impl core::fmt::Debug for ChannelType {
     }
   }
 }
-impl<'a> flatbuffers::Follow<'a> for ChannelType {
+impl<'a> flatbuffers::Follow<'a> for ActionData {
   type Inner = Self;
   #[inline]
   unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
@@ -77,15 +69,15 @@ impl<'a> flatbuffers::Follow<'a> for ChannelType {
   }
 }
 
-impl flatbuffers::Push for ChannelType {
-    type Output = ChannelType;
+impl flatbuffers::Push for ActionData {
+    type Output = ActionData;
     #[inline]
     unsafe fn push(&self, dst: &mut [u8], _written_len: usize) {
         flatbuffers::emplace_scalar::<u8>(dst, self.0);
     }
 }
 
-impl flatbuffers::EndianScalar for ChannelType {
+impl flatbuffers::EndianScalar for ActionData {
   type Scalar = u8;
   #[inline]
   fn to_little_endian(self) -> u8 {
@@ -99,7 +91,7 @@ impl flatbuffers::EndianScalar for ChannelType {
   }
 }
 
-impl<'a> flatbuffers::Verifiable for ChannelType {
+impl<'a> flatbuffers::Verifiable for ActionData {
   #[inline]
   fn run_verifier(
     v: &mut flatbuffers::Verifier, pos: usize
@@ -109,4 +101,6 @@ impl<'a> flatbuffers::Verifiable for ChannelType {
   }
 }
 
-impl flatbuffers::SimpleToVerifyInSlice for ChannelType {}
+impl flatbuffers::SimpleToVerifyInSlice for ActionData {}
+pub struct ActionDataUnionTableOffset {}
+

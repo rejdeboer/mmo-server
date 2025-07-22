@@ -60,8 +60,8 @@ impl<'a> Action<'a> {
   }
   #[inline]
   #[allow(non_snake_case)]
-  pub fn data_as_mmo_client_chat_message(&self) -> Option<ClientChatMessage<'a>> {
-    if self.data_type() == ActionData::mmo_ClientChatMessage {
+  pub fn data_as_client_chat_message(&self) -> Option<ClientChatMessage<'a>> {
+    if self.data_type() == ActionData::ClientChatMessage {
       let u = self.data();
       // Safety:
       // Created from a valid Table for this object
@@ -74,13 +74,13 @@ impl<'a> Action<'a> {
 
   #[inline]
   #[allow(non_snake_case)]
-  pub fn data_as_player_move_action(&self) -> Option<PlayerMoveAction<'a>> {
-    if self.data_type() == ActionData::PlayerMoveAction {
+  pub fn data_as_client_whisper_by_name(&self) -> Option<ClientWhisperByName<'a>> {
+    if self.data_type() == ActionData::ClientWhisperByName {
       let u = self.data();
       // Safety:
       // Created from a valid Table for this object
       // Which contains a valid union in this slot
-      Some(unsafe { PlayerMoveAction::init_from_table(u) })
+      Some(unsafe { ClientWhisperByName::init_from_table(u) })
     } else {
       None
     }
@@ -88,13 +88,13 @@ impl<'a> Action<'a> {
 
   #[inline]
   #[allow(non_snake_case)]
-  pub fn data_as_player_jump_action(&self) -> Option<PlayerJumpAction<'a>> {
-    if self.data_type() == ActionData::PlayerJumpAction {
+  pub fn data_as_client_whisper_by_id(&self) -> Option<ClientWhisperById<'a>> {
+    if self.data_type() == ActionData::ClientWhisperById {
       let u = self.data();
       // Safety:
       // Created from a valid Table for this object
       // Which contains a valid union in this slot
-      Some(unsafe { PlayerJumpAction::init_from_table(u) })
+      Some(unsafe { ClientWhisperById::init_from_table(u) })
     } else {
       None
     }
@@ -111,9 +111,9 @@ impl flatbuffers::Verifiable for Action<'_> {
     v.visit_table(pos)?
      .visit_union::<ActionData, _>("data_type", Self::VT_DATA_TYPE, "data", Self::VT_DATA, true, |key, v, pos| {
         match key {
-          ActionData::mmo_ClientChatMessage => v.verify_union_variant::<flatbuffers::ForwardsUOffset<ClientChatMessage>>("ActionData::mmo_ClientChatMessage", pos),
-          ActionData::PlayerMoveAction => v.verify_union_variant::<flatbuffers::ForwardsUOffset<PlayerMoveAction>>("ActionData::PlayerMoveAction", pos),
-          ActionData::PlayerJumpAction => v.verify_union_variant::<flatbuffers::ForwardsUOffset<PlayerJumpAction>>("ActionData::PlayerJumpAction", pos),
+          ActionData::ClientChatMessage => v.verify_union_variant::<flatbuffers::ForwardsUOffset<ClientChatMessage>>("ActionData::ClientChatMessage", pos),
+          ActionData::ClientWhisperByName => v.verify_union_variant::<flatbuffers::ForwardsUOffset<ClientWhisperByName>>("ActionData::ClientWhisperByName", pos),
+          ActionData::ClientWhisperById => v.verify_union_variant::<flatbuffers::ForwardsUOffset<ClientWhisperById>>("ActionData::ClientWhisperById", pos),
           _ => Ok(()),
         }
      })?
@@ -169,22 +169,22 @@ impl core::fmt::Debug for Action<'_> {
     let mut ds = f.debug_struct("Action");
       ds.field("data_type", &self.data_type());
       match self.data_type() {
-        ActionData::mmo_ClientChatMessage => {
-          if let Some(x) = self.data_as_mmo_client_chat_message() {
+        ActionData::ClientChatMessage => {
+          if let Some(x) = self.data_as_client_chat_message() {
             ds.field("data", &x)
           } else {
             ds.field("data", &"InvalidFlatbuffer: Union discriminant does not match value.")
           }
         },
-        ActionData::PlayerMoveAction => {
-          if let Some(x) = self.data_as_player_move_action() {
+        ActionData::ClientWhisperByName => {
+          if let Some(x) = self.data_as_client_whisper_by_name() {
             ds.field("data", &x)
           } else {
             ds.field("data", &"InvalidFlatbuffer: Union discriminant does not match value.")
           }
         },
-        ActionData::PlayerJumpAction => {
-          if let Some(x) = self.data_as_player_jump_action() {
+        ActionData::ClientWhisperById => {
+          if let Some(x) = self.data_as_client_whisper_by_id() {
             ds.field("data", &x)
           } else {
             ds.field("data", &"InvalidFlatbuffer: Union discriminant does not match value.")
@@ -197,4 +197,75 @@ impl core::fmt::Debug for Action<'_> {
       };
       ds.finish()
   }
+}
+#[inline]
+/// Verifies that a buffer of bytes contains a `Action`
+/// and returns it.
+/// Note that verification is still experimental and may not
+/// catch every error, or be maximally performant. For the
+/// previous, unchecked, behavior use
+/// `root_as_action_unchecked`.
+pub fn root_as_action(buf: &[u8]) -> Result<Action, flatbuffers::InvalidFlatbuffer> {
+  flatbuffers::root::<Action>(buf)
+}
+#[inline]
+/// Verifies that a buffer of bytes contains a size prefixed
+/// `Action` and returns it.
+/// Note that verification is still experimental and may not
+/// catch every error, or be maximally performant. For the
+/// previous, unchecked, behavior use
+/// `size_prefixed_root_as_action_unchecked`.
+pub fn size_prefixed_root_as_action(buf: &[u8]) -> Result<Action, flatbuffers::InvalidFlatbuffer> {
+  flatbuffers::size_prefixed_root::<Action>(buf)
+}
+#[inline]
+/// Verifies, with the given options, that a buffer of bytes
+/// contains a `Action` and returns it.
+/// Note that verification is still experimental and may not
+/// catch every error, or be maximally performant. For the
+/// previous, unchecked, behavior use
+/// `root_as_action_unchecked`.
+pub fn root_as_action_with_opts<'b, 'o>(
+  opts: &'o flatbuffers::VerifierOptions,
+  buf: &'b [u8],
+) -> Result<Action<'b>, flatbuffers::InvalidFlatbuffer> {
+  flatbuffers::root_with_opts::<Action<'b>>(opts, buf)
+}
+#[inline]
+/// Verifies, with the given verifier options, that a buffer of
+/// bytes contains a size prefixed `Action` and returns
+/// it. Note that verification is still experimental and may not
+/// catch every error, or be maximally performant. For the
+/// previous, unchecked, behavior use
+/// `root_as_action_unchecked`.
+pub fn size_prefixed_root_as_action_with_opts<'b, 'o>(
+  opts: &'o flatbuffers::VerifierOptions,
+  buf: &'b [u8],
+) -> Result<Action<'b>, flatbuffers::InvalidFlatbuffer> {
+  flatbuffers::size_prefixed_root_with_opts::<Action<'b>>(opts, buf)
+}
+#[inline]
+/// Assumes, without verification, that a buffer of bytes contains a Action and returns it.
+/// # Safety
+/// Callers must trust the given bytes do indeed contain a valid `Action`.
+pub unsafe fn root_as_action_unchecked(buf: &[u8]) -> Action {
+  flatbuffers::root_unchecked::<Action>(buf)
+}
+#[inline]
+/// Assumes, without verification, that a buffer of bytes contains a size prefixed Action and returns it.
+/// # Safety
+/// Callers must trust the given bytes do indeed contain a valid size prefixed `Action`.
+pub unsafe fn size_prefixed_root_as_action_unchecked(buf: &[u8]) -> Action {
+  flatbuffers::size_prefixed_root_unchecked::<Action>(buf)
+}
+#[inline]
+pub fn finish_action_buffer<'a, 'b, A: flatbuffers::Allocator + 'a>(
+    fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
+    root: flatbuffers::WIPOffset<Action<'a>>) {
+  fbb.finish(root, None);
+}
+
+#[inline]
+pub fn finish_size_prefixed_action_buffer<'a, 'b, A: flatbuffers::Allocator + 'a>(fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>, root: flatbuffers::WIPOffset<Action<'a>>) {
+  fbb.finish_size_prefixed(root, None);
 }

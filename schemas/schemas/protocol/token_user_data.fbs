@@ -1,0 +1,7 @@
+namespace protocol;
+
+table TokenUserData {
+	character_id: int32;
+}
+
+root_type TokenUserData;

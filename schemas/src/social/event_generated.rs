@@ -60,55 +60,27 @@ impl<'a> Event<'a> {
   }
   #[inline]
   #[allow(non_snake_case)]
-  pub fn data_as_entity_move_event(&self) -> Option<EntityMoveEvent<'a>> {
-    if self.data_type() == EventData::EntityMoveEvent {
-      let u = self.data();
-      // Safety:
-      // Created from a valid Table for this object
-      // Which contains a valid union in this slot
-      Some(unsafe { EntityMoveEvent::init_from_table(u) })
-    } else {
-      None
-    }
-  }
-
-  #[inline]
-  #[allow(non_snake_case)]
-  pub fn data_as_entity_spawn_event(&self) -> Option<EntitySpawnEvent<'a>> {
-    if self.data_type() == EventData::EntitySpawnEvent {
-      let u = self.data();
-      // Safety:
-      // Created from a valid Table for this object
-      // Which contains a valid union in this slot
-      Some(unsafe { EntitySpawnEvent::init_from_table(u) })
-    } else {
-      None
-    }
-  }
-
-  #[inline]
-  #[allow(non_snake_case)]
-  pub fn data_as_entity_despawn_event(&self) -> Option<EntityDespawnEvent<'a>> {
-    if self.data_type() == EventData::EntityDespawnEvent {
-      let u = self.data();
-      // Safety:
-      // Created from a valid Table for this object
-      // Which contains a valid union in this slot
-      Some(unsafe { EntityDespawnEvent::init_from_table(u) })
-    } else {
-      None
-    }
-  }
-
-  #[inline]
-  #[allow(non_snake_case)]
-  pub fn data_as_mmo_server_chat_message(&self) -> Option<ServerChatMessage<'a>> {
-    if self.data_type() == EventData::mmo_ServerChatMessage {
+  pub fn data_as_server_chat_message(&self) -> Option<ServerChatMessage<'a>> {
+    if self.data_type() == EventData::ServerChatMessage {
       let u = self.data();
       // Safety:
       // Created from a valid Table for this object
       // Which contains a valid union in this slot
       Some(unsafe { ServerChatMessage::init_from_table(u) })
+    } else {
+      None
+    }
+  }
+
+  #[inline]
+  #[allow(non_snake_case)]
+  pub fn data_as_server_whisper(&self) -> Option<ServerWhisper<'a>> {
+    if self.data_type() == EventData::ServerWhisper {
+      let u = self.data();
+      // Safety:
+      // Created from a valid Table for this object
+      // Which contains a valid union in this slot
+      Some(unsafe { ServerWhisper::init_from_table(u) })
     } else {
       None
     }
@@ -125,10 +97,8 @@ impl flatbuffers::Verifiable for Event<'_> {
     v.visit_table(pos)?
      .visit_union::<EventData, _>("data_type", Self::VT_DATA_TYPE, "data", Self::VT_DATA, true, |key, v, pos| {
         match key {
-          EventData::EntityMoveEvent => v.verify_union_variant::<flatbuffers::ForwardsUOffset<EntityMoveEvent>>("EventData::EntityMoveEvent", pos),
-          EventData::EntitySpawnEvent => v.verify_union_variant::<flatbuffers::ForwardsUOffset<EntitySpawnEvent>>("EventData::EntitySpawnEvent", pos),
-          EventData::EntityDespawnEvent => v.verify_union_variant::<flatbuffers::ForwardsUOffset<EntityDespawnEvent>>("EventData::EntityDespawnEvent", pos),
-          EventData::mmo_ServerChatMessage => v.verify_union_variant::<flatbuffers::ForwardsUOffset<ServerChatMessage>>("EventData::mmo_ServerChatMessage", pos),
+          EventData::ServerChatMessage => v.verify_union_variant::<flatbuffers::ForwardsUOffset<ServerChatMessage>>("EventData::ServerChatMessage", pos),
+          EventData::ServerWhisper => v.verify_union_variant::<flatbuffers::ForwardsUOffset<ServerWhisper>>("EventData::ServerWhisper", pos),
           _ => Ok(()),
         }
      })?
@@ -184,29 +154,15 @@ impl core::fmt::Debug for Event<'_> {
     let mut ds = f.debug_struct("Event");
       ds.field("data_type", &self.data_type());
       match self.data_type() {
-        EventData::EntityMoveEvent => {
-          if let Some(x) = self.data_as_entity_move_event() {
+        EventData::ServerChatMessage => {
+          if let Some(x) = self.data_as_server_chat_message() {
             ds.field("data", &x)
           } else {
             ds.field("data", &"InvalidFlatbuffer: Union discriminant does not match value.")
           }
         },
-        EventData::EntitySpawnEvent => {
-          if let Some(x) = self.data_as_entity_spawn_event() {
-            ds.field("data", &x)
-          } else {
-            ds.field("data", &"InvalidFlatbuffer: Union discriminant does not match value.")
-          }
-        },
-        EventData::EntityDespawnEvent => {
-          if let Some(x) = self.data_as_entity_despawn_event() {
-            ds.field("data", &x)
-          } else {
-            ds.field("data", &"InvalidFlatbuffer: Union discriminant does not match value.")
-          }
-        },
-        EventData::mmo_ServerChatMessage => {
-          if let Some(x) = self.data_as_mmo_server_chat_message() {
+        EventData::ServerWhisper => {
+          if let Some(x) = self.data_as_server_whisper() {
             ds.field("data", &x)
           } else {
             ds.field("data", &"InvalidFlatbuffer: Union discriminant does not match value.")
@@ -219,4 +175,75 @@ impl core::fmt::Debug for Event<'_> {
       };
       ds.finish()
   }
+}
+#[inline]
+/// Verifies that a buffer of bytes contains a `Event`
+/// and returns it.
+/// Note that verification is still experimental and may not
+/// catch every error, or be maximally performant. For the
+/// previous, unchecked, behavior use
+/// `root_as_event_unchecked`.
+pub fn root_as_event(buf: &[u8]) -> Result<Event, flatbuffers::InvalidFlatbuffer> {
+  flatbuffers::root::<Event>(buf)
+}
+#[inline]
+/// Verifies that a buffer of bytes contains a size prefixed
+/// `Event` and returns it.
+/// Note that verification is still experimental and may not
+/// catch every error, or be maximally performant. For the
+/// previous, unchecked, behavior use
+/// `size_prefixed_root_as_event_unchecked`.
+pub fn size_prefixed_root_as_event(buf: &[u8]) -> Result<Event, flatbuffers::InvalidFlatbuffer> {
+  flatbuffers::size_prefixed_root::<Event>(buf)
+}
+#[inline]
+/// Verifies, with the given options, that a buffer of bytes
+/// contains a `Event` and returns it.
+/// Note that verification is still experimental and may not
+/// catch every error, or be maximally performant. For the
+/// previous, unchecked, behavior use
+/// `root_as_event_unchecked`.
+pub fn root_as_event_with_opts<'b, 'o>(
+  opts: &'o flatbuffers::VerifierOptions,
+  buf: &'b [u8],
+) -> Result<Event<'b>, flatbuffers::InvalidFlatbuffer> {
+  flatbuffers::root_with_opts::<Event<'b>>(opts, buf)
+}
+#[inline]
+/// Verifies, with the given verifier options, that a buffer of
+/// bytes contains a size prefixed `Event` and returns
+/// it. Note that verification is still experimental and may not
+/// catch every error, or be maximally performant. For the
+/// previous, unchecked, behavior use
+/// `root_as_event_unchecked`.
+pub fn size_prefixed_root_as_event_with_opts<'b, 'o>(
+  opts: &'o flatbuffers::VerifierOptions,
+  buf: &'b [u8],
+) -> Result<Event<'b>, flatbuffers::InvalidFlatbuffer> {
+  flatbuffers::size_prefixed_root_with_opts::<Event<'b>>(opts, buf)
+}
+#[inline]
+/// Assumes, without verification, that a buffer of bytes contains a Event and returns it.
+/// # Safety
+/// Callers must trust the given bytes do indeed contain a valid `Event`.
+pub unsafe fn root_as_event_unchecked(buf: &[u8]) -> Event {
+  flatbuffers::root_unchecked::<Event>(buf)
+}
+#[inline]
+/// Assumes, without verification, that a buffer of bytes contains a size prefixed Event and returns it.
+/// # Safety
+/// Callers must trust the given bytes do indeed contain a valid size prefixed `Event`.
+pub unsafe fn size_prefixed_root_as_event_unchecked(buf: &[u8]) -> Event {
+  flatbuffers::size_prefixed_root_unchecked::<Event>(buf)
+}
+#[inline]
+pub fn finish_event_buffer<'a, 'b, A: flatbuffers::Allocator + 'a>(
+    fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
+    root: flatbuffers::WIPOffset<Event<'a>>) {
+  fbb.finish(root, None);
+}
+
+#[inline]
+pub fn finish_size_prefixed_event_buffer<'a, 'b, A: flatbuffers::Allocator + 'a>(fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>, root: flatbuffers::WIPOffset<Event<'a>>) {
+  fbb.finish_size_prefixed(root, None);
 }

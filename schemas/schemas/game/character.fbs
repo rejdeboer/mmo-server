@@ -1,9 +1,9 @@
 include "entity.fbs";
 
-namespace mmo;
+namespace game;
 
 table Character {
-	entity: mmo.Entity;
+	entity: game.Entity;
 	// class: uint8;
 }
 
