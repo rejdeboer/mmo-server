@@ -1,11 +1,13 @@
 use std::{ops::ControlFlow, sync::Arc};
 
-use crate::chat::{command::HubCommand, error::ChatReceiveError};
+use crate::social::{
+    command::{HubCommand, Recipient},
+    error::ReaderError,
+};
 
 use axum::extract::ws::{Message, WebSocket};
 use flatbuffers::root;
 use futures::{StreamExt, stream::SplitStream};
-use schema::ChannelType;
 use schemas::social as schema;
 use tokio::sync::mpsc::Sender;
 
@@ -60,27 +62,33 @@ impl SocketReader {
         ControlFlow::Continue(())
     }
 
-    async fn read_binary_message(&mut self, bytes: Vec<u8>) -> Result<(), ChatReceiveError> {
-        let fb_msg =
-            root::<schema::ClientChatMessage>(&bytes).map_err(ChatReceiveError::InvalidSchema)?;
+    async fn read_binary_message(&mut self, bytes: Vec<u8>) -> Result<(), ReaderError> {
+        let fb_action = root::<schema::Action>(&bytes).map_err(ReaderError::InvalidSchema)?;
 
-        let msg = match fb_msg.channel() {
-            ChannelType::Whisper => Ok(HubCommand::Whisper {
-                sender_id: self.character_id,
-                text: Arc::from(fb_msg.text()),
-                recipient_id: fb_msg.recipient_id(),
-            }),
-            ChannelType::Guild => Ok(HubCommand::Guild {
-                sender_id: self.character_id,
-                text: Arc::from(fb_msg.text()),
-            }),
-            channel => Err(ChatReceiveError::InvalidChannel(channel)),
+        let cmd = match fb_action.data_type() {
+            schema::ActionData::ClientChatMessage => {
+                let data = fb_action.data_as_client_chat_message().unwrap();
+                Ok(HubCommand::ChatMessage {
+                    sender_id: self.character_id,
+                    channel: data.channel(),
+                    text: Arc::from(data.text()),
+                })
+            }
+            schema::ActionData::ClientWhisperById => {
+                let data = fb_action.data_as_client_whisper_by_id().unwrap();
+                Ok(HubCommand::Whisper {
+                    sender_id: self.character_id,
+                    text: Arc::from(data.text()),
+                    recipient: Recipient::Id(data.recipient_id()),
+                })
+            }
+            action_type => Err(ReaderError::InvalidActionType(action_type)),
         }?;
 
         self.hub_tx
-            .send(msg)
+            .send(cmd)
             .await
-            .map_err(ChatReceiveError::HubSendFailure)?;
+            .map_err(ReaderError::HubSendFailure)?;
 
         Ok(())
     }

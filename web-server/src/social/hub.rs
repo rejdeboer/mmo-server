@@ -1,11 +1,10 @@
 use flatbuffers::FlatBufferBuilder;
-use schema::ChannelType;
 use schemas::social as schema;
 use std::collections::HashMap;
 use tokio::sync::mpsc::{Receiver, Sender, channel};
 use tracing::{Instrument, instrument};
 
-use crate::chat::command::HubCommand;
+use super::command::HubCommand;
 
 struct ConnectedClient {
     pub character_name: String,
@@ -80,7 +79,7 @@ impl Hub {
                     }
                 }
             }
-            HubCommand::Guild { sender_id, text } => {
+            HubCommand::ChatMessage { sender_id, text } => {
                 let Some(client) = self.clients.get(&sender_id) else {
                     return tracing::error!(?sender_id, "failed to get sender client");
                 };

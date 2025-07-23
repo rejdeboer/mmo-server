@@ -1,13 +1,13 @@
 use flatbuffers::InvalidFlatbuffer;
-use schemas::social::ChannelType;
+use schemas::social::{ActionData, ChannelType};
 use tokio::sync::mpsc::error::SendError;
 
-use crate::chat::HubCommand;
+use crate::social::HubCommand;
 
 #[derive(Debug)]
-pub enum ChatReceiveError {
+pub enum ReaderError {
     InvalidSchema(InvalidFlatbuffer),
-    InvalidChannel(ChannelType),
+    InvalidActionType(ActionData),
     HubSendFailure(SendError<HubCommand>),
 }
 
