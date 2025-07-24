@@ -1,9 +1,10 @@
 use crate::{
     auth::{account_auth_middleware, character_auth_middleware},
-    chat::{Hub, HubCommand},
+    chat::{Hub, HubMessage},
     configuration::{DatabaseSettings, NetcodePrivateKey, Settings},
     realm_resolution::{RealmResolver, create_realm_resolver},
     routes::{account_create, character_create, character_list, chat, game_entry, login},
+    social::Hub,
 };
 use axum::{
     Router, middleware,
@@ -13,14 +14,18 @@ use secrecy::SecretString;
 use serde::Deserialize;
 use sqlx::{PgPool, postgres::PgPoolOptions};
 use std::{net::SocketAddr, sync::Arc};
-use tokio::{net::TcpListener, sync::mpsc::Sender};
+use tokio::{
+    net::TcpListener,
+    sync::mpsc::{Receiver, Sender, channel},
+};
 use tower_http::trace::{DefaultMakeSpan, TraceLayer};
 
 pub struct Application {
     listener: TcpListener,
     router: Router,
-    chat_hub: Hub,
     port: u16,
+    hub_rx: Receiver<HubMessage>,
+    pool: PgPool,
 }
 
 #[derive(Clone)]
@@ -29,7 +34,7 @@ pub struct ApplicationState {
     pub jwt_signing_key: SecretString,
     pub netcode_private_key: NetcodePrivateKey,
     pub realm_resolver: Arc<dyn RealmResolver>,
-    pub chat_handle: Sender<HubCommand>,
+    pub hub_tx: Sender<HubMessage>,
 }
 
 #[derive(Deserialize)]
@@ -46,16 +51,16 @@ impl Application {
 
         let listener = TcpListener::bind(address).await.unwrap();
         let port = listener.local_addr().unwrap().port();
-        let connection_pool = get_connection_pool(&settings.database);
+        let pool = get_connection_pool(&settings.database);
 
-        let (chat_hub, chat_handle) = Hub::build();
+        let (hub_tx, hub_rx) = channel::<HubMessage>(128);
 
         let application_state = ApplicationState {
-            pool: connection_pool,
+            pool: pool.clone(),
             jwt_signing_key: settings.application.jwt_signing_key.clone(),
             netcode_private_key: settings.application.netcode_private_key,
             realm_resolver: Arc::from(create_realm_resolver(&settings.realm_resolver).await),
-            chat_handle,
+            hub_tx,
         };
 
         let account_routes = Router::new()
@@ -89,13 +94,16 @@ impl Application {
             listener,
             router,
             port,
-            chat_hub,
+            hub_rx,
+            pool,
         })
     }
 
     pub async fn run_until_stopped(self) -> Result<(), std::io::Error> {
         tracing::info!("listening on {}", self.listener.local_addr().unwrap());
-        self.chat_hub.run();
+
+        start_social_hub(self.pool, self.hub_rx);
+
         axum::serve(
             self.listener,
             self.router
@@ -111,4 +119,12 @@ impl Application {
 
 pub fn get_connection_pool(settings: &DatabaseSettings) -> PgPool {
     PgPoolOptions::new().connect_lazy_with(settings.with_db())
+}
+
+fn start_social_hub(db_pool: PgPool, receiver: Receiver<HubMessage>) {
+    tokio::spawn(async move {
+        tracing::info!("starting hub");
+        let hub = Hub::new(db_pool, receiver);
+        hub.run().await;
+    });
 }

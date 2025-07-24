@@ -7,24 +7,30 @@ pub enum Recipient {
     Name(Arc<str>),
 }
 
+pub struct HubMessage {
+    pub sender_id: i32,
+    pub command: HubCommand,
+}
+
+impl HubMessage {
+    pub fn new(sender_id: i32, command: HubCommand) -> Self {
+        Self { sender_id, command }
+    }
+}
+
 pub enum HubCommand {
     Connect {
-        character_id: i32,
         character_name: String,
         guild_id: Option<i32>,
         tx: Sender<Vec<u8>>,
     },
     Whisper {
-        sender_id: i32,
         recipient: Recipient,
         text: Arc<str>,
     },
     ChatMessage {
-        sender_id: i32,
         channel: ChannelType,
         text: Arc<str>,
     },
-    Disconnect {
-        character_id: i32,
-    },
+    Disconnect,
 }

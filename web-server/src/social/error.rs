@@ -8,11 +8,13 @@ use crate::social::HubCommand;
 pub enum ReaderError {
     InvalidSchema(InvalidFlatbuffer),
     InvalidActionType(ActionData),
-    HubSendFailure(SendError<HubCommand>),
+    HubSendFailure(SendError<(i32, HubCommand)>),
 }
 
 #[derive(Debug)]
-pub enum ChatSendError {
-    RecipientNotOnline,
+pub enum HubError {
+    RecipientNotFound,
     SenderNotInGuild,
+    SenderNotFound,
+    Unexpected,
 }

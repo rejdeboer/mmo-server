@@ -14,14 +14,14 @@ use tokio::sync::mpsc::Sender;
 pub struct SocketReader {
     pub character_id: i32,
     pub socket_rx: SplitStream<WebSocket>,
-    pub hub_tx: Sender<HubCommand>,
+    pub hub_tx: Sender<(i32, HubCommand)>,
 }
 
 impl SocketReader {
     pub fn new(
         character_id: i32,
         socket_rx: SplitStream<WebSocket>,
-        hub_tx: Sender<HubCommand>,
+        hub_tx: Sender<(i32, HubCommand)>,
     ) -> Self {
         Self {
             character_id,
@@ -69,7 +69,6 @@ impl SocketReader {
             schema::ActionData::ClientChatMessage => {
                 let data = fb_action.data_as_client_chat_message().unwrap();
                 Ok(HubCommand::ChatMessage {
-                    sender_id: self.character_id,
                     channel: data.channel(),
                     text: Arc::from(data.text()),
                 })
@@ -77,7 +76,6 @@ impl SocketReader {
             schema::ActionData::ClientWhisperById => {
                 let data = fb_action.data_as_client_whisper_by_id().unwrap();
                 Ok(HubCommand::Whisper {
-                    sender_id: self.character_id,
                     text: Arc::from(data.text()),
                     recipient: Recipient::Id(data.recipient_id()),
                 })
@@ -86,7 +84,7 @@ impl SocketReader {
         }?;
 
         self.hub_tx
-            .send(cmd)
+            .send((self.character_id, cmd))
             .await
             .map_err(ReaderError::HubSendFailure)?;
 
