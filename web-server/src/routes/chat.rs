@@ -33,7 +33,7 @@ pub async fn chat(
         ApiError::UnexpectedError
     })?;
 
-    Ok(ws.on_upgrade(move |socket| handle_socket(socket, ctx, row.name, state.social_handle)))
+    Ok(ws.on_upgrade(move |socket| handle_socket(socket, ctx, row.name, state.hub_tx)))
 }
 
 async fn handle_socket(

@@ -1,5 +1,5 @@
 use flatbuffers::InvalidFlatbuffer;
-use schemas::social::{ActionData, ChannelType};
+use schemas::social::ActionData;
 use tokio::sync::mpsc::error::SendError;
 
 use crate::social::HubCommand;
@@ -15,6 +15,5 @@ pub enum ReaderError {
 pub enum HubError {
     RecipientNotFound,
     SenderNotInGuild,
-    SenderNotFound,
     Unexpected,
 }

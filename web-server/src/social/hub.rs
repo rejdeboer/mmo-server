@@ -3,9 +3,11 @@ use schemas::social as schema;
 use sqlx::PgPool;
 use std::collections::HashMap;
 use tokio::sync::mpsc::{Receiver, Sender};
-use tracing::{instrument};
 
-use crate::social::{command::{HubMessage, Recipient}, error::HubError};
+use crate::social::{
+    command::{HubMessage, Recipient},
+    error::HubError,
+};
 
 use super::command::HubCommand;
 
@@ -15,11 +17,7 @@ struct ConnectedClient {
     pub tx: Sender<Vec<u8>>,
 }
 
-impl ConnectedClient {
-    pub async fn write_error(&self, error: HubError) {
-        // TODO: Write out system error message back to client
-    }
-}
+impl ConnectedClient {}
 
 pub struct Hub<'fbb> {
     clients: HashMap<i32, ConnectedClient>,
@@ -40,7 +38,6 @@ impl Hub<'_> {
         }
     }
 
-    #[instrument(name="Hub", parent=None, skip(self))]
     pub async fn run(mut self) {
         while let Some(message) = self.rx.recv().await {
             self.process_message(message).await;
@@ -80,42 +77,29 @@ impl Hub<'_> {
                     }
                 }
             }
-            HubCommand::ChatMessage { channel, text } => {
-                let Some(client) = self.clients.get(&sender_id) else {
-                    tracing::error!(?sender_id, "failed to get sender client");
-                    return Err(HubError::Unexpected);
+            HubCommand::ChatMessage { channel, text } => {}
+            HubCommand::Whisper { recipient, text } => {
+                let sender_client = self.get_sender(&msg.sender_id);
+                let recipient_id = match self.resolve_recipient_id(recipient).await {
+                    Ok(id) => id,
+                    Err(err) => return self.write_error(err, sender_client.tx.clone()).await,
                 };
 
-                let Some(gid) = client.guild_id else {
-                    tracing::error!(?sender_id, "sender is not in guild");
-                    return Err(HubError::SenderNotInGuild);
+                let Some(recipient_client) = self.clients.get(&recipient_id) else {
+                    return self
+                        .write_error(HubError::RecipientNotFound, sender_client.tx.clone())
+                        .await;
                 };
-            }
-            HubCommand::Whisper {
-                sender_id,
-                recipient,
-                text,
-            } => {
-                let recipient_id = match recipient {
-                    Recipient::Id(id) => id,
-                    Recipient::Name(name) =>
-                }
-                let sender_client = self
-                    .clients
-                    .get(&sender_id)
-                    .expect("failed to get sender client");
-                let recipient_client = self
-                    .clients
-                    .get(&recipient_id)
-                    .expect("failed to get recipient client");
 
                 let fb_sender = self.fb_builder.create_string(&sender_client.character_name);
-                let fb_recipient = self.fb_builder.create_string(&recipient_client.character_name);
+                let fb_recipient = self
+                    .fb_builder
+                    .create_string(&recipient_client.character_name);
                 let fb_text = self.fb_builder.create_string(&text);
                 let fb_msg = schema::ServerWhisper::create(
                     &mut self.fb_builder,
                     &schema::ServerWhisperArgs {
-                        sender_id,
+                        sender_id: msg.sender_id,
                         sender_name: Some(fb_sender),
                         recipient_id,
                         recipient_name: Some(fb_recipient),
@@ -147,18 +131,33 @@ impl Hub<'_> {
         };
     }
 
-    async fn get_character_id_by_name(&self, character_name: &str) -> Result<i32, HubError> {
-        let id = sqlx::query!(
-            "SELECT id from characters WHERE name = $1 LIMIT 1", 
-            character_name
-        ).fetch_one(&self.db_pool)
-        .await
-        .map_err(|err| match err {
-            sqlx::Error::Database(_) => HubError::RecipientNotFound,
-            _ => HubError::Unexpected,
-        })?
-        .id;
+    pub async fn write_error(&self, error: HubError, tx: Sender<Vec<u8>>) {
+        // TODO: Write out system error message back to client
+    }
 
-        Ok(id)
+    async fn resolve_recipient_id(&self, recipient: Recipient) -> Result<i32, HubError> {
+        match recipient {
+            Recipient::Id(id) => Ok(id),
+            Recipient::Name(name) => {
+                let id = sqlx::query!(
+                    "SELECT id from characters WHERE name = $1 LIMIT 1",
+                    name.as_ref(),
+                )
+                .fetch_one(&self.db_pool)
+                .await
+                .map_err(|err| match err {
+                    sqlx::Error::Database(_) => HubError::RecipientNotFound,
+                    _ => HubError::Unexpected,
+                })?
+                .id;
+
+                Ok(id)
+            }
+        }
+    }
+
+    // WARNING: Utitlity function to grab the sender client from the hashmap
+    fn get_sender(&self, sender_id: &i32) -> &ConnectedClient {
+        self.clients.get(sender_id).expect("failed to fetch sender")
     }
 }
