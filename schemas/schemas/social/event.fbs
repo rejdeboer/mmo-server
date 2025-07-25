@@ -5,6 +5,7 @@ namespace social;
 table ServerChatMessage {
   channel: ChannelType;
   sender_name: string (required);
+  sender_id: int32;
   text: string (required);
 }
 

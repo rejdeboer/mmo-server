@@ -27,7 +27,8 @@ impl<'a> flatbuffers::Follow<'a> for ServerChatMessage<'a> {
 impl<'a> ServerChatMessage<'a> {
   pub const VT_CHANNEL: flatbuffers::VOffsetT = 4;
   pub const VT_SENDER_NAME: flatbuffers::VOffsetT = 6;
-  pub const VT_TEXT: flatbuffers::VOffsetT = 8;
+  pub const VT_SENDER_ID: flatbuffers::VOffsetT = 8;
+  pub const VT_TEXT: flatbuffers::VOffsetT = 10;
 
   #[inline]
   pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
@@ -40,6 +41,7 @@ impl<'a> ServerChatMessage<'a> {
   ) -> flatbuffers::WIPOffset<ServerChatMessage<'bldr>> {
     let mut builder = ServerChatMessageBuilder::new(_fbb);
     if let Some(x) = args.text { builder.add_text(x); }
+    builder.add_sender_id(args.sender_id);
     if let Some(x) = args.sender_name { builder.add_sender_name(x); }
     builder.add_channel(args.channel);
     builder.finish()
@@ -61,6 +63,13 @@ impl<'a> ServerChatMessage<'a> {
     unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<&str>>(ServerChatMessage::VT_SENDER_NAME, None).unwrap()}
   }
   #[inline]
+  pub fn sender_id(&self) -> i32 {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<i32>(ServerChatMessage::VT_SENDER_ID, Some(0)).unwrap()}
+  }
+  #[inline]
   pub fn text(&self) -> &'a str {
     // Safety:
     // Created from valid Table for this object
@@ -78,6 +87,7 @@ impl flatbuffers::Verifiable for ServerChatMessage<'_> {
     v.visit_table(pos)?
      .visit_field::<ChannelType>("channel", Self::VT_CHANNEL, false)?
      .visit_field::<flatbuffers::ForwardsUOffset<&str>>("sender_name", Self::VT_SENDER_NAME, true)?
+     .visit_field::<i32>("sender_id", Self::VT_SENDER_ID, false)?
      .visit_field::<flatbuffers::ForwardsUOffset<&str>>("text", Self::VT_TEXT, true)?
      .finish();
     Ok(())
@@ -86,6 +96,7 @@ impl flatbuffers::Verifiable for ServerChatMessage<'_> {
 pub struct ServerChatMessageArgs<'a> {
     pub channel: ChannelType,
     pub sender_name: Option<flatbuffers::WIPOffset<&'a str>>,
+    pub sender_id: i32,
     pub text: Option<flatbuffers::WIPOffset<&'a str>>,
 }
 impl<'a> Default for ServerChatMessageArgs<'a> {
@@ -94,6 +105,7 @@ impl<'a> Default for ServerChatMessageArgs<'a> {
     ServerChatMessageArgs {
       channel: ChannelType::Guild,
       sender_name: None, // required field
+      sender_id: 0,
       text: None, // required field
     }
   }
@@ -111,6 +123,10 @@ impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> ServerChatMessageBuilder<'a, 'b
   #[inline]
   pub fn add_sender_name(&mut self, sender_name: flatbuffers::WIPOffset<&'b  str>) {
     self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(ServerChatMessage::VT_SENDER_NAME, sender_name);
+  }
+  #[inline]
+  pub fn add_sender_id(&mut self, sender_id: i32) {
+    self.fbb_.push_slot::<i32>(ServerChatMessage::VT_SENDER_ID, sender_id, 0);
   }
   #[inline]
   pub fn add_text(&mut self, text: flatbuffers::WIPOffset<&'b  str>) {
@@ -138,6 +154,7 @@ impl core::fmt::Debug for ServerChatMessage<'_> {
     let mut ds = f.debug_struct("ServerChatMessage");
       ds.field("channel", &self.channel());
       ds.field("sender_name", &self.sender_name());
+      ds.field("sender_id", &self.sender_id());
       ds.field("text", &self.text());
       ds.finish()
   }

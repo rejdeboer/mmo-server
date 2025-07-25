@@ -1,5 +1,5 @@
 use flatbuffers::FlatBufferBuilder;
-use schemas::social as schema;
+use schemas::social::{self as schema, ChannelType};
 use sqlx::PgPool;
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::mpsc::{Receiver, Sender};
@@ -72,12 +72,66 @@ impl Hub {
                     }
                 }
             }
-            HubCommand::ChatMessage { channel, text } => {}
+            HubCommand::ChatMessage { channel, text } => {
+                self.handle_chat(msg.sender_id, channel, &text).await;
+            }
             HubCommand::Whisper { recipient, text } => {
-                self.handle_whisper(msg.sender_id, recipient, text.as_ref())
-                    .await;
+                self.handle_whisper(msg.sender_id, recipient, &text).await;
             }
         };
+    }
+
+    async fn handle_chat(&self, sender_id: i32, channel: ChannelType, text: &str) {
+        let sender_client = self.get_client_unchecked(&sender_id);
+        match channel {
+            ChannelType::Guild => {
+                let Some(gid) = sender_client.guild_id else {
+                    return self
+                        .write_error(HubError::SenderNotInGuild, sender_client.tx.clone())
+                        .await;
+                };
+
+                let mut builder = FlatBufferBuilder::new();
+                let fb_sender = builder.create_string(&sender_client.character_name);
+                let fb_text = builder.create_string(&text);
+                let fb_msg = schema::ServerChatMessage::create(
+                    &mut builder,
+                    &schema::ServerChatMessageArgs {
+                        sender_id,
+                        channel,
+                        sender_name: Some(fb_sender),
+                        text: Some(fb_text),
+                    },
+                )
+                .as_union_value();
+                let fb_event = schema::Event::create(
+                    &mut builder,
+                    &schema::EventArgs {
+                        data_type: schema::EventData::ServerChatMessage,
+                        data: Some(fb_msg),
+                    },
+                );
+                builder.finish_minimal(fb_event);
+                let msg: Arc<[u8]> = Arc::from(builder.finished_data());
+
+                let members = self.get_guild_members_unchecked(&gid);
+                for member in members.into_iter() {
+                    let Some(member_client) = self.clients.get(member) else {
+                        tracing::warn!(?member, ?gid, "member not found in guild");
+                        continue;
+                    };
+
+                    if let Err(err) = member_client.tx.send(msg.clone()).await {
+                        tracing::error!(?err, ?member, "failed to send message to guild member");
+                    }
+                }
+            }
+            unsupported => {
+                tracing::error!(?unsupported, "channel not supported");
+                self.write_error(HubError::Unexpected, sender_client.tx.clone())
+                    .await;
+            }
+        }
     }
 
     async fn handle_whisper(&self, sender_id: i32, recipient: Recipient, text: &str) {
@@ -180,7 +234,13 @@ impl Hub {
     }
 
     // WARNING: Utitlity function to grab the sender client from the hashmap
+    #[inline]
     fn get_client_unchecked(&self, client_id: &i32) -> &ConnectedClient {
         self.clients.get(client_id).expect("failed to fetch client")
+    }
+
+    #[inline]
+    fn get_guild_members_unchecked(&self, gid: &i32) -> &Vec<i32> {
+        self.guilds.get(gid).expect("failed to fetch guild members")
     }
 }
