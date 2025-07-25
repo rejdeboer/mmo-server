@@ -16,9 +16,14 @@ table ServerWhisper {
   text: string (required);
 }
 
+table ServerSystemMessage {
+  text: string (required);
+}
+
 union EventData {
 	ServerChatMessage,
 	ServerWhisper,
+	ServerSystemMessage,
 }
 
 table Event {

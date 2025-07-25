@@ -131,7 +131,34 @@ impl Hub {
     }
 
     async fn write_error(&self, error: HubError, tx: Sender<Arc<[u8]>>) {
-        // TODO: Write out system error message back to client
+        let text = match error {
+            HubError::SenderNotInGuild => "You are not in a guild",
+            HubError::RecipientNotFound => "Player not found",
+            HubError::Unexpected => "An unexpected error occured, please try re-logging",
+        };
+
+        let mut builder = FlatBufferBuilder::new();
+        let fb_text = builder.create_string(&text);
+        let fb_msg = schema::ServerSystemMessage::create(
+            &mut builder,
+            &schema::ServerSystemMessageArgs {
+                text: Some(fb_text),
+            },
+        )
+        .as_union_value();
+        let fb_event = schema::Event::create(
+            &mut builder,
+            &schema::EventArgs {
+                data_type: schema::EventData::ServerWhisper,
+                data: Some(fb_msg),
+            },
+        );
+        builder.finish_minimal(fb_event);
+        let msg: Arc<[u8]> = Arc::from(builder.finished_data());
+
+        if let Err(err) = tx.send(msg).await {
+            return tracing::error!(?err, "failed to send error");
+        }
     }
 
     async fn resolve_recipient_id(&self, recipient: Recipient) -> Result<i32, HubError> {

@@ -86,6 +86,20 @@ impl<'a> Event<'a> {
     }
   }
 
+  #[inline]
+  #[allow(non_snake_case)]
+  pub fn data_as_server_system_message(&self) -> Option<ServerSystemMessage<'a>> {
+    if self.data_type() == EventData::ServerSystemMessage {
+      let u = self.data();
+      // Safety:
+      // Created from a valid Table for this object
+      // Which contains a valid union in this slot
+      Some(unsafe { ServerSystemMessage::init_from_table(u) })
+    } else {
+      None
+    }
+  }
+
 }
 
 impl flatbuffers::Verifiable for Event<'_> {
@@ -99,6 +113,7 @@ impl flatbuffers::Verifiable for Event<'_> {
         match key {
           EventData::ServerChatMessage => v.verify_union_variant::<flatbuffers::ForwardsUOffset<ServerChatMessage>>("EventData::ServerChatMessage", pos),
           EventData::ServerWhisper => v.verify_union_variant::<flatbuffers::ForwardsUOffset<ServerWhisper>>("EventData::ServerWhisper", pos),
+          EventData::ServerSystemMessage => v.verify_union_variant::<flatbuffers::ForwardsUOffset<ServerSystemMessage>>("EventData::ServerSystemMessage", pos),
           _ => Ok(()),
         }
      })?
@@ -163,6 +178,13 @@ impl core::fmt::Debug for Event<'_> {
         },
         EventData::ServerWhisper => {
           if let Some(x) = self.data_as_server_whisper() {
+            ds.field("data", &x)
+          } else {
+            ds.field("data", &"InvalidFlatbuffer: Union discriminant does not match value.")
+          }
+        },
+        EventData::ServerSystemMessage => {
+          if let Some(x) = self.data_as_server_system_message() {
             ds.field("data", &x)
           } else {
             ds.field("data", &"InvalidFlatbuffer: Union discriminant does not match value.")
