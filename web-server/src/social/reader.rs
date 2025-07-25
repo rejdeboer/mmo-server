@@ -43,9 +43,11 @@ impl SocketReader {
     async fn read_message(&mut self, msg: Message) -> ControlFlow<(), ()> {
         match msg {
             Message::Binary(bytes) => {
-                self.read_binary_message(bytes.into())
-                    .await
-                    .expect("TODO: FIX THIS");
+                if let Err(err) = self.read_binary_message(bytes.into()).await {
+                    // TODO: We should probably make sure the websocket writer will close as well
+                    tracing::error!(?err, "failed to send message to hub");
+                    return ControlFlow::Break(());
+                }
             }
             Message::Close(c) => {
                 if let Some(cf) = c {
