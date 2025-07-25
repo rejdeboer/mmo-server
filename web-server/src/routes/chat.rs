@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use axum::{
     Extension,
     extract::{State, WebSocketUpgrade, ws::WebSocket},
@@ -10,7 +12,7 @@ use crate::{
     ApplicationState,
     auth::CharacterContext,
     error::ApiError,
-    social::{HubCommand, SocketReader, SocketWriter},
+    social::{HubCommand, HubMessage, SocketReader, SocketWriter},
 };
 
 pub async fn chat(
@@ -40,18 +42,18 @@ async fn handle_socket(
     socket: WebSocket,
     ctx: CharacterContext,
     character_name: String,
-    hub_tx: Sender<(i32, HubCommand)>,
+    hub_tx: Sender<HubMessage>,
 ) {
-    let (client_tx, hub_rx) = channel::<Vec<u8>>(128);
+    let (client_tx, hub_rx) = channel::<Arc<[u8]>>(128);
+
+    let cmd = HubCommand::Connect {
+        character_name,
+        guild_id: None,
+        tx: client_tx,
+    };
+
     hub_tx
-        .send(
-            ctx.character_id,
-            HubCommand::Connect {
-                character_name,
-                guild_id: None,
-                tx: client_tx,
-            },
-        )
+        .send(HubMessage::new(ctx.character_id, cmd))
         .await
         .expect("client connects to hub");
 

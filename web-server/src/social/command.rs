@@ -1,10 +1,11 @@
-use schemas::social::ChannelType;
 use std::sync::Arc;
+
+use schemas::social::ChannelType;
 use tokio::sync::mpsc::Sender;
 
 pub enum Recipient {
     Id(i32),
-    Name(Arc<str>),
+    Name(String),
 }
 
 pub struct HubMessage {
@@ -22,15 +23,15 @@ pub enum HubCommand {
     Connect {
         character_name: String,
         guild_id: Option<i32>,
-        tx: Sender<Vec<u8>>,
+        tx: Sender<Arc<[u8]>>,
     },
     Whisper {
         recipient: Recipient,
-        text: Arc<str>,
+        text: String,
     },
     ChatMessage {
         channel: ChannelType,
-        text: Arc<str>,
+        text: String,
     },
     Disconnect,
 }

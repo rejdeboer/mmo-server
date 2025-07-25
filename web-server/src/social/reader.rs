@@ -1,6 +1,7 @@
-use std::{ops::ControlFlow, sync::Arc};
+use std::ops::ControlFlow;
 
 use crate::social::{
+    HubMessage,
     command::{HubCommand, Recipient},
     error::ReaderError,
 };
@@ -14,14 +15,14 @@ use tokio::sync::mpsc::Sender;
 pub struct SocketReader {
     pub character_id: i32,
     pub socket_rx: SplitStream<WebSocket>,
-    pub hub_tx: Sender<(i32, HubCommand)>,
+    pub hub_tx: Sender<HubMessage>,
 }
 
 impl SocketReader {
     pub fn new(
         character_id: i32,
         socket_rx: SplitStream<WebSocket>,
-        hub_tx: Sender<(i32, HubCommand)>,
+        hub_tx: Sender<HubMessage>,
     ) -> Self {
         Self {
             character_id,
@@ -70,13 +71,13 @@ impl SocketReader {
                 let data = fb_action.data_as_client_chat_message().unwrap();
                 Ok(HubCommand::ChatMessage {
                     channel: data.channel(),
-                    text: Arc::from(data.text()),
+                    text: data.text().to_string(),
                 })
             }
             schema::ActionData::ClientWhisperById => {
                 let data = fb_action.data_as_client_whisper_by_id().unwrap();
                 Ok(HubCommand::Whisper {
-                    text: Arc::from(data.text()),
+                    text: data.text().to_string(),
                     recipient: Recipient::Id(data.recipient_id()),
                 })
             }
@@ -84,7 +85,7 @@ impl SocketReader {
         }?;
 
         self.hub_tx
-            .send((self.character_id, cmd))
+            .send(HubMessage::new(self.character_id, cmd))
             .await
             .map_err(ReaderError::HubSendFailure)?;
 

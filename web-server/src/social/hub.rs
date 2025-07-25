@@ -1,7 +1,7 @@
 use flatbuffers::FlatBufferBuilder;
 use schemas::social as schema;
 use sqlx::PgPool;
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 use tokio::sync::mpsc::{Receiver, Sender};
 
 use crate::social::{
@@ -14,10 +14,8 @@ use super::command::HubCommand;
 struct ConnectedClient {
     pub character_name: String,
     pub guild_id: Option<i32>,
-    pub tx: Sender<Vec<u8>>,
+    pub tx: Sender<Arc<[u8]>>,
 }
-
-impl ConnectedClient {}
 
 pub struct Hub {
     clients: HashMap<i32, ConnectedClient>,
@@ -118,21 +116,21 @@ impl Hub {
             },
         );
         builder.finish_minimal(fb_event);
-        let bytes = builder.finished_data().to_vec();
+        let msg: Arc<[u8]> = Arc::from(builder.finished_data());
 
         sender_client
             .tx
-            .send(bytes.clone())
+            .send(msg.clone())
             .await
             .expect("failed to send to sender");
         recipient_client
             .tx
-            .send(bytes)
+            .send(msg)
             .await
             .expect("failed to send to recipient");
     }
 
-    async fn write_error(&self, error: HubError, tx: Sender<Vec<u8>>) {
+    async fn write_error(&self, error: HubError, tx: Sender<Arc<[u8]>>) {
         // TODO: Write out system error message back to client
     }
 
@@ -140,17 +138,14 @@ impl Hub {
         match recipient {
             Recipient::Id(id) => Ok(id),
             Recipient::Name(name) => {
-                let id = sqlx::query!(
-                    "SELECT id from characters WHERE name = $1 LIMIT 1",
-                    name.as_ref(),
-                )
-                .fetch_one(&self.db_pool)
-                .await
-                .map_err(|err| match err {
-                    sqlx::Error::Database(_) => HubError::RecipientNotFound,
-                    _ => HubError::Unexpected,
-                })?
-                .id;
+                let id = sqlx::query!("SELECT id from characters WHERE name = $1 LIMIT 1", &name)
+                    .fetch_one(&self.db_pool)
+                    .await
+                    .map_err(|err| match err {
+                        sqlx::Error::Database(_) => HubError::RecipientNotFound,
+                        _ => HubError::Unexpected,
+                    })?
+                    .id;
 
                 Ok(id)
             }
