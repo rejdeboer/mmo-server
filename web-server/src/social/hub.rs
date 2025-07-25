@@ -118,16 +118,16 @@ impl Hub {
         builder.finish_minimal(fb_event);
         let msg: Arc<[u8]> = Arc::from(builder.finished_data());
 
-        sender_client
-            .tx
-            .send(msg.clone())
-            .await
-            .expect("failed to send to sender");
-        recipient_client
-            .tx
-            .send(msg)
-            .await
-            .expect("failed to send to recipient");
+        if let Err(err) = recipient_client.tx.send(msg.clone()).await {
+            tracing::error!(?err, "failed to send whisper to recipient");
+            return self
+                .write_error(HubError::Unexpected, sender_client.tx.clone())
+                .await;
+        }
+
+        if let Err(err) = sender_client.tx.send(msg).await {
+            return tracing::error!(?err, "failed to send receipt to sender");
+        }
     }
 
     async fn write_error(&self, error: HubError, tx: Sender<Arc<[u8]>>) {
