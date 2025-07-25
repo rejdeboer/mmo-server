@@ -42,8 +42,10 @@ impl SocketReader {
 
     async fn read_message(&mut self, msg: Message) -> ControlFlow<(), ()> {
         match msg {
-            Message::Binary(_) => {
-                todo!("read flatbuffer");
+            Message::Binary(bytes) => {
+                self.read_binary_message(bytes.into())
+                    .await
+                    .expect("TODO: FIX THIS");
             }
             Message::Close(c) => {
                 if let Some(cf) = c {
