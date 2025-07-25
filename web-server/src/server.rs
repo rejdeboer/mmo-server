@@ -1,10 +1,9 @@
 use crate::{
     auth::{account_auth_middleware, character_auth_middleware},
-    chat::{Hub, HubMessage},
     configuration::{DatabaseSettings, NetcodePrivateKey, Settings},
     realm_resolution::{RealmResolver, create_realm_resolver},
     routes::{account_create, character_create, character_list, chat, game_entry, login},
-    social::Hub,
+    social::{Hub, HubMessage},
 };
 use axum::{
     Router, middleware,

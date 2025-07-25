@@ -208,9 +208,9 @@ impl GameClient {
         let server_addr: SocketAddr = SocketAddr::new(ip_addr, port);
 
         let mut builder = FlatBufferBuilder::new();
-        let response_offset = schema::NetcodeTokenUserData::create(
+        let response_offset = schemas::protocol::TokenUserData::create(
             &mut builder,
-            &schema::NetcodeTokenUserDataArgs { character_id },
+            &schemas::protocol::TokenUserDataArgs { character_id },
         );
         builder.finish_minimal(response_offset);
 
