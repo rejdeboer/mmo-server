@@ -2,201 +2,240 @@
 // @generated
 extern crate alloc;
 extern crate flatbuffers;
+use self::flatbuffers::{EndianScalar, Follow};
+use super::*;
 use alloc::boxed::Box;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use core::mem;
 use core::cmp::Ordering;
-use self::flatbuffers::{EndianScalar, Follow};
-use super::*;
+use core::mem;
 pub enum EventOffset {}
 #[derive(Copy, Clone, PartialEq)]
 
 pub struct Event<'a> {
-  pub _tab: flatbuffers::Table<'a>,
+    pub _tab: flatbuffers::Table<'a>,
 }
 
 impl<'a> flatbuffers::Follow<'a> for Event<'a> {
-  type Inner = Event<'a>;
-  #[inline]
-  unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
-    Self { _tab: flatbuffers::Table::new(buf, loc) }
-  }
+    type Inner = Event<'a>;
+    #[inline]
+    unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
+        Self {
+            _tab: flatbuffers::Table::new(buf, loc),
+        }
+    }
 }
 
 impl<'a> Event<'a> {
-  pub const VT_DATA_TYPE: flatbuffers::VOffsetT = 4;
-  pub const VT_DATA: flatbuffers::VOffsetT = 6;
+    pub const VT_DATA_TYPE: flatbuffers::VOffsetT = 4;
+    pub const VT_DATA: flatbuffers::VOffsetT = 6;
 
-  #[inline]
-  pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
-    Event { _tab: table }
-  }
-  #[allow(unused_mut)]
-  pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
-    _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
-    args: &'args EventArgs
-  ) -> flatbuffers::WIPOffset<Event<'bldr>> {
-    let mut builder = EventBuilder::new(_fbb);
-    if let Some(x) = args.data { builder.add_data(x); }
-    builder.add_data_type(args.data_type);
-    builder.finish()
-  }
-
-
-  #[inline]
-  pub fn data_type(&self) -> EventData {
-    // Safety:
-    // Created from valid Table for this object
-    // which contains a valid value in this slot
-    unsafe { self._tab.get::<EventData>(Event::VT_DATA_TYPE, Some(EventData::NONE)).unwrap()}
-  }
-  #[inline]
-  pub fn data(&self) -> flatbuffers::Table<'a> {
-    // Safety:
-    // Created from valid Table for this object
-    // which contains a valid value in this slot
-    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<flatbuffers::Table<'a>>>(Event::VT_DATA, None).unwrap()}
-  }
-  #[inline]
-  #[allow(non_snake_case)]
-  pub fn data_as_server_chat_message(&self) -> Option<ServerChatMessage<'a>> {
-    if self.data_type() == EventData::ServerChatMessage {
-      let u = self.data();
-      // Safety:
-      // Created from a valid Table for this object
-      // Which contains a valid union in this slot
-      Some(unsafe { ServerChatMessage::init_from_table(u) })
-    } else {
-      None
+    #[inline]
+    pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
+        Event { _tab: table }
     }
-  }
-
-  #[inline]
-  #[allow(non_snake_case)]
-  pub fn data_as_server_whisper(&self) -> Option<ServerWhisper<'a>> {
-    if self.data_type() == EventData::ServerWhisper {
-      let u = self.data();
-      // Safety:
-      // Created from a valid Table for this object
-      // Which contains a valid union in this slot
-      Some(unsafe { ServerWhisper::init_from_table(u) })
-    } else {
-      None
+    #[allow(unused_mut)]
+    pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
+        _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
+        args: &'args EventArgs,
+    ) -> flatbuffers::WIPOffset<Event<'bldr>> {
+        let mut builder = EventBuilder::new(_fbb);
+        if let Some(x) = args.data {
+            builder.add_data(x);
+        }
+        builder.add_data_type(args.data_type);
+        builder.finish()
     }
-  }
 
-  #[inline]
-  #[allow(non_snake_case)]
-  pub fn data_as_server_system_message(&self) -> Option<ServerSystemMessage<'a>> {
-    if self.data_type() == EventData::ServerSystemMessage {
-      let u = self.data();
-      // Safety:
-      // Created from a valid Table for this object
-      // Which contains a valid union in this slot
-      Some(unsafe { ServerSystemMessage::init_from_table(u) })
-    } else {
-      None
+    #[inline]
+    pub fn data_type(&self) -> EventData {
+        // Safety:
+        // Created from valid Table for this object
+        // which contains a valid value in this slot
+        unsafe {
+            self._tab
+                .get::<EventData>(Event::VT_DATA_TYPE, Some(EventData::NONE))
+                .unwrap()
+        }
     }
-  }
+    #[inline]
+    pub fn data(&self) -> flatbuffers::Table<'a> {
+        // Safety:
+        // Created from valid Table for this object
+        // which contains a valid value in this slot
+        unsafe {
+            self._tab
+                .get::<flatbuffers::ForwardsUOffset<flatbuffers::Table<'a>>>(Event::VT_DATA, None)
+                .unwrap()
+        }
+    }
+    #[inline]
+    #[allow(non_snake_case)]
+    pub fn data_as_server_chat_message(&self) -> Option<ServerChatMessage<'a>> {
+        if self.data_type() == EventData::ServerChatMessage {
+            let u = self.data();
+            // Safety:
+            // Created from a valid Table for this object
+            // Which contains a valid union in this slot
+            Some(unsafe { ServerChatMessage::init_from_table(u) })
+        } else {
+            None
+        }
+    }
 
+    #[inline]
+    #[allow(non_snake_case)]
+    pub fn data_as_server_whisper(&self) -> Option<ServerWhisper<'a>> {
+        if self.data_type() == EventData::ServerWhisper {
+            let u = self.data();
+            // Safety:
+            // Created from a valid Table for this object
+            // Which contains a valid union in this slot
+            Some(unsafe { ServerWhisper::init_from_table(u) })
+        } else {
+            None
+        }
+    }
+
+    #[inline]
+    #[allow(non_snake_case)]
+    pub fn data_as_server_system_message(&self) -> Option<ServerSystemMessage<'a>> {
+        if self.data_type() == EventData::ServerSystemMessage {
+            let u = self.data();
+            // Safety:
+            // Created from a valid Table for this object
+            // Which contains a valid union in this slot
+            Some(unsafe { ServerSystemMessage::init_from_table(u) })
+        } else {
+            None
+        }
+    }
 }
 
 impl flatbuffers::Verifiable for Event<'_> {
-  #[inline]
-  fn run_verifier(
-    v: &mut flatbuffers::Verifier, pos: usize
-  ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
-    use self::flatbuffers::Verifiable;
-    v.visit_table(pos)?
-     .visit_union::<EventData, _>("data_type", Self::VT_DATA_TYPE, "data", Self::VT_DATA, true, |key, v, pos| {
-        match key {
-          EventData::ServerChatMessage => v.verify_union_variant::<flatbuffers::ForwardsUOffset<ServerChatMessage>>("EventData::ServerChatMessage", pos),
-          EventData::ServerWhisper => v.verify_union_variant::<flatbuffers::ForwardsUOffset<ServerWhisper>>("EventData::ServerWhisper", pos),
-          EventData::ServerSystemMessage => v.verify_union_variant::<flatbuffers::ForwardsUOffset<ServerSystemMessage>>("EventData::ServerSystemMessage", pos),
-          _ => Ok(()),
-        }
-     })?
-     .finish();
-    Ok(())
-  }
+    #[inline]
+    fn run_verifier(
+        v: &mut flatbuffers::Verifier,
+        pos: usize,
+    ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
+        use self::flatbuffers::Verifiable;
+        v.visit_table(pos)?
+            .visit_union::<EventData, _>(
+                "data_type",
+                Self::VT_DATA_TYPE,
+                "data",
+                Self::VT_DATA,
+                true,
+                |key, v, pos| match key {
+                    EventData::ServerChatMessage => v
+                        .verify_union_variant::<flatbuffers::ForwardsUOffset<ServerChatMessage>>(
+                            "EventData::ServerChatMessage",
+                            pos,
+                        ),
+                    EventData::ServerWhisper => v
+                        .verify_union_variant::<flatbuffers::ForwardsUOffset<ServerWhisper>>(
+                            "EventData::ServerWhisper",
+                            pos,
+                        ),
+                    EventData::ServerSystemMessage => v
+                        .verify_union_variant::<flatbuffers::ForwardsUOffset<ServerSystemMessage>>(
+                            "EventData::ServerSystemMessage",
+                            pos,
+                        ),
+                    _ => Ok(()),
+                },
+            )?
+            .finish();
+        Ok(())
+    }
 }
 pub struct EventArgs {
     pub data_type: EventData,
     pub data: Option<flatbuffers::WIPOffset<flatbuffers::UnionWIPOffset>>,
 }
 impl<'a> Default for EventArgs {
-  #[inline]
-  fn default() -> Self {
-    EventArgs {
-      data_type: EventData::NONE,
-      data: None, // required field
+    #[inline]
+    fn default() -> Self {
+        EventArgs {
+            data_type: EventData::NONE,
+            data: None, // required field
+        }
     }
-  }
 }
 
 pub struct EventBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> {
-  fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
-  start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
+    fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
+    start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
 }
 impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> EventBuilder<'a, 'b, A> {
-  #[inline]
-  pub fn add_data_type(&mut self, data_type: EventData) {
-    self.fbb_.push_slot::<EventData>(Event::VT_DATA_TYPE, data_type, EventData::NONE);
-  }
-  #[inline]
-  pub fn add_data(&mut self, data: flatbuffers::WIPOffset<flatbuffers::UnionWIPOffset>) {
-    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(Event::VT_DATA, data);
-  }
-  #[inline]
-  pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> EventBuilder<'a, 'b, A> {
-    let start = _fbb.start_table();
-    EventBuilder {
-      fbb_: _fbb,
-      start_: start,
+    #[inline]
+    pub fn add_data_type(&mut self, data_type: EventData) {
+        self.fbb_
+            .push_slot::<EventData>(Event::VT_DATA_TYPE, data_type, EventData::NONE);
     }
-  }
-  #[inline]
-  pub fn finish(self) -> flatbuffers::WIPOffset<Event<'a>> {
-    let o = self.fbb_.end_table(self.start_);
-    self.fbb_.required(o, Event::VT_DATA,"data");
-    flatbuffers::WIPOffset::new(o.value())
-  }
+    #[inline]
+    pub fn add_data(&mut self, data: flatbuffers::WIPOffset<flatbuffers::UnionWIPOffset>) {
+        self.fbb_
+            .push_slot_always::<flatbuffers::WIPOffset<_>>(Event::VT_DATA, data);
+    }
+    #[inline]
+    pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> EventBuilder<'a, 'b, A> {
+        let start = _fbb.start_table();
+        EventBuilder {
+            fbb_: _fbb,
+            start_: start,
+        }
+    }
+    #[inline]
+    pub fn finish(self) -> flatbuffers::WIPOffset<Event<'a>> {
+        let o = self.fbb_.end_table(self.start_);
+        self.fbb_.required(o, Event::VT_DATA, "data");
+        flatbuffers::WIPOffset::new(o.value())
+    }
 }
 
 impl core::fmt::Debug for Event<'_> {
-  fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-    let mut ds = f.debug_struct("Event");
-      ds.field("data_type", &self.data_type());
-      match self.data_type() {
-        EventData::ServerChatMessage => {
-          if let Some(x) = self.data_as_server_chat_message() {
-            ds.field("data", &x)
-          } else {
-            ds.field("data", &"InvalidFlatbuffer: Union discriminant does not match value.")
-          }
-        },
-        EventData::ServerWhisper => {
-          if let Some(x) = self.data_as_server_whisper() {
-            ds.field("data", &x)
-          } else {
-            ds.field("data", &"InvalidFlatbuffer: Union discriminant does not match value.")
-          }
-        },
-        EventData::ServerSystemMessage => {
-          if let Some(x) = self.data_as_server_system_message() {
-            ds.field("data", &x)
-          } else {
-            ds.field("data", &"InvalidFlatbuffer: Union discriminant does not match value.")
-          }
-        },
-        _ => {
-          let x: Option<()> = None;
-          ds.field("data", &x)
-        },
-      };
-      ds.finish()
-  }
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let mut ds = f.debug_struct("Event");
+        ds.field("data_type", &self.data_type());
+        match self.data_type() {
+            EventData::ServerChatMessage => {
+                if let Some(x) = self.data_as_server_chat_message() {
+                    ds.field("data", &x)
+                } else {
+                    ds.field(
+                        "data",
+                        &"InvalidFlatbuffer: Union discriminant does not match value.",
+                    )
+                }
+            }
+            EventData::ServerWhisper => {
+                if let Some(x) = self.data_as_server_whisper() {
+                    ds.field("data", &x)
+                } else {
+                    ds.field(
+                        "data",
+                        &"InvalidFlatbuffer: Union discriminant does not match value.",
+                    )
+                }
+            }
+            EventData::ServerSystemMessage => {
+                if let Some(x) = self.data_as_server_system_message() {
+                    ds.field("data", &x)
+                } else {
+                    ds.field(
+                        "data",
+                        &"InvalidFlatbuffer: Union discriminant does not match value.",
+                    )
+                }
+            }
+            _ => {
+                let x: Option<()> = None;
+                ds.field("data", &x)
+            }
+        };
+        ds.finish()
+    }
 }
 #[inline]
 /// Verifies that a buffer of bytes contains a `Event`
@@ -206,7 +245,7 @@ impl core::fmt::Debug for Event<'_> {
 /// previous, unchecked, behavior use
 /// `root_as_event_unchecked`.
 pub fn root_as_event(buf: &[u8]) -> Result<Event, flatbuffers::InvalidFlatbuffer> {
-  flatbuffers::root::<Event>(buf)
+    flatbuffers::root::<Event>(buf)
 }
 #[inline]
 /// Verifies that a buffer of bytes contains a size prefixed
@@ -216,7 +255,7 @@ pub fn root_as_event(buf: &[u8]) -> Result<Event, flatbuffers::InvalidFlatbuffer
 /// previous, unchecked, behavior use
 /// `size_prefixed_root_as_event_unchecked`.
 pub fn size_prefixed_root_as_event(buf: &[u8]) -> Result<Event, flatbuffers::InvalidFlatbuffer> {
-  flatbuffers::size_prefixed_root::<Event>(buf)
+    flatbuffers::size_prefixed_root::<Event>(buf)
 }
 #[inline]
 /// Verifies, with the given options, that a buffer of bytes
@@ -226,10 +265,10 @@ pub fn size_prefixed_root_as_event(buf: &[u8]) -> Result<Event, flatbuffers::Inv
 /// previous, unchecked, behavior use
 /// `root_as_event_unchecked`.
 pub fn root_as_event_with_opts<'b, 'o>(
-  opts: &'o flatbuffers::VerifierOptions,
-  buf: &'b [u8],
+    opts: &'o flatbuffers::VerifierOptions,
+    buf: &'b [u8],
 ) -> Result<Event<'b>, flatbuffers::InvalidFlatbuffer> {
-  flatbuffers::root_with_opts::<Event<'b>>(opts, buf)
+    flatbuffers::root_with_opts::<Event<'b>>(opts, buf)
 }
 #[inline]
 /// Verifies, with the given verifier options, that a buffer of
@@ -239,33 +278,37 @@ pub fn root_as_event_with_opts<'b, 'o>(
 /// previous, unchecked, behavior use
 /// `root_as_event_unchecked`.
 pub fn size_prefixed_root_as_event_with_opts<'b, 'o>(
-  opts: &'o flatbuffers::VerifierOptions,
-  buf: &'b [u8],
+    opts: &'o flatbuffers::VerifierOptions,
+    buf: &'b [u8],
 ) -> Result<Event<'b>, flatbuffers::InvalidFlatbuffer> {
-  flatbuffers::size_prefixed_root_with_opts::<Event<'b>>(opts, buf)
+    flatbuffers::size_prefixed_root_with_opts::<Event<'b>>(opts, buf)
 }
 #[inline]
 /// Assumes, without verification, that a buffer of bytes contains a Event and returns it.
 /// # Safety
 /// Callers must trust the given bytes do indeed contain a valid `Event`.
 pub unsafe fn root_as_event_unchecked(buf: &[u8]) -> Event {
-  flatbuffers::root_unchecked::<Event>(buf)
+    flatbuffers::root_unchecked::<Event>(buf)
 }
 #[inline]
 /// Assumes, without verification, that a buffer of bytes contains a size prefixed Event and returns it.
 /// # Safety
 /// Callers must trust the given bytes do indeed contain a valid size prefixed `Event`.
 pub unsafe fn size_prefixed_root_as_event_unchecked(buf: &[u8]) -> Event {
-  flatbuffers::size_prefixed_root_unchecked::<Event>(buf)
+    flatbuffers::size_prefixed_root_unchecked::<Event>(buf)
 }
 #[inline]
 pub fn finish_event_buffer<'a, 'b, A: flatbuffers::Allocator + 'a>(
     fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
-    root: flatbuffers::WIPOffset<Event<'a>>) {
-  fbb.finish(root, None);
+    root: flatbuffers::WIPOffset<Event<'a>>,
+) {
+    fbb.finish(root, None);
 }
 
 #[inline]
-pub fn finish_size_prefixed_event_buffer<'a, 'b, A: flatbuffers::Allocator + 'a>(fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>, root: flatbuffers::WIPOffset<Event<'a>>) {
-  fbb.finish_size_prefixed(root, None);
+pub fn finish_size_prefixed_event_buffer<'a, 'b, A: flatbuffers::Allocator + 'a>(
+    fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
+    root: flatbuffers::WIPOffset<Event<'a>>,
+) {
+    fbb.finish_size_prefixed(root, None);
 }
