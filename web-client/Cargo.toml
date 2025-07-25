@@ -1,5 +1,5 @@
 [package]
-name = "mmo-client"
+name = "web-client"
 version = "0.1.0"
 edition = "2024"
 
@@ -7,7 +7,6 @@ edition = "2024"
 path = "src/lib.rs"
 
 [dependencies]
-flatbuffers = "25.2.10"
 schemas = { path = "../schemas" }
-tokio = { version = "1", features = ["full"] }
-tracing = "0.1.40"
+tokio = { workspace = true }
+tracing = { workspace = true }

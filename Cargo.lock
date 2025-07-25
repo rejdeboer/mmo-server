@@ -4936,6 +4936,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "web-client"
+version = "0.1.0"
+dependencies = [
+ "schemas",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "web-server"
 version = "0.1.0"
 dependencies = [

@@ -3,3 +3,8 @@ members = ["db", "mmo-client", "mmo-server", "schemas", "web-client", "web-serve
 default-members = ["mmo-server", "web-server"]
 
 resolver = "3"
+
+[workspace.dependencies]
+flatbuffers = "25.2.10"
+tokio = { version = "1.0", features = ["full"] }
+tracing = "0.1"
