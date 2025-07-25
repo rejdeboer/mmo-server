@@ -1,15 +1,13 @@
-use std::ops::ControlFlow;
-
 use crate::social::{
     HubMessage,
     command::{HubCommand, Recipient},
     error::ReaderError,
 };
-
 use axum::extract::ws::{Message, WebSocket};
 use flatbuffers::root;
 use futures::{StreamExt, stream::SplitStream};
 use schemas::social as schema;
+use std::ops::ControlFlow;
 use tokio::sync::mpsc::Sender;
 
 pub struct SocketReader {
