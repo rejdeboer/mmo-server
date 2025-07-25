@@ -149,7 +149,7 @@ impl Hub {
         let fb_event = schema::Event::create(
             &mut builder,
             &schema::EventArgs {
-                data_type: schema::EventData::ServerWhisper,
+                data_type: schema::EventData::ServerSystemMessage,
                 data: Some(fb_msg),
             },
         );
