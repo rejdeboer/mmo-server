@@ -19,29 +19,26 @@ struct ConnectedClient {
 
 impl ConnectedClient {}
 
-pub struct Hub<'fbb> {
+pub struct Hub {
     clients: HashMap<i32, ConnectedClient>,
     rx: Receiver<HubMessage>,
     guilds: HashMap<i32, Vec<i32>>,
     db_pool: PgPool,
-    fb_builder: FlatBufferBuilder<'fbb>,
 }
 
-impl Hub<'_> {
+impl Hub {
     pub fn new(db_pool: PgPool, receiver: Receiver<HubMessage>) -> Self {
         Self {
             clients: HashMap::new(),
             rx: receiver,
             guilds: HashMap::new(),
             db_pool,
-            fb_builder: FlatBufferBuilder::new(),
         }
     }
 
     pub async fn run(mut self) {
         while let Some(message) = self.rx.recv().await {
             self.process_message(message).await;
-            self.fb_builder.reset();
         }
     }
 
@@ -79,59 +76,63 @@ impl Hub<'_> {
             }
             HubCommand::ChatMessage { channel, text } => {}
             HubCommand::Whisper { recipient, text } => {
-                let sender_client = self.get_sender(&msg.sender_id);
-                let recipient_id = match self.resolve_recipient_id(recipient).await {
-                    Ok(id) => id,
-                    Err(err) => return self.write_error(err, sender_client.tx.clone()).await,
-                };
-
-                let Some(recipient_client) = self.clients.get(&recipient_id) else {
-                    return self
-                        .write_error(HubError::RecipientNotFound, sender_client.tx.clone())
-                        .await;
-                };
-
-                let fb_sender = self.fb_builder.create_string(&sender_client.character_name);
-                let fb_recipient = self
-                    .fb_builder
-                    .create_string(&recipient_client.character_name);
-                let fb_text = self.fb_builder.create_string(&text);
-                let fb_msg = schema::ServerWhisper::create(
-                    &mut self.fb_builder,
-                    &schema::ServerWhisperArgs {
-                        sender_id: msg.sender_id,
-                        sender_name: Some(fb_sender),
-                        recipient_id,
-                        recipient_name: Some(fb_recipient),
-                        text: Some(fb_text),
-                    },
-                )
-                .as_union_value();
-                let fb_event = schema::Event::create(
-                    &mut self.fb_builder,
-                    &schema::EventArgs {
-                        data_type: schema::EventData::ServerWhisper,
-                        data: Some(fb_msg),
-                    },
-                );
-                self.fb_builder.finish_minimal(fb_event);
-                let bytes = self.fb_builder.finished_data().to_vec();
-
-                sender_client
-                    .tx
-                    .send(bytes.clone())
-                    .await
-                    .expect("failed to send to sender");
-                recipient_client
-                    .tx
-                    .send(bytes)
-                    .await
-                    .expect("failed to send to recipient");
+                self.handle_whisper(msg.sender_id, recipient, text.as_ref())
+                    .await;
             }
         };
     }
 
-    pub async fn write_error(&self, error: HubError, tx: Sender<Vec<u8>>) {
+    async fn handle_whisper(&self, sender_id: i32, recipient: Recipient, text: &str) {
+        let sender_client = self.get_client_unchecked(&sender_id);
+        let recipient_id = match self.resolve_recipient_id(recipient).await {
+            Ok(id) => id,
+            Err(err) => return self.write_error(err, sender_client.tx.clone()).await,
+        };
+
+        let Some(recipient_client) = self.clients.get(&recipient_id) else {
+            return self
+                .write_error(HubError::RecipientNotFound, sender_client.tx.clone())
+                .await;
+        };
+
+        let mut builder = FlatBufferBuilder::new();
+        let fb_sender = builder.create_string(&sender_client.character_name);
+        let fb_recipient = builder.create_string(&recipient_client.character_name);
+        let fb_text = builder.create_string(&text);
+        let fb_msg = schema::ServerWhisper::create(
+            &mut builder,
+            &schema::ServerWhisperArgs {
+                sender_id,
+                sender_name: Some(fb_sender),
+                recipient_id,
+                recipient_name: Some(fb_recipient),
+                text: Some(fb_text),
+            },
+        )
+        .as_union_value();
+        let fb_event = schema::Event::create(
+            &mut builder,
+            &schema::EventArgs {
+                data_type: schema::EventData::ServerWhisper,
+                data: Some(fb_msg),
+            },
+        );
+        builder.finish_minimal(fb_event);
+        let bytes = builder.finished_data().to_vec();
+
+        sender_client
+            .tx
+            .send(bytes.clone())
+            .await
+            .expect("failed to send to sender");
+        recipient_client
+            .tx
+            .send(bytes)
+            .await
+            .expect("failed to send to recipient");
+    }
+
+    async fn write_error(&self, error: HubError, tx: Sender<Vec<u8>>) {
         // TODO: Write out system error message back to client
     }
 
@@ -157,7 +158,7 @@ impl Hub<'_> {
     }
 
     // WARNING: Utitlity function to grab the sender client from the hashmap
-    fn get_sender(&self, sender_id: &i32) -> &ConnectedClient {
-        self.clients.get(sender_id).expect("failed to fetch sender")
+    fn get_client_unchecked(&self, client_id: &i32) -> &ConnectedClient {
+        self.clients.get(client_id).expect("failed to fetch client")
     }
 }
