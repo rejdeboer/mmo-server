@@ -83,53 +83,63 @@ impl Hub {
 
     async fn handle_chat(&self, sender_id: i32, channel: ChannelType, text: &str) {
         let sender_client = self.get_client_unchecked(&sender_id);
-        match channel {
+        return match channel {
             ChannelType::Guild => {
-                let Some(gid) = sender_client.guild_id else {
-                    return self
-                        .write_error(HubError::SenderNotInGuild, sender_client.tx.clone())
-                        .await;
-                };
-
-                let mut builder = FlatBufferBuilder::new();
-                let fb_sender = builder.create_string(&sender_client.character_name);
-                let fb_text = builder.create_string(&text);
-                let fb_msg = schema::ServerChatMessage::create(
-                    &mut builder,
-                    &schema::ServerChatMessageArgs {
-                        sender_id,
-                        channel,
-                        sender_name: Some(fb_sender),
-                        text: Some(fb_text),
-                    },
-                )
-                .as_union_value();
-                let fb_event = schema::Event::create(
-                    &mut builder,
-                    &schema::EventArgs {
-                        data_type: schema::EventData::ServerChatMessage,
-                        data: Some(fb_msg),
-                    },
-                );
-                builder.finish_minimal(fb_event);
-                let msg: Arc<[u8]> = Arc::from(builder.finished_data());
-
-                let members = self.get_guild_members_unchecked(&gid);
-                for member in members.into_iter() {
-                    let Some(member_client) = self.clients.get(member) else {
-                        tracing::warn!(?member, ?gid, "member not found in guild");
-                        continue;
-                    };
-
-                    if let Err(err) = member_client.tx.send(msg.clone()).await {
-                        tracing::error!(?err, ?member, "failed to send message to guild member");
-                    }
-                }
+                self.handle_guild_message(sender_id, sender_client, text)
+                    .await
             }
             unsupported => {
                 tracing::error!(?unsupported, "channel not supported");
                 self.write_error(HubError::Unexpected, sender_client.tx.clone())
                     .await;
+            }
+        };
+    }
+
+    async fn handle_guild_message(
+        &self,
+        sender_id: i32,
+        sender_client: &ConnectedClient,
+        text: &str,
+    ) {
+        let Some(gid) = sender_client.guild_id else {
+            return self
+                .write_error(HubError::SenderNotInGuild, sender_client.tx.clone())
+                .await;
+        };
+
+        let mut builder = FlatBufferBuilder::new();
+        let fb_sender = builder.create_string(&sender_client.character_name);
+        let fb_text = builder.create_string(&text);
+        let fb_msg = schema::ServerChatMessage::create(
+            &mut builder,
+            &schema::ServerChatMessageArgs {
+                sender_id,
+                channel: ChannelType::Guild,
+                sender_name: Some(fb_sender),
+                text: Some(fb_text),
+            },
+        )
+        .as_union_value();
+        let fb_event = schema::Event::create(
+            &mut builder,
+            &schema::EventArgs {
+                data_type: schema::EventData::ServerChatMessage,
+                data: Some(fb_msg),
+            },
+        );
+        builder.finish_minimal(fb_event);
+        let msg: Arc<[u8]> = Arc::from(builder.finished_data());
+
+        let members = self.get_guild_members_unchecked(&gid);
+        for member in members.into_iter() {
+            let Some(member_client) = self.clients.get(member) else {
+                tracing::warn!(?member, ?gid, "member not found in guild");
+                continue;
+            };
+
+            if let Err(err) = member_client.tx.send(msg.clone()).await {
+                tracing::error!(?err, ?member, "failed to send message to guild member");
             }
         }
     }
