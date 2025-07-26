@@ -4968,6 +4968,8 @@ dependencies = [
 name = "web-client"
 version = "0.1.0"
 dependencies = [
+ "flatbuffers",
+ "futures-util",
  "http",
  "schemas",
  "tokio",
