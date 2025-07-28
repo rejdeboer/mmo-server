@@ -10,6 +10,9 @@ use crate::{
     action::SocialAction, event::SocialEvent, reader::run_reader_task, writer::run_writer_task,
 };
 
+pub type ConnectionResult =
+    Result<(mpsc::Sender<SocialAction>, mpsc::Receiver<SocialEvent>), ConnectionError>;
+
 pub enum ConnectionError {
     InvalidUrl,
     InvalidTokenFormat,
@@ -17,10 +20,7 @@ pub enum ConnectionError {
     Http(StatusCode),
 }
 
-pub async fn connect(
-    server_url: &str,
-    auth_token: &str,
-) -> Result<(mpsc::Sender<SocialAction>, mpsc::Receiver<SocialEvent>), ConnectionError> {
+pub async fn connect(server_url: &str, auth_token: &str) -> ConnectionResult {
     let request = create_connection_request(server_url, auth_token)?;
 
     let (ws_stream, _) =

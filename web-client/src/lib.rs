@@ -5,5 +5,5 @@ mod reader;
 mod writer;
 
 pub use action::SocialAction;
-pub use client::{ConnectionError, connect};
+pub use client::{ConnectionError, ConnectionResult, connect};
 pub use event::SocialEvent;
