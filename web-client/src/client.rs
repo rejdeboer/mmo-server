@@ -13,6 +13,7 @@ use crate::{
 pub type ConnectionResult =
     Result<(mpsc::Sender<SocialAction>, mpsc::Receiver<SocialEvent>), ConnectionError>;
 
+#[derive(Debug)]
 pub enum ConnectionError {
     InvalidUrl,
     InvalidTokenFormat,
