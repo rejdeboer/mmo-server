@@ -7,3 +7,4 @@ mod writer;
 pub use action::SocialAction;
 pub use client::{ConnectionError, ConnectionResult, connect};
 pub use event::SocialEvent;
+pub use schemas::social::ChannelType;
