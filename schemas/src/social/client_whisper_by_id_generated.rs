@@ -2,141 +2,125 @@
 // @generated
 extern crate alloc;
 extern crate flatbuffers;
-use self::flatbuffers::{EndianScalar, Follow};
-use super::*;
 use alloc::boxed::Box;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use core::cmp::Ordering;
 use core::mem;
+use core::cmp::Ordering;
+use self::flatbuffers::{EndianScalar, Follow};
+use super::*;
 pub enum ClientWhisperByIdOffset {}
 #[derive(Copy, Clone, PartialEq)]
 
 pub struct ClientWhisperById<'a> {
-    pub _tab: flatbuffers::Table<'a>,
+  pub _tab: flatbuffers::Table<'a>,
 }
 
 impl<'a> flatbuffers::Follow<'a> for ClientWhisperById<'a> {
-    type Inner = ClientWhisperById<'a>;
-    #[inline]
-    unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
-        Self {
-            _tab: flatbuffers::Table::new(buf, loc),
-        }
-    }
+  type Inner = ClientWhisperById<'a>;
+  #[inline]
+  unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
+    Self { _tab: flatbuffers::Table::new(buf, loc) }
+  }
 }
 
 impl<'a> ClientWhisperById<'a> {
-    pub const VT_RECIPIENT_ID: flatbuffers::VOffsetT = 4;
-    pub const VT_TEXT: flatbuffers::VOffsetT = 6;
+  pub const VT_RECIPIENT_ID: flatbuffers::VOffsetT = 4;
+  pub const VT_TEXT: flatbuffers::VOffsetT = 6;
 
-    #[inline]
-    pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
-        ClientWhisperById { _tab: table }
-    }
-    #[allow(unused_mut)]
-    pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
-        _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
-        args: &'args ClientWhisperByIdArgs<'args>,
-    ) -> flatbuffers::WIPOffset<ClientWhisperById<'bldr>> {
-        let mut builder = ClientWhisperByIdBuilder::new(_fbb);
-        if let Some(x) = args.text {
-            builder.add_text(x);
-        }
-        builder.add_recipient_id(args.recipient_id);
-        builder.finish()
-    }
+  #[inline]
+  pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
+    ClientWhisperById { _tab: table }
+  }
+  #[allow(unused_mut)]
+  pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
+    _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
+    args: &'args ClientWhisperByIdArgs<'args>
+  ) -> flatbuffers::WIPOffset<ClientWhisperById<'bldr>> {
+    let mut builder = ClientWhisperByIdBuilder::new(_fbb);
+    if let Some(x) = args.text { builder.add_text(x); }
+    builder.add_recipient_id(args.recipient_id);
+    builder.finish()
+  }
 
-    #[inline]
-    pub fn recipient_id(&self) -> i32 {
-        // Safety:
-        // Created from valid Table for this object
-        // which contains a valid value in this slot
-        unsafe {
-            self._tab
-                .get::<i32>(ClientWhisperById::VT_RECIPIENT_ID, Some(0))
-                .unwrap()
-        }
-    }
-    #[inline]
-    pub fn text(&self) -> &'a str {
-        // Safety:
-        // Created from valid Table for this object
-        // which contains a valid value in this slot
-        unsafe {
-            self._tab
-                .get::<flatbuffers::ForwardsUOffset<&str>>(ClientWhisperById::VT_TEXT, None)
-                .unwrap()
-        }
-    }
+
+  #[inline]
+  pub fn recipient_id(&self) -> i32 {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<i32>(ClientWhisperById::VT_RECIPIENT_ID, Some(0)).unwrap()}
+  }
+  #[inline]
+  pub fn text(&self) -> &'a str {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<&str>>(ClientWhisperById::VT_TEXT, None).unwrap()}
+  }
 }
 
 impl flatbuffers::Verifiable for ClientWhisperById<'_> {
-    #[inline]
-    fn run_verifier(
-        v: &mut flatbuffers::Verifier,
-        pos: usize,
-    ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
-        use self::flatbuffers::Verifiable;
-        v.visit_table(pos)?
-            .visit_field::<i32>("recipient_id", Self::VT_RECIPIENT_ID, false)?
-            .visit_field::<flatbuffers::ForwardsUOffset<&str>>("text", Self::VT_TEXT, true)?
-            .finish();
-        Ok(())
-    }
+  #[inline]
+  fn run_verifier(
+    v: &mut flatbuffers::Verifier, pos: usize
+  ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
+    use self::flatbuffers::Verifiable;
+    v.visit_table(pos)?
+     .visit_field::<i32>("recipient_id", Self::VT_RECIPIENT_ID, false)?
+     .visit_field::<flatbuffers::ForwardsUOffset<&str>>("text", Self::VT_TEXT, true)?
+     .finish();
+    Ok(())
+  }
 }
 pub struct ClientWhisperByIdArgs<'a> {
     pub recipient_id: i32,
     pub text: Option<flatbuffers::WIPOffset<&'a str>>,
 }
 impl<'a> Default for ClientWhisperByIdArgs<'a> {
-    #[inline]
-    fn default() -> Self {
-        ClientWhisperByIdArgs {
-            recipient_id: 0,
-            text: None, // required field
-        }
+  #[inline]
+  fn default() -> Self {
+    ClientWhisperByIdArgs {
+      recipient_id: 0,
+      text: None, // required field
     }
+  }
 }
 
 pub struct ClientWhisperByIdBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> {
-    fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
-    start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
+  fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
+  start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
 }
 impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> ClientWhisperByIdBuilder<'a, 'b, A> {
-    #[inline]
-    pub fn add_recipient_id(&mut self, recipient_id: i32) {
-        self.fbb_
-            .push_slot::<i32>(ClientWhisperById::VT_RECIPIENT_ID, recipient_id, 0);
+  #[inline]
+  pub fn add_recipient_id(&mut self, recipient_id: i32) {
+    self.fbb_.push_slot::<i32>(ClientWhisperById::VT_RECIPIENT_ID, recipient_id, 0);
+  }
+  #[inline]
+  pub fn add_text(&mut self, text: flatbuffers::WIPOffset<&'b  str>) {
+    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(ClientWhisperById::VT_TEXT, text);
+  }
+  #[inline]
+  pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> ClientWhisperByIdBuilder<'a, 'b, A> {
+    let start = _fbb.start_table();
+    ClientWhisperByIdBuilder {
+      fbb_: _fbb,
+      start_: start,
     }
-    #[inline]
-    pub fn add_text(&mut self, text: flatbuffers::WIPOffset<&'b str>) {
-        self.fbb_
-            .push_slot_always::<flatbuffers::WIPOffset<_>>(ClientWhisperById::VT_TEXT, text);
-    }
-    #[inline]
-    pub fn new(
-        _fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
-    ) -> ClientWhisperByIdBuilder<'a, 'b, A> {
-        let start = _fbb.start_table();
-        ClientWhisperByIdBuilder {
-            fbb_: _fbb,
-            start_: start,
-        }
-    }
-    #[inline]
-    pub fn finish(self) -> flatbuffers::WIPOffset<ClientWhisperById<'a>> {
-        let o = self.fbb_.end_table(self.start_);
-        self.fbb_.required(o, ClientWhisperById::VT_TEXT, "text");
-        flatbuffers::WIPOffset::new(o.value())
-    }
+  }
+  #[inline]
+  pub fn finish(self) -> flatbuffers::WIPOffset<ClientWhisperById<'a>> {
+    let o = self.fbb_.end_table(self.start_);
+    self.fbb_.required(o, ClientWhisperById::VT_TEXT,"text");
+    flatbuffers::WIPOffset::new(o.value())
+  }
 }
 
 impl core::fmt::Debug for ClientWhisperById<'_> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let mut ds = f.debug_struct("ClientWhisperById");
-        ds.field("recipient_id", &self.recipient_id());
-        ds.field("text", &self.text());
-        ds.finish()
-    }
+  fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    let mut ds = f.debug_struct("ClientWhisperById");
+      ds.field("recipient_id", &self.recipient_id());
+      ds.field("text", &self.text());
+      ds.finish()
+  }
 }

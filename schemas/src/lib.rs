@@ -67,6 +67,8 @@ pub mod social {
     pub use server_system_message_generated::*;
     mod server_whisper_generated;
     pub use server_whisper_generated::*;
+    mod server_whisper_receipt_generated;
+    pub use server_whisper_receipt_generated::*;
     mod event_data_generated;
     pub use event_data_generated::*;
     mod event_generated;

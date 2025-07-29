@@ -2,129 +2,109 @@
 // @generated
 extern crate alloc;
 extern crate flatbuffers;
-use self::flatbuffers::{EndianScalar, Follow};
-use super::*;
 use alloc::boxed::Box;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use core::cmp::Ordering;
 use core::mem;
+use core::cmp::Ordering;
+use self::flatbuffers::{EndianScalar, Follow};
+use super::*;
 pub enum BatchedEventsOffset {}
 #[derive(Copy, Clone, PartialEq)]
 
 pub struct BatchedEvents<'a> {
-    pub _tab: flatbuffers::Table<'a>,
+  pub _tab: flatbuffers::Table<'a>,
 }
 
 impl<'a> flatbuffers::Follow<'a> for BatchedEvents<'a> {
-    type Inner = BatchedEvents<'a>;
-    #[inline]
-    unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
-        Self {
-            _tab: flatbuffers::Table::new(buf, loc),
-        }
-    }
+  type Inner = BatchedEvents<'a>;
+  #[inline]
+  unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
+    Self { _tab: flatbuffers::Table::new(buf, loc) }
+  }
 }
 
 impl<'a> BatchedEvents<'a> {
-    pub const VT_EVENTS: flatbuffers::VOffsetT = 4;
+  pub const VT_EVENTS: flatbuffers::VOffsetT = 4;
 
-    #[inline]
-    pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
-        BatchedEvents { _tab: table }
-    }
-    #[allow(unused_mut)]
-    pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
-        _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
-        args: &'args BatchedEventsArgs<'args>,
-    ) -> flatbuffers::WIPOffset<BatchedEvents<'bldr>> {
-        let mut builder = BatchedEventsBuilder::new(_fbb);
-        if let Some(x) = args.events {
-            builder.add_events(x);
-        }
-        builder.finish()
-    }
+  #[inline]
+  pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
+    BatchedEvents { _tab: table }
+  }
+  #[allow(unused_mut)]
+  pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
+    _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
+    args: &'args BatchedEventsArgs<'args>
+  ) -> flatbuffers::WIPOffset<BatchedEvents<'bldr>> {
+    let mut builder = BatchedEventsBuilder::new(_fbb);
+    if let Some(x) = args.events { builder.add_events(x); }
+    builder.finish()
+  }
 
-    #[inline]
-    pub fn events(
-        &self,
-    ) -> Option<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<Event<'a>>>> {
-        // Safety:
-        // Created from valid Table for this object
-        // which contains a valid value in this slot
-        unsafe {
-            self._tab.get::<flatbuffers::ForwardsUOffset<
-                flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<Event>>,
-            >>(BatchedEvents::VT_EVENTS, None)
-        }
-    }
+
+  #[inline]
+  pub fn events(&self) -> Option<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<Event<'a>>>> {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<Event>>>>(BatchedEvents::VT_EVENTS, None)}
+  }
 }
 
 impl flatbuffers::Verifiable for BatchedEvents<'_> {
-    #[inline]
-    fn run_verifier(
-        v: &mut flatbuffers::Verifier,
-        pos: usize,
-    ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
-        use self::flatbuffers::Verifiable;
-        v.visit_table(pos)?
-            .visit_field::<flatbuffers::ForwardsUOffset<
-                flatbuffers::Vector<'_, flatbuffers::ForwardsUOffset<Event>>,
-            >>("events", Self::VT_EVENTS, false)?
-            .finish();
-        Ok(())
-    }
+  #[inline]
+  fn run_verifier(
+    v: &mut flatbuffers::Verifier, pos: usize
+  ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
+    use self::flatbuffers::Verifiable;
+    v.visit_table(pos)?
+     .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, flatbuffers::ForwardsUOffset<Event>>>>("events", Self::VT_EVENTS, false)?
+     .finish();
+    Ok(())
+  }
 }
 pub struct BatchedEventsArgs<'a> {
-    pub events: Option<
-        flatbuffers::WIPOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<Event<'a>>>>,
-    >,
+    pub events: Option<flatbuffers::WIPOffset<flatbuffers::Vector<'a, flatbuffers::ForwardsUOffset<Event<'a>>>>>,
 }
 impl<'a> Default for BatchedEventsArgs<'a> {
-    #[inline]
-    fn default() -> Self {
-        BatchedEventsArgs { events: None }
+  #[inline]
+  fn default() -> Self {
+    BatchedEventsArgs {
+      events: None,
     }
+  }
 }
 
 pub struct BatchedEventsBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> {
-    fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
-    start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
+  fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
+  start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
 }
 impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> BatchedEventsBuilder<'a, 'b, A> {
-    #[inline]
-    pub fn add_events(
-        &mut self,
-        events: flatbuffers::WIPOffset<
-            flatbuffers::Vector<'b, flatbuffers::ForwardsUOffset<Event<'b>>>,
-        >,
-    ) {
-        self.fbb_
-            .push_slot_always::<flatbuffers::WIPOffset<_>>(BatchedEvents::VT_EVENTS, events);
+  #[inline]
+  pub fn add_events(&mut self, events: flatbuffers::WIPOffset<flatbuffers::Vector<'b , flatbuffers::ForwardsUOffset<Event<'b >>>>) {
+    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(BatchedEvents::VT_EVENTS, events);
+  }
+  #[inline]
+  pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> BatchedEventsBuilder<'a, 'b, A> {
+    let start = _fbb.start_table();
+    BatchedEventsBuilder {
+      fbb_: _fbb,
+      start_: start,
     }
-    #[inline]
-    pub fn new(
-        _fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
-    ) -> BatchedEventsBuilder<'a, 'b, A> {
-        let start = _fbb.start_table();
-        BatchedEventsBuilder {
-            fbb_: _fbb,
-            start_: start,
-        }
-    }
-    #[inline]
-    pub fn finish(self) -> flatbuffers::WIPOffset<BatchedEvents<'a>> {
-        let o = self.fbb_.end_table(self.start_);
-        flatbuffers::WIPOffset::new(o.value())
-    }
+  }
+  #[inline]
+  pub fn finish(self) -> flatbuffers::WIPOffset<BatchedEvents<'a>> {
+    let o = self.fbb_.end_table(self.start_);
+    flatbuffers::WIPOffset::new(o.value())
+  }
 }
 
 impl core::fmt::Debug for BatchedEvents<'_> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let mut ds = f.debug_struct("BatchedEvents");
-        ds.field("events", &self.events());
-        ds.finish()
-    }
+  fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    let mut ds = f.debug_struct("BatchedEvents");
+      ds.field("events", &self.events());
+      ds.finish()
+  }
 }
 #[inline]
 /// Verifies that a buffer of bytes contains a `BatchedEvents`
@@ -134,7 +114,7 @@ impl core::fmt::Debug for BatchedEvents<'_> {
 /// previous, unchecked, behavior use
 /// `root_as_batched_events_unchecked`.
 pub fn root_as_batched_events(buf: &[u8]) -> Result<BatchedEvents, flatbuffers::InvalidFlatbuffer> {
-    flatbuffers::root::<BatchedEvents>(buf)
+  flatbuffers::root::<BatchedEvents>(buf)
 }
 #[inline]
 /// Verifies that a buffer of bytes contains a size prefixed
@@ -143,10 +123,8 @@ pub fn root_as_batched_events(buf: &[u8]) -> Result<BatchedEvents, flatbuffers::
 /// catch every error, or be maximally performant. For the
 /// previous, unchecked, behavior use
 /// `size_prefixed_root_as_batched_events_unchecked`.
-pub fn size_prefixed_root_as_batched_events(
-    buf: &[u8],
-) -> Result<BatchedEvents, flatbuffers::InvalidFlatbuffer> {
-    flatbuffers::size_prefixed_root::<BatchedEvents>(buf)
+pub fn size_prefixed_root_as_batched_events(buf: &[u8]) -> Result<BatchedEvents, flatbuffers::InvalidFlatbuffer> {
+  flatbuffers::size_prefixed_root::<BatchedEvents>(buf)
 }
 #[inline]
 /// Verifies, with the given options, that a buffer of bytes
@@ -156,10 +134,10 @@ pub fn size_prefixed_root_as_batched_events(
 /// previous, unchecked, behavior use
 /// `root_as_batched_events_unchecked`.
 pub fn root_as_batched_events_with_opts<'b, 'o>(
-    opts: &'o flatbuffers::VerifierOptions,
-    buf: &'b [u8],
+  opts: &'o flatbuffers::VerifierOptions,
+  buf: &'b [u8],
 ) -> Result<BatchedEvents<'b>, flatbuffers::InvalidFlatbuffer> {
-    flatbuffers::root_with_opts::<BatchedEvents<'b>>(opts, buf)
+  flatbuffers::root_with_opts::<BatchedEvents<'b>>(opts, buf)
 }
 #[inline]
 /// Verifies, with the given verifier options, that a buffer of
@@ -169,37 +147,33 @@ pub fn root_as_batched_events_with_opts<'b, 'o>(
 /// previous, unchecked, behavior use
 /// `root_as_batched_events_unchecked`.
 pub fn size_prefixed_root_as_batched_events_with_opts<'b, 'o>(
-    opts: &'o flatbuffers::VerifierOptions,
-    buf: &'b [u8],
+  opts: &'o flatbuffers::VerifierOptions,
+  buf: &'b [u8],
 ) -> Result<BatchedEvents<'b>, flatbuffers::InvalidFlatbuffer> {
-    flatbuffers::size_prefixed_root_with_opts::<BatchedEvents<'b>>(opts, buf)
+  flatbuffers::size_prefixed_root_with_opts::<BatchedEvents<'b>>(opts, buf)
 }
 #[inline]
 /// Assumes, without verification, that a buffer of bytes contains a BatchedEvents and returns it.
 /// # Safety
 /// Callers must trust the given bytes do indeed contain a valid `BatchedEvents`.
 pub unsafe fn root_as_batched_events_unchecked(buf: &[u8]) -> BatchedEvents {
-    flatbuffers::root_unchecked::<BatchedEvents>(buf)
+  flatbuffers::root_unchecked::<BatchedEvents>(buf)
 }
 #[inline]
 /// Assumes, without verification, that a buffer of bytes contains a size prefixed BatchedEvents and returns it.
 /// # Safety
 /// Callers must trust the given bytes do indeed contain a valid size prefixed `BatchedEvents`.
 pub unsafe fn size_prefixed_root_as_batched_events_unchecked(buf: &[u8]) -> BatchedEvents {
-    flatbuffers::size_prefixed_root_unchecked::<BatchedEvents>(buf)
+  flatbuffers::size_prefixed_root_unchecked::<BatchedEvents>(buf)
 }
 #[inline]
 pub fn finish_batched_events_buffer<'a, 'b, A: flatbuffers::Allocator + 'a>(
     fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
-    root: flatbuffers::WIPOffset<BatchedEvents<'a>>,
-) {
-    fbb.finish(root, None);
+    root: flatbuffers::WIPOffset<BatchedEvents<'a>>) {
+  fbb.finish(root, None);
 }
 
 #[inline]
-pub fn finish_size_prefixed_batched_events_buffer<'a, 'b, A: flatbuffers::Allocator + 'a>(
-    fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
-    root: flatbuffers::WIPOffset<BatchedEvents<'a>>,
-) {
-    fbb.finish_size_prefixed(root, None);
+pub fn finish_size_prefixed_batched_events_buffer<'a, 'b, A: flatbuffers::Allocator + 'a>(fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>, root: flatbuffers::WIPOffset<BatchedEvents<'a>>) {
+  fbb.finish_size_prefixed(root, None);
 }

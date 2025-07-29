@@ -2,150 +2,126 @@
 // @generated
 extern crate alloc;
 extern crate flatbuffers;
-use self::flatbuffers::{EndianScalar, Follow};
-use super::*;
 use alloc::boxed::Box;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use core::cmp::Ordering;
 use core::mem;
+use core::cmp::Ordering;
+use self::flatbuffers::{EndianScalar, Follow};
+use super::*;
 pub enum EnterGameResponseOffset {}
 #[derive(Copy, Clone, PartialEq)]
 
 pub struct EnterGameResponse<'a> {
-    pub _tab: flatbuffers::Table<'a>,
+  pub _tab: flatbuffers::Table<'a>,
 }
 
 impl<'a> flatbuffers::Follow<'a> for EnterGameResponse<'a> {
-    type Inner = EnterGameResponse<'a>;
-    #[inline]
-    unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
-        Self {
-            _tab: flatbuffers::Table::new(buf, loc),
-        }
-    }
+  type Inner = EnterGameResponse<'a>;
+  #[inline]
+  unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
+    Self { _tab: flatbuffers::Table::new(buf, loc) }
+  }
 }
 
 impl<'a> EnterGameResponse<'a> {
-    pub const VT_PLAYER_ENTITY_ID: flatbuffers::VOffsetT = 4;
-    pub const VT_CHARACTER: flatbuffers::VOffsetT = 6;
+  pub const VT_PLAYER_ENTITY_ID: flatbuffers::VOffsetT = 4;
+  pub const VT_CHARACTER: flatbuffers::VOffsetT = 6;
 
-    #[inline]
-    pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
-        EnterGameResponse { _tab: table }
-    }
-    #[allow(unused_mut)]
-    pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
-        _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
-        args: &'args EnterGameResponseArgs<'args>,
-    ) -> flatbuffers::WIPOffset<EnterGameResponse<'bldr>> {
-        let mut builder = EnterGameResponseBuilder::new(_fbb);
-        builder.add_player_entity_id(args.player_entity_id);
-        if let Some(x) = args.character {
-            builder.add_character(x);
-        }
-        builder.finish()
-    }
+  #[inline]
+  pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
+    EnterGameResponse { _tab: table }
+  }
+  #[allow(unused_mut)]
+  pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
+    _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
+    args: &'args EnterGameResponseArgs<'args>
+  ) -> flatbuffers::WIPOffset<EnterGameResponse<'bldr>> {
+    let mut builder = EnterGameResponseBuilder::new(_fbb);
+    builder.add_player_entity_id(args.player_entity_id);
+    if let Some(x) = args.character { builder.add_character(x); }
+    builder.finish()
+  }
 
-    #[inline]
-    pub fn player_entity_id(&self) -> u64 {
-        // Safety:
-        // Created from valid Table for this object
-        // which contains a valid value in this slot
-        unsafe {
-            self._tab
-                .get::<u64>(EnterGameResponse::VT_PLAYER_ENTITY_ID, Some(0))
-                .unwrap()
-        }
-    }
-    #[inline]
-    pub fn character(&self) -> Option<Character<'a>> {
-        // Safety:
-        // Created from valid Table for this object
-        // which contains a valid value in this slot
-        unsafe {
-            self._tab.get::<flatbuffers::ForwardsUOffset<Character>>(
-                EnterGameResponse::VT_CHARACTER,
-                None,
-            )
-        }
-    }
+
+  #[inline]
+  pub fn player_entity_id(&self) -> u64 {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<u64>(EnterGameResponse::VT_PLAYER_ENTITY_ID, Some(0)).unwrap()}
+  }
+  #[inline]
+  pub fn character(&self) -> Option<Character<'a>> {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<Character>>(EnterGameResponse::VT_CHARACTER, None)}
+  }
 }
 
 impl flatbuffers::Verifiable for EnterGameResponse<'_> {
-    #[inline]
-    fn run_verifier(
-        v: &mut flatbuffers::Verifier,
-        pos: usize,
-    ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
-        use self::flatbuffers::Verifiable;
-        v.visit_table(pos)?
-            .visit_field::<u64>("player_entity_id", Self::VT_PLAYER_ENTITY_ID, false)?
-            .visit_field::<flatbuffers::ForwardsUOffset<Character>>(
-                "character",
-                Self::VT_CHARACTER,
-                false,
-            )?
-            .finish();
-        Ok(())
-    }
+  #[inline]
+  fn run_verifier(
+    v: &mut flatbuffers::Verifier, pos: usize
+  ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
+    use self::flatbuffers::Verifiable;
+    v.visit_table(pos)?
+     .visit_field::<u64>("player_entity_id", Self::VT_PLAYER_ENTITY_ID, false)?
+     .visit_field::<flatbuffers::ForwardsUOffset<Character>>("character", Self::VT_CHARACTER, false)?
+     .finish();
+    Ok(())
+  }
 }
 pub struct EnterGameResponseArgs<'a> {
     pub player_entity_id: u64,
     pub character: Option<flatbuffers::WIPOffset<Character<'a>>>,
 }
 impl<'a> Default for EnterGameResponseArgs<'a> {
-    #[inline]
-    fn default() -> Self {
-        EnterGameResponseArgs {
-            player_entity_id: 0,
-            character: None,
-        }
+  #[inline]
+  fn default() -> Self {
+    EnterGameResponseArgs {
+      player_entity_id: 0,
+      character: None,
     }
+  }
 }
 
 pub struct EnterGameResponseBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> {
-    fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
-    start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
+  fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
+  start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
 }
 impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> EnterGameResponseBuilder<'a, 'b, A> {
-    #[inline]
-    pub fn add_player_entity_id(&mut self, player_entity_id: u64) {
-        self.fbb_
-            .push_slot::<u64>(EnterGameResponse::VT_PLAYER_ENTITY_ID, player_entity_id, 0);
+  #[inline]
+  pub fn add_player_entity_id(&mut self, player_entity_id: u64) {
+    self.fbb_.push_slot::<u64>(EnterGameResponse::VT_PLAYER_ENTITY_ID, player_entity_id, 0);
+  }
+  #[inline]
+  pub fn add_character(&mut self, character: flatbuffers::WIPOffset<Character<'b >>) {
+    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<Character>>(EnterGameResponse::VT_CHARACTER, character);
+  }
+  #[inline]
+  pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> EnterGameResponseBuilder<'a, 'b, A> {
+    let start = _fbb.start_table();
+    EnterGameResponseBuilder {
+      fbb_: _fbb,
+      start_: start,
     }
-    #[inline]
-    pub fn add_character(&mut self, character: flatbuffers::WIPOffset<Character<'b>>) {
-        self.fbb_
-            .push_slot_always::<flatbuffers::WIPOffset<Character>>(
-                EnterGameResponse::VT_CHARACTER,
-                character,
-            );
-    }
-    #[inline]
-    pub fn new(
-        _fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
-    ) -> EnterGameResponseBuilder<'a, 'b, A> {
-        let start = _fbb.start_table();
-        EnterGameResponseBuilder {
-            fbb_: _fbb,
-            start_: start,
-        }
-    }
-    #[inline]
-    pub fn finish(self) -> flatbuffers::WIPOffset<EnterGameResponse<'a>> {
-        let o = self.fbb_.end_table(self.start_);
-        flatbuffers::WIPOffset::new(o.value())
-    }
+  }
+  #[inline]
+  pub fn finish(self) -> flatbuffers::WIPOffset<EnterGameResponse<'a>> {
+    let o = self.fbb_.end_table(self.start_);
+    flatbuffers::WIPOffset::new(o.value())
+  }
 }
 
 impl core::fmt::Debug for EnterGameResponse<'_> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let mut ds = f.debug_struct("EnterGameResponse");
-        ds.field("player_entity_id", &self.player_entity_id());
-        ds.field("character", &self.character());
-        ds.finish()
-    }
+  fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    let mut ds = f.debug_struct("EnterGameResponse");
+      ds.field("player_entity_id", &self.player_entity_id());
+      ds.field("character", &self.character());
+      ds.finish()
+  }
 }
 #[inline]
 /// Verifies that a buffer of bytes contains a `EnterGameResponse`
@@ -154,10 +130,8 @@ impl core::fmt::Debug for EnterGameResponse<'_> {
 /// catch every error, or be maximally performant. For the
 /// previous, unchecked, behavior use
 /// `root_as_enter_game_response_unchecked`.
-pub fn root_as_enter_game_response(
-    buf: &[u8],
-) -> Result<EnterGameResponse, flatbuffers::InvalidFlatbuffer> {
-    flatbuffers::root::<EnterGameResponse>(buf)
+pub fn root_as_enter_game_response(buf: &[u8]) -> Result<EnterGameResponse, flatbuffers::InvalidFlatbuffer> {
+  flatbuffers::root::<EnterGameResponse>(buf)
 }
 #[inline]
 /// Verifies that a buffer of bytes contains a size prefixed
@@ -166,10 +140,8 @@ pub fn root_as_enter_game_response(
 /// catch every error, or be maximally performant. For the
 /// previous, unchecked, behavior use
 /// `size_prefixed_root_as_enter_game_response_unchecked`.
-pub fn size_prefixed_root_as_enter_game_response(
-    buf: &[u8],
-) -> Result<EnterGameResponse, flatbuffers::InvalidFlatbuffer> {
-    flatbuffers::size_prefixed_root::<EnterGameResponse>(buf)
+pub fn size_prefixed_root_as_enter_game_response(buf: &[u8]) -> Result<EnterGameResponse, flatbuffers::InvalidFlatbuffer> {
+  flatbuffers::size_prefixed_root::<EnterGameResponse>(buf)
 }
 #[inline]
 /// Verifies, with the given options, that a buffer of bytes
@@ -179,10 +151,10 @@ pub fn size_prefixed_root_as_enter_game_response(
 /// previous, unchecked, behavior use
 /// `root_as_enter_game_response_unchecked`.
 pub fn root_as_enter_game_response_with_opts<'b, 'o>(
-    opts: &'o flatbuffers::VerifierOptions,
-    buf: &'b [u8],
+  opts: &'o flatbuffers::VerifierOptions,
+  buf: &'b [u8],
 ) -> Result<EnterGameResponse<'b>, flatbuffers::InvalidFlatbuffer> {
-    flatbuffers::root_with_opts::<EnterGameResponse<'b>>(opts, buf)
+  flatbuffers::root_with_opts::<EnterGameResponse<'b>>(opts, buf)
 }
 #[inline]
 /// Verifies, with the given verifier options, that a buffer of
@@ -192,37 +164,33 @@ pub fn root_as_enter_game_response_with_opts<'b, 'o>(
 /// previous, unchecked, behavior use
 /// `root_as_enter_game_response_unchecked`.
 pub fn size_prefixed_root_as_enter_game_response_with_opts<'b, 'o>(
-    opts: &'o flatbuffers::VerifierOptions,
-    buf: &'b [u8],
+  opts: &'o flatbuffers::VerifierOptions,
+  buf: &'b [u8],
 ) -> Result<EnterGameResponse<'b>, flatbuffers::InvalidFlatbuffer> {
-    flatbuffers::size_prefixed_root_with_opts::<EnterGameResponse<'b>>(opts, buf)
+  flatbuffers::size_prefixed_root_with_opts::<EnterGameResponse<'b>>(opts, buf)
 }
 #[inline]
 /// Assumes, without verification, that a buffer of bytes contains a EnterGameResponse and returns it.
 /// # Safety
 /// Callers must trust the given bytes do indeed contain a valid `EnterGameResponse`.
 pub unsafe fn root_as_enter_game_response_unchecked(buf: &[u8]) -> EnterGameResponse {
-    flatbuffers::root_unchecked::<EnterGameResponse>(buf)
+  flatbuffers::root_unchecked::<EnterGameResponse>(buf)
 }
 #[inline]
 /// Assumes, without verification, that a buffer of bytes contains a size prefixed EnterGameResponse and returns it.
 /// # Safety
 /// Callers must trust the given bytes do indeed contain a valid size prefixed `EnterGameResponse`.
 pub unsafe fn size_prefixed_root_as_enter_game_response_unchecked(buf: &[u8]) -> EnterGameResponse {
-    flatbuffers::size_prefixed_root_unchecked::<EnterGameResponse>(buf)
+  flatbuffers::size_prefixed_root_unchecked::<EnterGameResponse>(buf)
 }
 #[inline]
 pub fn finish_enter_game_response_buffer<'a, 'b, A: flatbuffers::Allocator + 'a>(
     fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
-    root: flatbuffers::WIPOffset<EnterGameResponse<'a>>,
-) {
-    fbb.finish(root, None);
+    root: flatbuffers::WIPOffset<EnterGameResponse<'a>>) {
+  fbb.finish(root, None);
 }
 
 #[inline]
-pub fn finish_size_prefixed_enter_game_response_buffer<'a, 'b, A: flatbuffers::Allocator + 'a>(
-    fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
-    root: flatbuffers::WIPOffset<EnterGameResponse<'a>>,
-) {
-    fbb.finish_size_prefixed(root, None);
+pub fn finish_size_prefixed_enter_game_response_buffer<'a, 'b, A: flatbuffers::Allocator + 'a>(fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>, root: flatbuffers::WIPOffset<EnterGameResponse<'a>>) {
+  fbb.finish_size_prefixed(root, None);
 }

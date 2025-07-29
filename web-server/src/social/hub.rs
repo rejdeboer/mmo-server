@@ -83,7 +83,7 @@ impl Hub {
 
     async fn handle_chat(&self, sender_id: i32, channel: ChannelType, text: &str) {
         let sender_client = self.get_client_unchecked(&sender_id);
-        return match channel {
+        match channel {
             ChannelType::Guild => {
                 self.handle_guild_message(sender_id, sender_client, text)
                     .await
@@ -110,7 +110,7 @@ impl Hub {
 
         let mut builder = FlatBufferBuilder::new();
         let fb_sender = builder.create_string(&sender_client.character_name);
-        let fb_text = builder.create_string(&text);
+        let fb_text = builder.create_string(text);
         let fb_msg = schema::ServerChatMessage::create(
             &mut builder,
             &schema::ServerChatMessageArgs {
@@ -132,7 +132,7 @@ impl Hub {
         let msg: Arc<[u8]> = Arc::from(builder.finished_data());
 
         let members = self.get_guild_members_unchecked(&gid);
-        for member in members.into_iter() {
+        for member in members {
             let Some(member_client) = self.clients.get(member) else {
                 tracing::warn!(?member, ?gid, "member not found in guild");
                 continue;
@@ -159,13 +159,39 @@ impl Hub {
 
         let mut builder = FlatBufferBuilder::new();
         let fb_sender = builder.create_string(&sender_client.character_name);
-        let fb_recipient = builder.create_string(&recipient_client.character_name);
-        let fb_text = builder.create_string(&text);
-        let fb_msg = schema::ServerWhisper::create(
+        let fb_text = builder.create_string(text);
+        let fb_whisper = schema::ServerWhisper::create(
             &mut builder,
             &schema::ServerWhisperArgs {
                 sender_id,
                 sender_name: Some(fb_sender),
+                text: Some(fb_text),
+            },
+        )
+        .as_union_value();
+        let fb_event = schema::Event::create(
+            &mut builder,
+            &schema::EventArgs {
+                data_type: schema::EventData::ServerWhisper,
+                data: Some(fb_whisper),
+            },
+        );
+        builder.finish_minimal(fb_event);
+        let whisper: Arc<[u8]> = Arc::from(builder.finished_data());
+        builder.reset();
+
+        if let Err(err) = recipient_client.tx.send(whisper.clone()).await {
+            tracing::error!(?err, "failed to send whisper to recipient");
+            return self
+                .write_error(HubError::Unexpected, sender_client.tx.clone())
+                .await;
+        }
+
+        let fb_recipient = builder.create_string(&recipient_client.character_name);
+        let fb_text = builder.create_string(text);
+        let fb_receipt = schema::ServerWhisperReceipt::create(
+            &mut builder,
+            &schema::ServerWhisperReceiptArgs {
                 recipient_id,
                 recipient_name: Some(fb_recipient),
                 text: Some(fb_text),
@@ -175,22 +201,15 @@ impl Hub {
         let fb_event = schema::Event::create(
             &mut builder,
             &schema::EventArgs {
-                data_type: schema::EventData::ServerWhisper,
-                data: Some(fb_msg),
+                data_type: schema::EventData::ServerWhisperReceipt,
+                data: Some(fb_receipt),
             },
         );
         builder.finish_minimal(fb_event);
-        let msg: Arc<[u8]> = Arc::from(builder.finished_data());
+        let receipt: Arc<[u8]> = Arc::from(builder.finished_data());
 
-        if let Err(err) = recipient_client.tx.send(msg.clone()).await {
-            tracing::error!(?err, "failed to send whisper to recipient");
-            return self
-                .write_error(HubError::Unexpected, sender_client.tx.clone())
-                .await;
-        }
-
-        if let Err(err) = sender_client.tx.send(msg).await {
-            return tracing::error!(?err, "failed to send receipt to sender");
+        if let Err(err) = sender_client.tx.send(receipt).await {
+            tracing::error!(?err, "failed to send receipt to sender");
         }
     }
 
@@ -202,7 +221,7 @@ impl Hub {
         };
 
         let mut builder = FlatBufferBuilder::new();
-        let fb_text = builder.create_string(&text);
+        let fb_text = builder.create_string(text);
         let fb_msg = schema::ServerSystemMessage::create(
             &mut builder,
             &schema::ServerSystemMessageArgs {
@@ -221,7 +240,7 @@ impl Hub {
         let msg: Arc<[u8]> = Arc::from(builder.finished_data());
 
         if let Err(err) = tx.send(msg).await {
-            return tracing::error!(?err, "failed to send error");
+            tracing::error!(?err, "failed to send error");
         }
     }
 

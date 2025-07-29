@@ -9,36 +9,38 @@ use core::mem;
 use core::cmp::Ordering;
 use self::flatbuffers::{EndianScalar, Follow};
 use super::*;
-pub enum ClientWhisperByNameOffset {}
+pub enum ServerWhisperReceiptOffset {}
 #[derive(Copy, Clone, PartialEq)]
 
-pub struct ClientWhisperByName<'a> {
+pub struct ServerWhisperReceipt<'a> {
   pub _tab: flatbuffers::Table<'a>,
 }
 
-impl<'a> flatbuffers::Follow<'a> for ClientWhisperByName<'a> {
-  type Inner = ClientWhisperByName<'a>;
+impl<'a> flatbuffers::Follow<'a> for ServerWhisperReceipt<'a> {
+  type Inner = ServerWhisperReceipt<'a>;
   #[inline]
   unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
     Self { _tab: flatbuffers::Table::new(buf, loc) }
   }
 }
 
-impl<'a> ClientWhisperByName<'a> {
+impl<'a> ServerWhisperReceipt<'a> {
   pub const VT_RECIPIENT_NAME: flatbuffers::VOffsetT = 4;
-  pub const VT_TEXT: flatbuffers::VOffsetT = 6;
+  pub const VT_RECIPIENT_ID: flatbuffers::VOffsetT = 6;
+  pub const VT_TEXT: flatbuffers::VOffsetT = 8;
 
   #[inline]
   pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
-    ClientWhisperByName { _tab: table }
+    ServerWhisperReceipt { _tab: table }
   }
   #[allow(unused_mut)]
   pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
     _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
-    args: &'args ClientWhisperByNameArgs<'args>
-  ) -> flatbuffers::WIPOffset<ClientWhisperByName<'bldr>> {
-    let mut builder = ClientWhisperByNameBuilder::new(_fbb);
+    args: &'args ServerWhisperReceiptArgs<'args>
+  ) -> flatbuffers::WIPOffset<ServerWhisperReceipt<'bldr>> {
+    let mut builder = ServerWhisperReceiptBuilder::new(_fbb);
     if let Some(x) = args.text { builder.add_text(x); }
+    builder.add_recipient_id(args.recipient_id);
     if let Some(x) = args.recipient_name { builder.add_recipient_name(x); }
     builder.finish()
   }
@@ -49,18 +51,25 @@ impl<'a> ClientWhisperByName<'a> {
     // Safety:
     // Created from valid Table for this object
     // which contains a valid value in this slot
-    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<&str>>(ClientWhisperByName::VT_RECIPIENT_NAME, None).unwrap()}
+    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<&str>>(ServerWhisperReceipt::VT_RECIPIENT_NAME, None).unwrap()}
+  }
+  #[inline]
+  pub fn recipient_id(&self) -> i32 {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<i32>(ServerWhisperReceipt::VT_RECIPIENT_ID, Some(0)).unwrap()}
   }
   #[inline]
   pub fn text(&self) -> &'a str {
     // Safety:
     // Created from valid Table for this object
     // which contains a valid value in this slot
-    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<&str>>(ClientWhisperByName::VT_TEXT, None).unwrap()}
+    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<&str>>(ServerWhisperReceipt::VT_TEXT, None).unwrap()}
   }
 }
 
-impl flatbuffers::Verifiable for ClientWhisperByName<'_> {
+impl flatbuffers::Verifiable for ServerWhisperReceipt<'_> {
   #[inline]
   fn run_verifier(
     v: &mut flatbuffers::Verifier, pos: usize
@@ -68,59 +77,67 @@ impl flatbuffers::Verifiable for ClientWhisperByName<'_> {
     use self::flatbuffers::Verifiable;
     v.visit_table(pos)?
      .visit_field::<flatbuffers::ForwardsUOffset<&str>>("recipient_name", Self::VT_RECIPIENT_NAME, true)?
+     .visit_field::<i32>("recipient_id", Self::VT_RECIPIENT_ID, false)?
      .visit_field::<flatbuffers::ForwardsUOffset<&str>>("text", Self::VT_TEXT, true)?
      .finish();
     Ok(())
   }
 }
-pub struct ClientWhisperByNameArgs<'a> {
+pub struct ServerWhisperReceiptArgs<'a> {
     pub recipient_name: Option<flatbuffers::WIPOffset<&'a str>>,
+    pub recipient_id: i32,
     pub text: Option<flatbuffers::WIPOffset<&'a str>>,
 }
-impl<'a> Default for ClientWhisperByNameArgs<'a> {
+impl<'a> Default for ServerWhisperReceiptArgs<'a> {
   #[inline]
   fn default() -> Self {
-    ClientWhisperByNameArgs {
+    ServerWhisperReceiptArgs {
       recipient_name: None, // required field
+      recipient_id: 0,
       text: None, // required field
     }
   }
 }
 
-pub struct ClientWhisperByNameBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> {
+pub struct ServerWhisperReceiptBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> {
   fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
   start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
 }
-impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> ClientWhisperByNameBuilder<'a, 'b, A> {
+impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> ServerWhisperReceiptBuilder<'a, 'b, A> {
   #[inline]
   pub fn add_recipient_name(&mut self, recipient_name: flatbuffers::WIPOffset<&'b  str>) {
-    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(ClientWhisperByName::VT_RECIPIENT_NAME, recipient_name);
+    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(ServerWhisperReceipt::VT_RECIPIENT_NAME, recipient_name);
+  }
+  #[inline]
+  pub fn add_recipient_id(&mut self, recipient_id: i32) {
+    self.fbb_.push_slot::<i32>(ServerWhisperReceipt::VT_RECIPIENT_ID, recipient_id, 0);
   }
   #[inline]
   pub fn add_text(&mut self, text: flatbuffers::WIPOffset<&'b  str>) {
-    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(ClientWhisperByName::VT_TEXT, text);
+    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(ServerWhisperReceipt::VT_TEXT, text);
   }
   #[inline]
-  pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> ClientWhisperByNameBuilder<'a, 'b, A> {
+  pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> ServerWhisperReceiptBuilder<'a, 'b, A> {
     let start = _fbb.start_table();
-    ClientWhisperByNameBuilder {
+    ServerWhisperReceiptBuilder {
       fbb_: _fbb,
       start_: start,
     }
   }
   #[inline]
-  pub fn finish(self) -> flatbuffers::WIPOffset<ClientWhisperByName<'a>> {
+  pub fn finish(self) -> flatbuffers::WIPOffset<ServerWhisperReceipt<'a>> {
     let o = self.fbb_.end_table(self.start_);
-    self.fbb_.required(o, ClientWhisperByName::VT_RECIPIENT_NAME,"recipient_name");
-    self.fbb_.required(o, ClientWhisperByName::VT_TEXT,"text");
+    self.fbb_.required(o, ServerWhisperReceipt::VT_RECIPIENT_NAME,"recipient_name");
+    self.fbb_.required(o, ServerWhisperReceipt::VT_TEXT,"text");
     flatbuffers::WIPOffset::new(o.value())
   }
 }
 
-impl core::fmt::Debug for ClientWhisperByName<'_> {
+impl core::fmt::Debug for ServerWhisperReceipt<'_> {
   fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-    let mut ds = f.debug_struct("ClientWhisperByName");
+    let mut ds = f.debug_struct("ServerWhisperReceipt");
       ds.field("recipient_name", &self.recipient_name());
+      ds.field("recipient_id", &self.recipient_id());
       ds.field("text", &self.text());
       ds.finish()
   }

@@ -2,144 +2,125 @@
 // @generated
 extern crate alloc;
 extern crate flatbuffers;
-use self::flatbuffers::{EndianScalar, Follow};
-use super::*;
 use alloc::boxed::Box;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use core::cmp::Ordering;
 use core::mem;
+use core::cmp::Ordering;
+use self::flatbuffers::{EndianScalar, Follow};
+use super::*;
 pub enum ClientChatMessageOffset {}
 #[derive(Copy, Clone, PartialEq)]
 
 pub struct ClientChatMessage<'a> {
-    pub _tab: flatbuffers::Table<'a>,
+  pub _tab: flatbuffers::Table<'a>,
 }
 
 impl<'a> flatbuffers::Follow<'a> for ClientChatMessage<'a> {
-    type Inner = ClientChatMessage<'a>;
-    #[inline]
-    unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
-        Self {
-            _tab: flatbuffers::Table::new(buf, loc),
-        }
-    }
+  type Inner = ClientChatMessage<'a>;
+  #[inline]
+  unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
+    Self { _tab: flatbuffers::Table::new(buf, loc) }
+  }
 }
 
 impl<'a> ClientChatMessage<'a> {
-    pub const VT_CHANNEL: flatbuffers::VOffsetT = 4;
-    pub const VT_TEXT: flatbuffers::VOffsetT = 6;
+  pub const VT_CHANNEL: flatbuffers::VOffsetT = 4;
+  pub const VT_TEXT: flatbuffers::VOffsetT = 6;
 
-    #[inline]
-    pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
-        ClientChatMessage { _tab: table }
-    }
-    #[allow(unused_mut)]
-    pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
-        _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
-        args: &'args ClientChatMessageArgs<'args>,
-    ) -> flatbuffers::WIPOffset<ClientChatMessage<'bldr>> {
-        let mut builder = ClientChatMessageBuilder::new(_fbb);
-        if let Some(x) = args.text {
-            builder.add_text(x);
-        }
-        builder.add_channel(args.channel);
-        builder.finish()
-    }
+  #[inline]
+  pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
+    ClientChatMessage { _tab: table }
+  }
+  #[allow(unused_mut)]
+  pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
+    _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
+    args: &'args ClientChatMessageArgs<'args>
+  ) -> flatbuffers::WIPOffset<ClientChatMessage<'bldr>> {
+    let mut builder = ClientChatMessageBuilder::new(_fbb);
+    if let Some(x) = args.text { builder.add_text(x); }
+    builder.add_channel(args.channel);
+    builder.finish()
+  }
 
-    #[inline]
-    pub fn channel(&self) -> ChannelType {
-        // Safety:
-        // Created from valid Table for this object
-        // which contains a valid value in this slot
-        unsafe {
-            self._tab
-                .get::<ChannelType>(ClientChatMessage::VT_CHANNEL, Some(ChannelType::Guild))
-                .unwrap()
-        }
-    }
-    #[inline]
-    pub fn text(&self) -> &'a str {
-        // Safety:
-        // Created from valid Table for this object
-        // which contains a valid value in this slot
-        unsafe {
-            self._tab
-                .get::<flatbuffers::ForwardsUOffset<&str>>(ClientChatMessage::VT_TEXT, None)
-                .unwrap()
-        }
-    }
+
+  #[inline]
+  pub fn channel(&self) -> ChannelType {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<ChannelType>(ClientChatMessage::VT_CHANNEL, Some(ChannelType::Guild)).unwrap()}
+  }
+  #[inline]
+  pub fn text(&self) -> &'a str {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<&str>>(ClientChatMessage::VT_TEXT, None).unwrap()}
+  }
 }
 
 impl flatbuffers::Verifiable for ClientChatMessage<'_> {
-    #[inline]
-    fn run_verifier(
-        v: &mut flatbuffers::Verifier,
-        pos: usize,
-    ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
-        use self::flatbuffers::Verifiable;
-        v.visit_table(pos)?
-            .visit_field::<ChannelType>("channel", Self::VT_CHANNEL, false)?
-            .visit_field::<flatbuffers::ForwardsUOffset<&str>>("text", Self::VT_TEXT, true)?
-            .finish();
-        Ok(())
-    }
+  #[inline]
+  fn run_verifier(
+    v: &mut flatbuffers::Verifier, pos: usize
+  ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
+    use self::flatbuffers::Verifiable;
+    v.visit_table(pos)?
+     .visit_field::<ChannelType>("channel", Self::VT_CHANNEL, false)?
+     .visit_field::<flatbuffers::ForwardsUOffset<&str>>("text", Self::VT_TEXT, true)?
+     .finish();
+    Ok(())
+  }
 }
 pub struct ClientChatMessageArgs<'a> {
     pub channel: ChannelType,
     pub text: Option<flatbuffers::WIPOffset<&'a str>>,
 }
 impl<'a> Default for ClientChatMessageArgs<'a> {
-    #[inline]
-    fn default() -> Self {
-        ClientChatMessageArgs {
-            channel: ChannelType::Guild,
-            text: None, // required field
-        }
+  #[inline]
+  fn default() -> Self {
+    ClientChatMessageArgs {
+      channel: ChannelType::Guild,
+      text: None, // required field
     }
+  }
 }
 
 pub struct ClientChatMessageBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> {
-    fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
-    start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
+  fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
+  start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
 }
 impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> ClientChatMessageBuilder<'a, 'b, A> {
-    #[inline]
-    pub fn add_channel(&mut self, channel: ChannelType) {
-        self.fbb_.push_slot::<ChannelType>(
-            ClientChatMessage::VT_CHANNEL,
-            channel,
-            ChannelType::Guild,
-        );
+  #[inline]
+  pub fn add_channel(&mut self, channel: ChannelType) {
+    self.fbb_.push_slot::<ChannelType>(ClientChatMessage::VT_CHANNEL, channel, ChannelType::Guild);
+  }
+  #[inline]
+  pub fn add_text(&mut self, text: flatbuffers::WIPOffset<&'b  str>) {
+    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(ClientChatMessage::VT_TEXT, text);
+  }
+  #[inline]
+  pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> ClientChatMessageBuilder<'a, 'b, A> {
+    let start = _fbb.start_table();
+    ClientChatMessageBuilder {
+      fbb_: _fbb,
+      start_: start,
     }
-    #[inline]
-    pub fn add_text(&mut self, text: flatbuffers::WIPOffset<&'b str>) {
-        self.fbb_
-            .push_slot_always::<flatbuffers::WIPOffset<_>>(ClientChatMessage::VT_TEXT, text);
-    }
-    #[inline]
-    pub fn new(
-        _fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
-    ) -> ClientChatMessageBuilder<'a, 'b, A> {
-        let start = _fbb.start_table();
-        ClientChatMessageBuilder {
-            fbb_: _fbb,
-            start_: start,
-        }
-    }
-    #[inline]
-    pub fn finish(self) -> flatbuffers::WIPOffset<ClientChatMessage<'a>> {
-        let o = self.fbb_.end_table(self.start_);
-        self.fbb_.required(o, ClientChatMessage::VT_TEXT, "text");
-        flatbuffers::WIPOffset::new(o.value())
-    }
+  }
+  #[inline]
+  pub fn finish(self) -> flatbuffers::WIPOffset<ClientChatMessage<'a>> {
+    let o = self.fbb_.end_table(self.start_);
+    self.fbb_.required(o, ClientChatMessage::VT_TEXT,"text");
+    flatbuffers::WIPOffset::new(o.value())
+  }
 }
 
 impl core::fmt::Debug for ClientChatMessage<'_> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let mut ds = f.debug_struct("ClientChatMessage");
-        ds.field("channel", &self.channel());
-        ds.field("text", &self.text());
-        ds.finish()
-    }
+  fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    let mut ds = f.debug_struct("ClientChatMessage");
+      ds.field("channel", &self.channel());
+      ds.field("text", &self.text());
+      ds.finish()
+  }
 }

@@ -12,6 +12,10 @@ table ServerChatMessage {
 table ServerWhisper {
   sender_name: string (required);
   sender_id: int32;
+  text: string (required);
+}
+
+table ServerWhisperReceipt {
   recipient_name: string (required);
   recipient_id: int32;
   text: string (required);
@@ -24,6 +28,7 @@ table ServerSystemMessage {
 union EventData {
 	ServerChatMessage,
 	ServerWhisper,
+	ServerWhisperReceipt,
 	ServerSystemMessage,
 }
 
