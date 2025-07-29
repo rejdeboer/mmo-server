@@ -8,6 +8,10 @@ pub enum SocialAction {
         recipient_name: String,
         text: String,
     },
+    WhisperById {
+        recipient_id: i32,
+        text: String,
+    },
     Chat {
         channel: ChannelType,
         text: String,
@@ -41,6 +45,18 @@ impl SocialAction {
                     builder,
                     &schema::ClientWhisperByNameArgs {
                         recipient_name: Some(fb_recipient),
+                        text: Some(fb_msg),
+                    },
+                )
+                .as_union_value()
+            }
+            Self::WhisperById { recipient_id, text } => {
+                data_type = schema::ActionData::ClientWhisperById;
+                let fb_msg = builder.create_string(text);
+                schema::ClientWhisperById::create(
+                    builder,
+                    &schema::ClientWhisperByIdArgs {
+                        recipient_id: *recipient_id,
                         text: Some(fb_msg),
                     },
                 )
