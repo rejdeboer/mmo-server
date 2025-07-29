@@ -21,6 +21,9 @@ pub enum SocialEvent {
         recipient_name: String,
         recipient_id: i32,
     },
+    SystemMessage {
+        text: String,
+    },
 }
 
 impl SocialEvent {
@@ -55,6 +58,14 @@ impl SocialEvent {
                 Ok(Self::WhisperReceipt {
                     recipient_name: fb_event.recipient_name().to_string(),
                     recipient_id: fb_event.recipient_id(),
+                    text: fb_event.text().to_string(),
+                })
+            }
+            schema::EventData::ServerSystemMessage => {
+                let fb_event = event
+                    .data_as_server_system_message()
+                    .expect("event should be some");
+                Ok(Self::SystemMessage {
                     text: fb_event.text().to_string(),
                 })
             }
