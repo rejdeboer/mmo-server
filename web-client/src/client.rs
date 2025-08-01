@@ -15,7 +15,7 @@ pub type ConnectionResult =
 
 #[derive(Debug)]
 pub enum ConnectionError {
-    InvalidUrl,
+    InvalidUrl(String),
     InvalidTokenFormat,
     // TODO: Send back error in json?
     Http(StatusCode),
@@ -32,7 +32,9 @@ pub async fn connect(server_url: &str, auth_token: &str) -> ConnectionResult {
                 tokio_tungstenite::tungstenite::Error::Http(res) => {
                     ConnectionError::Http(res.status())
                 }
-                // err => unreachable!("encountered unreachable error: {:?}", err),
+                tokio_tungstenite::tungstenite::Error::Url(err) => {
+                    ConnectionError::InvalidUrl(err.to_string())
+                }
                 err => ConnectionError::WebSocket(err),
             })?;
     tracing::info!("WebSocket handshake with JWT auth successful");
@@ -56,7 +58,7 @@ fn create_connection_request(
     let auth_header =
         HeaderValue::from_str(&bearer_token).map_err(|_| ConnectionError::InvalidTokenFormat)?;
 
-    let url = Url::parse(server_url).map_err(|_| ConnectionError::InvalidUrl)?;
+    let url = Url::parse(server_url).map_err(|err| ConnectionError::InvalidUrl(err.to_string()))?;
     let request = Request::builder()
         .uri(server_url)
         .header("Host", url.host_str().unwrap())
