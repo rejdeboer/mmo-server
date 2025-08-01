@@ -87,7 +87,7 @@ impl SocketReader {
                 let data = fb_action.data_as_client_whisper_by_name().unwrap();
                 Ok(HubCommand::Whisper {
                     text: data.text().to_string(),
-                    recipient: Recipient::Name(data.recipient_name()),
+                    recipient: Recipient::Name(data.recipient_name().to_string()),
                 })
             }
             action_type => Err(ReaderError::InvalidActionType(action_type)),
