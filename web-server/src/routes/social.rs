@@ -15,7 +15,7 @@ use crate::{
     social::{HubCommand, HubMessage, SocketReader, SocketWriter},
 };
 
-pub async fn chat(
+pub async fn social(
     ws: WebSocketUpgrade,
     State(state): State<ApplicationState>,
     Extension(ctx): Extension<CharacterContext>,

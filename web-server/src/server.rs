@@ -2,7 +2,7 @@ use crate::{
     auth::{account_auth_middleware, character_auth_middleware},
     configuration::{DatabaseSettings, NetcodePrivateKey, Settings},
     realm_resolution::{RealmResolver, create_realm_resolver},
-    routes::{account_create, character_create, character_list, chat, game_entry, login},
+    routes::{account_create, character_create, character_list, game_entry, login, social},
     social::{Hub, HubMessage},
 };
 use axum::{
@@ -70,13 +70,12 @@ impl Application {
                 account_auth_middleware,
             ));
 
-        let character_routes =
-            Router::new()
-                .route("/chat", get(chat))
-                .route_layer(middleware::from_fn_with_state(
-                    settings.application.jwt_signing_key,
-                    character_auth_middleware,
-                ));
+        let character_routes = Router::new().route("/social", get(social)).route_layer(
+            middleware::from_fn_with_state(
+                settings.application.jwt_signing_key,
+                character_auth_middleware,
+            ),
+        );
 
         let router = Router::new()
             .merge(character_routes)
