@@ -83,6 +83,13 @@ impl SocketReader {
                     recipient: Recipient::Id(data.recipient_id()),
                 })
             }
+            schema::ActionData::ClientWhisperByName => {
+                let data = fb_action.data_as_client_whisper_by_name().unwrap();
+                Ok(HubCommand::Whisper {
+                    text: data.text().to_string(),
+                    recipient: Recipient::Name(data.recipient_name()),
+                })
+            }
             action_type => Err(ReaderError::InvalidActionType(action_type)),
         }?;
 
