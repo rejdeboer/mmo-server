@@ -2,107 +2,114 @@
 // @generated
 extern crate alloc;
 extern crate flatbuffers;
+use self::flatbuffers::{EndianScalar, Follow};
+use super::*;
 use alloc::boxed::Box;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use core::mem;
 use core::cmp::Ordering;
-use self::flatbuffers::{EndianScalar, Follow};
-use super::*;
+use core::mem;
 pub enum EntityDespawnEventOffset {}
 #[derive(Copy, Clone, PartialEq)]
 
 pub struct EntityDespawnEvent<'a> {
-  pub _tab: flatbuffers::Table<'a>,
+    pub _tab: flatbuffers::Table<'a>,
 }
 
 impl<'a> flatbuffers::Follow<'a> for EntityDespawnEvent<'a> {
-  type Inner = EntityDespawnEvent<'a>;
-  #[inline]
-  unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
-    Self { _tab: flatbuffers::Table::new(buf, loc) }
-  }
+    type Inner = EntityDespawnEvent<'a>;
+    #[inline]
+    unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
+        Self {
+            _tab: flatbuffers::Table::new(buf, loc),
+        }
+    }
 }
 
 impl<'a> EntityDespawnEvent<'a> {
-  pub const VT_ENTITY_ID: flatbuffers::VOffsetT = 4;
+    pub const VT_ENTITY_ID: flatbuffers::VOffsetT = 4;
 
-  #[inline]
-  pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
-    EntityDespawnEvent { _tab: table }
-  }
-  #[allow(unused_mut)]
-  pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
-    _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
-    args: &'args EntityDespawnEventArgs
-  ) -> flatbuffers::WIPOffset<EntityDespawnEvent<'bldr>> {
-    let mut builder = EntityDespawnEventBuilder::new(_fbb);
-    builder.add_entity_id(args.entity_id);
-    builder.finish()
-  }
+    #[inline]
+    pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
+        EntityDespawnEvent { _tab: table }
+    }
+    #[allow(unused_mut)]
+    pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
+        _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
+        args: &'args EntityDespawnEventArgs,
+    ) -> flatbuffers::WIPOffset<EntityDespawnEvent<'bldr>> {
+        let mut builder = EntityDespawnEventBuilder::new(_fbb);
+        builder.add_entity_id(args.entity_id);
+        builder.finish()
+    }
 
-
-  #[inline]
-  pub fn entity_id(&self) -> u64 {
-    // Safety:
-    // Created from valid Table for this object
-    // which contains a valid value in this slot
-    unsafe { self._tab.get::<u64>(EntityDespawnEvent::VT_ENTITY_ID, Some(0)).unwrap()}
-  }
+    #[inline]
+    pub fn entity_id(&self) -> u64 {
+        // Safety:
+        // Created from valid Table for this object
+        // which contains a valid value in this slot
+        unsafe {
+            self._tab
+                .get::<u64>(EntityDespawnEvent::VT_ENTITY_ID, Some(0))
+                .unwrap()
+        }
+    }
 }
 
 impl flatbuffers::Verifiable for EntityDespawnEvent<'_> {
-  #[inline]
-  fn run_verifier(
-    v: &mut flatbuffers::Verifier, pos: usize
-  ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
-    use self::flatbuffers::Verifiable;
-    v.visit_table(pos)?
-     .visit_field::<u64>("entity_id", Self::VT_ENTITY_ID, false)?
-     .finish();
-    Ok(())
-  }
+    #[inline]
+    fn run_verifier(
+        v: &mut flatbuffers::Verifier,
+        pos: usize,
+    ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
+        use self::flatbuffers::Verifiable;
+        v.visit_table(pos)?
+            .visit_field::<u64>("entity_id", Self::VT_ENTITY_ID, false)?
+            .finish();
+        Ok(())
+    }
 }
 pub struct EntityDespawnEventArgs {
     pub entity_id: u64,
 }
 impl<'a> Default for EntityDespawnEventArgs {
-  #[inline]
-  fn default() -> Self {
-    EntityDespawnEventArgs {
-      entity_id: 0,
+    #[inline]
+    fn default() -> Self {
+        EntityDespawnEventArgs { entity_id: 0 }
     }
-  }
 }
 
 pub struct EntityDespawnEventBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> {
-  fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
-  start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
+    fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
+    start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
 }
 impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> EntityDespawnEventBuilder<'a, 'b, A> {
-  #[inline]
-  pub fn add_entity_id(&mut self, entity_id: u64) {
-    self.fbb_.push_slot::<u64>(EntityDespawnEvent::VT_ENTITY_ID, entity_id, 0);
-  }
-  #[inline]
-  pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> EntityDespawnEventBuilder<'a, 'b, A> {
-    let start = _fbb.start_table();
-    EntityDespawnEventBuilder {
-      fbb_: _fbb,
-      start_: start,
+    #[inline]
+    pub fn add_entity_id(&mut self, entity_id: u64) {
+        self.fbb_
+            .push_slot::<u64>(EntityDespawnEvent::VT_ENTITY_ID, entity_id, 0);
     }
-  }
-  #[inline]
-  pub fn finish(self) -> flatbuffers::WIPOffset<EntityDespawnEvent<'a>> {
-    let o = self.fbb_.end_table(self.start_);
-    flatbuffers::WIPOffset::new(o.value())
-  }
+    #[inline]
+    pub fn new(
+        _fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
+    ) -> EntityDespawnEventBuilder<'a, 'b, A> {
+        let start = _fbb.start_table();
+        EntityDespawnEventBuilder {
+            fbb_: _fbb,
+            start_: start,
+        }
+    }
+    #[inline]
+    pub fn finish(self) -> flatbuffers::WIPOffset<EntityDespawnEvent<'a>> {
+        let o = self.fbb_.end_table(self.start_);
+        flatbuffers::WIPOffset::new(o.value())
+    }
 }
 
 impl core::fmt::Debug for EntityDespawnEvent<'_> {
-  fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-    let mut ds = f.debug_struct("EntityDespawnEvent");
-      ds.field("entity_id", &self.entity_id());
-      ds.finish()
-  }
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let mut ds = f.debug_struct("EntityDespawnEvent");
+        ds.field("entity_id", &self.entity_id());
+        ds.finish()
+    }
 }

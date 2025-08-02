@@ -2,51 +2,54 @@
 // @generated
 extern crate alloc;
 extern crate flatbuffers;
+use self::flatbuffers::{EndianScalar, Follow};
+use super::*;
 use alloc::boxed::Box;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use core::mem;
 use core::cmp::Ordering;
-use self::flatbuffers::{EndianScalar, Follow};
-use super::*;
+use core::mem;
 // struct Transform, aligned to 4
 #[repr(transparent)]
 #[derive(Clone, Copy, PartialEq)]
 pub struct Transform(pub [u8; 16]);
-impl Default for Transform { 
-  fn default() -> Self { 
-    Self([0; 16])
-  }
+impl Default for Transform {
+    fn default() -> Self {
+        Self([0; 16])
+    }
 }
 impl core::fmt::Debug for Transform {
-  fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-    f.debug_struct("Transform")
-      .field("position", &self.position())
-      .field("yaw", &self.yaw())
-      .finish()
-  }
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        f.debug_struct("Transform")
+            .field("position", &self.position())
+            .field("yaw", &self.yaw())
+            .finish()
+    }
 }
 
 impl flatbuffers::SimpleToVerifyInSlice for Transform {}
 impl<'a> flatbuffers::Follow<'a> for Transform {
-  type Inner = &'a Transform;
-  #[inline]
-  unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
-    <&'a Transform>::follow(buf, loc)
-  }
+    type Inner = &'a Transform;
+    #[inline]
+    unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
+        <&'a Transform>::follow(buf, loc)
+    }
 }
 impl<'a> flatbuffers::Follow<'a> for &'a Transform {
-  type Inner = &'a Transform;
-  #[inline]
-  unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
-    flatbuffers::follow_cast_ref::<Transform>(buf, loc)
-  }
+    type Inner = &'a Transform;
+    #[inline]
+    unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
+        flatbuffers::follow_cast_ref::<Transform>(buf, loc)
+    }
 }
 impl<'b> flatbuffers::Push for Transform {
     type Output = Transform;
     #[inline]
     unsafe fn push(&self, dst: &mut [u8], _written_len: usize) {
-        let src = ::core::slice::from_raw_parts(self as *const Transform as *const u8, <Self as flatbuffers::Push>::size());
+        let src = ::core::slice::from_raw_parts(
+            self as *const Transform as *const u8,
+            <Self as flatbuffers::Push>::size(),
+        );
         dst.copy_from_slice(src);
     }
     #[inline]
@@ -56,67 +59,63 @@ impl<'b> flatbuffers::Push for Transform {
 }
 
 impl<'a> flatbuffers::Verifiable for Transform {
-  #[inline]
-  fn run_verifier(
-    v: &mut flatbuffers::Verifier, pos: usize
-  ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
-    use self::flatbuffers::Verifiable;
-    v.in_buffer::<Self>(pos)
-  }
+    #[inline]
+    fn run_verifier(
+        v: &mut flatbuffers::Verifier,
+        pos: usize,
+    ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
+        use self::flatbuffers::Verifiable;
+        v.in_buffer::<Self>(pos)
+    }
 }
 
 impl<'a> Transform {
-  #[allow(clippy::too_many_arguments)]
-  pub fn new(
-    position: &Vec3,
-    yaw: f32,
-  ) -> Self {
-    let mut s = Self([0; 16]);
-    s.set_position(position);
-    s.set_yaw(yaw);
-    s
-  }
-
-  pub fn position(&self) -> &Vec3 {
-    // Safety:
-    // Created from a valid Table for this object
-    // Which contains a valid struct in this slot
-    unsafe { &*(self.0[0..].as_ptr() as *const Vec3) }
-  }
-
-  #[allow(clippy::identity_op)]
-  pub fn set_position(&mut self, x: &Vec3) {
-    self.0[0..0 + 12].copy_from_slice(&x.0)
-  }
-
-  pub fn yaw(&self) -> f32 {
-    let mut mem = core::mem::MaybeUninit::<<f32 as EndianScalar>::Scalar>::uninit();
-    // Safety:
-    // Created from a valid Table for this object
-    // Which contains a valid value in this slot
-    EndianScalar::from_little_endian(unsafe {
-      core::ptr::copy_nonoverlapping(
-        self.0[12..].as_ptr(),
-        mem.as_mut_ptr() as *mut u8,
-        core::mem::size_of::<<f32 as EndianScalar>::Scalar>(),
-      );
-      mem.assume_init()
-    })
-  }
-
-  pub fn set_yaw(&mut self, x: f32) {
-    let x_le = x.to_little_endian();
-    // Safety:
-    // Created from a valid Table for this object
-    // Which contains a valid value in this slot
-    unsafe {
-      core::ptr::copy_nonoverlapping(
-        &x_le as *const _ as *const u8,
-        self.0[12..].as_mut_ptr(),
-        core::mem::size_of::<<f32 as EndianScalar>::Scalar>(),
-      );
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(position: &Vec3, yaw: f32) -> Self {
+        let mut s = Self([0; 16]);
+        s.set_position(position);
+        s.set_yaw(yaw);
+        s
     }
-  }
 
+    pub fn position(&self) -> &Vec3 {
+        // Safety:
+        // Created from a valid Table for this object
+        // Which contains a valid struct in this slot
+        unsafe { &*(self.0[0..].as_ptr() as *const Vec3) }
+    }
+
+    #[allow(clippy::identity_op)]
+    pub fn set_position(&mut self, x: &Vec3) {
+        self.0[0..0 + 12].copy_from_slice(&x.0)
+    }
+
+    pub fn yaw(&self) -> f32 {
+        let mut mem = core::mem::MaybeUninit::<<f32 as EndianScalar>::Scalar>::uninit();
+        // Safety:
+        // Created from a valid Table for this object
+        // Which contains a valid value in this slot
+        EndianScalar::from_little_endian(unsafe {
+            core::ptr::copy_nonoverlapping(
+                self.0[12..].as_ptr(),
+                mem.as_mut_ptr() as *mut u8,
+                core::mem::size_of::<<f32 as EndianScalar>::Scalar>(),
+            );
+            mem.assume_init()
+        })
+    }
+
+    pub fn set_yaw(&mut self, x: f32) {
+        let x_le = x.to_little_endian();
+        // Safety:
+        // Created from a valid Table for this object
+        // Which contains a valid value in this slot
+        unsafe {
+            core::ptr::copy_nonoverlapping(
+                &x_le as *const _ as *const u8,
+                self.0[12..].as_mut_ptr(),
+                core::mem::size_of::<<f32 as EndianScalar>::Scalar>(),
+            );
+        }
+    }
 }
-

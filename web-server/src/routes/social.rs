@@ -1,19 +1,17 @@
-use std::sync::Arc;
-
-use axum::{
-    Extension,
-    extract::{State, WebSocketUpgrade, ws::WebSocket},
-    response::{Response, Result},
-};
-use futures::StreamExt;
-use tokio::sync::mpsc::{Sender, channel};
-
 use crate::{
     ApplicationState,
     auth::CharacterContext,
     error::ApiError,
     social::{HubCommand, HubMessage, SocketReader, SocketWriter},
 };
+use axum::{
+    Extension,
+    extract::{State, WebSocketUpgrade, ws::WebSocket},
+    response::{Response, Result},
+};
+use futures::StreamExt;
+use std::sync::Arc;
+use tokio::sync::mpsc::{Sender, channel};
 
 pub async fn social(
     ws: WebSocketUpgrade,

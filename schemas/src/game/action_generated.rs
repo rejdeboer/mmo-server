@@ -2,199 +2,238 @@
 // @generated
 extern crate alloc;
 extern crate flatbuffers;
+use self::flatbuffers::{EndianScalar, Follow};
+use super::*;
 use alloc::boxed::Box;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use core::mem;
 use core::cmp::Ordering;
-use self::flatbuffers::{EndianScalar, Follow};
-use super::*;
+use core::mem;
 pub enum ActionOffset {}
 #[derive(Copy, Clone, PartialEq)]
 
 pub struct Action<'a> {
-  pub _tab: flatbuffers::Table<'a>,
+    pub _tab: flatbuffers::Table<'a>,
 }
 
 impl<'a> flatbuffers::Follow<'a> for Action<'a> {
-  type Inner = Action<'a>;
-  #[inline]
-  unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
-    Self { _tab: flatbuffers::Table::new(buf, loc) }
-  }
+    type Inner = Action<'a>;
+    #[inline]
+    unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
+        Self {
+            _tab: flatbuffers::Table::new(buf, loc),
+        }
+    }
 }
 
 impl<'a> Action<'a> {
-  pub const VT_DATA_TYPE: flatbuffers::VOffsetT = 4;
-  pub const VT_DATA: flatbuffers::VOffsetT = 6;
+    pub const VT_DATA_TYPE: flatbuffers::VOffsetT = 4;
+    pub const VT_DATA: flatbuffers::VOffsetT = 6;
 
-  #[inline]
-  pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
-    Action { _tab: table }
-  }
-  #[allow(unused_mut)]
-  pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
-    _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
-    args: &'args ActionArgs
-  ) -> flatbuffers::WIPOffset<Action<'bldr>> {
-    let mut builder = ActionBuilder::new(_fbb);
-    if let Some(x) = args.data { builder.add_data(x); }
-    builder.add_data_type(args.data_type);
-    builder.finish()
-  }
-
-
-  #[inline]
-  pub fn data_type(&self) -> ActionData {
-    // Safety:
-    // Created from valid Table for this object
-    // which contains a valid value in this slot
-    unsafe { self._tab.get::<ActionData>(Action::VT_DATA_TYPE, Some(ActionData::NONE)).unwrap()}
-  }
-  #[inline]
-  pub fn data(&self) -> flatbuffers::Table<'a> {
-    // Safety:
-    // Created from valid Table for this object
-    // which contains a valid value in this slot
-    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<flatbuffers::Table<'a>>>(Action::VT_DATA, None).unwrap()}
-  }
-  #[inline]
-  #[allow(non_snake_case)]
-  pub fn data_as_game_client_chat_message(&self) -> Option<ClientChatMessage<'a>> {
-    if self.data_type() == ActionData::game_ClientChatMessage {
-      let u = self.data();
-      // Safety:
-      // Created from a valid Table for this object
-      // Which contains a valid union in this slot
-      Some(unsafe { ClientChatMessage::init_from_table(u) })
-    } else {
-      None
+    #[inline]
+    pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
+        Action { _tab: table }
     }
-  }
-
-  #[inline]
-  #[allow(non_snake_case)]
-  pub fn data_as_player_move_action(&self) -> Option<PlayerMoveAction<'a>> {
-    if self.data_type() == ActionData::PlayerMoveAction {
-      let u = self.data();
-      // Safety:
-      // Created from a valid Table for this object
-      // Which contains a valid union in this slot
-      Some(unsafe { PlayerMoveAction::init_from_table(u) })
-    } else {
-      None
+    #[allow(unused_mut)]
+    pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
+        _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
+        args: &'args ActionArgs,
+    ) -> flatbuffers::WIPOffset<Action<'bldr>> {
+        let mut builder = ActionBuilder::new(_fbb);
+        if let Some(x) = args.data {
+            builder.add_data(x);
+        }
+        builder.add_data_type(args.data_type);
+        builder.finish()
     }
-  }
 
-  #[inline]
-  #[allow(non_snake_case)]
-  pub fn data_as_player_jump_action(&self) -> Option<PlayerJumpAction<'a>> {
-    if self.data_type() == ActionData::PlayerJumpAction {
-      let u = self.data();
-      // Safety:
-      // Created from a valid Table for this object
-      // Which contains a valid union in this slot
-      Some(unsafe { PlayerJumpAction::init_from_table(u) })
-    } else {
-      None
+    #[inline]
+    pub fn data_type(&self) -> ActionData {
+        // Safety:
+        // Created from valid Table for this object
+        // which contains a valid value in this slot
+        unsafe {
+            self._tab
+                .get::<ActionData>(Action::VT_DATA_TYPE, Some(ActionData::NONE))
+                .unwrap()
+        }
     }
-  }
+    #[inline]
+    pub fn data(&self) -> flatbuffers::Table<'a> {
+        // Safety:
+        // Created from valid Table for this object
+        // which contains a valid value in this slot
+        unsafe {
+            self._tab
+                .get::<flatbuffers::ForwardsUOffset<flatbuffers::Table<'a>>>(Action::VT_DATA, None)
+                .unwrap()
+        }
+    }
+    #[inline]
+    #[allow(non_snake_case)]
+    pub fn data_as_game_client_chat_message(&self) -> Option<ClientChatMessage<'a>> {
+        if self.data_type() == ActionData::game_ClientChatMessage {
+            let u = self.data();
+            // Safety:
+            // Created from a valid Table for this object
+            // Which contains a valid union in this slot
+            Some(unsafe { ClientChatMessage::init_from_table(u) })
+        } else {
+            None
+        }
+    }
 
+    #[inline]
+    #[allow(non_snake_case)]
+    pub fn data_as_player_move_action(&self) -> Option<PlayerMoveAction<'a>> {
+        if self.data_type() == ActionData::PlayerMoveAction {
+            let u = self.data();
+            // Safety:
+            // Created from a valid Table for this object
+            // Which contains a valid union in this slot
+            Some(unsafe { PlayerMoveAction::init_from_table(u) })
+        } else {
+            None
+        }
+    }
+
+    #[inline]
+    #[allow(non_snake_case)]
+    pub fn data_as_player_jump_action(&self) -> Option<PlayerJumpAction<'a>> {
+        if self.data_type() == ActionData::PlayerJumpAction {
+            let u = self.data();
+            // Safety:
+            // Created from a valid Table for this object
+            // Which contains a valid union in this slot
+            Some(unsafe { PlayerJumpAction::init_from_table(u) })
+        } else {
+            None
+        }
+    }
 }
 
 impl flatbuffers::Verifiable for Action<'_> {
-  #[inline]
-  fn run_verifier(
-    v: &mut flatbuffers::Verifier, pos: usize
-  ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
-    use self::flatbuffers::Verifiable;
-    v.visit_table(pos)?
-     .visit_union::<ActionData, _>("data_type", Self::VT_DATA_TYPE, "data", Self::VT_DATA, true, |key, v, pos| {
-        match key {
-          ActionData::game_ClientChatMessage => v.verify_union_variant::<flatbuffers::ForwardsUOffset<ClientChatMessage>>("ActionData::game_ClientChatMessage", pos),
-          ActionData::PlayerMoveAction => v.verify_union_variant::<flatbuffers::ForwardsUOffset<PlayerMoveAction>>("ActionData::PlayerMoveAction", pos),
-          ActionData::PlayerJumpAction => v.verify_union_variant::<flatbuffers::ForwardsUOffset<PlayerJumpAction>>("ActionData::PlayerJumpAction", pos),
-          _ => Ok(()),
-        }
-     })?
-     .finish();
-    Ok(())
-  }
+    #[inline]
+    fn run_verifier(
+        v: &mut flatbuffers::Verifier,
+        pos: usize,
+    ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
+        use self::flatbuffers::Verifiable;
+        v.visit_table(pos)?
+            .visit_union::<ActionData, _>(
+                "data_type",
+                Self::VT_DATA_TYPE,
+                "data",
+                Self::VT_DATA,
+                true,
+                |key, v, pos| match key {
+                    ActionData::game_ClientChatMessage => v
+                        .verify_union_variant::<flatbuffers::ForwardsUOffset<ClientChatMessage>>(
+                            "ActionData::game_ClientChatMessage",
+                            pos,
+                        ),
+                    ActionData::PlayerMoveAction => v
+                        .verify_union_variant::<flatbuffers::ForwardsUOffset<PlayerMoveAction>>(
+                            "ActionData::PlayerMoveAction",
+                            pos,
+                        ),
+                    ActionData::PlayerJumpAction => v
+                        .verify_union_variant::<flatbuffers::ForwardsUOffset<PlayerJumpAction>>(
+                            "ActionData::PlayerJumpAction",
+                            pos,
+                        ),
+                    _ => Ok(()),
+                },
+            )?
+            .finish();
+        Ok(())
+    }
 }
 pub struct ActionArgs {
     pub data_type: ActionData,
     pub data: Option<flatbuffers::WIPOffset<flatbuffers::UnionWIPOffset>>,
 }
 impl<'a> Default for ActionArgs {
-  #[inline]
-  fn default() -> Self {
-    ActionArgs {
-      data_type: ActionData::NONE,
-      data: None, // required field
+    #[inline]
+    fn default() -> Self {
+        ActionArgs {
+            data_type: ActionData::NONE,
+            data: None, // required field
+        }
     }
-  }
 }
 
 pub struct ActionBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> {
-  fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
-  start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
+    fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
+    start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
 }
 impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> ActionBuilder<'a, 'b, A> {
-  #[inline]
-  pub fn add_data_type(&mut self, data_type: ActionData) {
-    self.fbb_.push_slot::<ActionData>(Action::VT_DATA_TYPE, data_type, ActionData::NONE);
-  }
-  #[inline]
-  pub fn add_data(&mut self, data: flatbuffers::WIPOffset<flatbuffers::UnionWIPOffset>) {
-    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(Action::VT_DATA, data);
-  }
-  #[inline]
-  pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> ActionBuilder<'a, 'b, A> {
-    let start = _fbb.start_table();
-    ActionBuilder {
-      fbb_: _fbb,
-      start_: start,
+    #[inline]
+    pub fn add_data_type(&mut self, data_type: ActionData) {
+        self.fbb_
+            .push_slot::<ActionData>(Action::VT_DATA_TYPE, data_type, ActionData::NONE);
     }
-  }
-  #[inline]
-  pub fn finish(self) -> flatbuffers::WIPOffset<Action<'a>> {
-    let o = self.fbb_.end_table(self.start_);
-    self.fbb_.required(o, Action::VT_DATA,"data");
-    flatbuffers::WIPOffset::new(o.value())
-  }
+    #[inline]
+    pub fn add_data(&mut self, data: flatbuffers::WIPOffset<flatbuffers::UnionWIPOffset>) {
+        self.fbb_
+            .push_slot_always::<flatbuffers::WIPOffset<_>>(Action::VT_DATA, data);
+    }
+    #[inline]
+    pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> ActionBuilder<'a, 'b, A> {
+        let start = _fbb.start_table();
+        ActionBuilder {
+            fbb_: _fbb,
+            start_: start,
+        }
+    }
+    #[inline]
+    pub fn finish(self) -> flatbuffers::WIPOffset<Action<'a>> {
+        let o = self.fbb_.end_table(self.start_);
+        self.fbb_.required(o, Action::VT_DATA, "data");
+        flatbuffers::WIPOffset::new(o.value())
+    }
 }
 
 impl core::fmt::Debug for Action<'_> {
-  fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-    let mut ds = f.debug_struct("Action");
-      ds.field("data_type", &self.data_type());
-      match self.data_type() {
-        ActionData::game_ClientChatMessage => {
-          if let Some(x) = self.data_as_game_client_chat_message() {
-            ds.field("data", &x)
-          } else {
-            ds.field("data", &"InvalidFlatbuffer: Union discriminant does not match value.")
-          }
-        },
-        ActionData::PlayerMoveAction => {
-          if let Some(x) = self.data_as_player_move_action() {
-            ds.field("data", &x)
-          } else {
-            ds.field("data", &"InvalidFlatbuffer: Union discriminant does not match value.")
-          }
-        },
-        ActionData::PlayerJumpAction => {
-          if let Some(x) = self.data_as_player_jump_action() {
-            ds.field("data", &x)
-          } else {
-            ds.field("data", &"InvalidFlatbuffer: Union discriminant does not match value.")
-          }
-        },
-        _ => {
-          let x: Option<()> = None;
-          ds.field("data", &x)
-        },
-      };
-      ds.finish()
-  }
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let mut ds = f.debug_struct("Action");
+        ds.field("data_type", &self.data_type());
+        match self.data_type() {
+            ActionData::game_ClientChatMessage => {
+                if let Some(x) = self.data_as_game_client_chat_message() {
+                    ds.field("data", &x)
+                } else {
+                    ds.field(
+                        "data",
+                        &"InvalidFlatbuffer: Union discriminant does not match value.",
+                    )
+                }
+            }
+            ActionData::PlayerMoveAction => {
+                if let Some(x) = self.data_as_player_move_action() {
+                    ds.field("data", &x)
+                } else {
+                    ds.field(
+                        "data",
+                        &"InvalidFlatbuffer: Union discriminant does not match value.",
+                    )
+                }
+            }
+            ActionData::PlayerJumpAction => {
+                if let Some(x) = self.data_as_player_jump_action() {
+                    ds.field("data", &x)
+                } else {
+                    ds.field(
+                        "data",
+                        &"InvalidFlatbuffer: Union discriminant does not match value.",
+                    )
+                }
+            }
+            _ => {
+                let x: Option<()> = None;
+                ds.field("data", &x)
+            }
+        };
+        ds.finish()
+    }
 }
