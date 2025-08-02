@@ -22,7 +22,7 @@ pub async fn social(
 ) -> Result<Response, ApiError> {
     let row = sqlx::query!(
         r#"
-        SELECT name
+        SELECT name, guild_id
         FROM characters
         WHERE id = $1 
         "#,
@@ -35,20 +35,22 @@ pub async fn social(
         ApiError::UnexpectedError
     })?;
 
-    Ok(ws.on_upgrade(move |socket| handle_socket(socket, ctx, row.name, state.hub_tx)))
+    Ok(ws
+        .on_upgrade(move |socket| handle_socket(socket, ctx, row.name, row.guild_id, state.hub_tx)))
 }
 
 async fn handle_socket(
     socket: WebSocket,
     ctx: CharacterContext,
     character_name: String,
+    guild_id: Option<i32>,
     hub_tx: Sender<HubMessage>,
 ) {
     let (client_tx, hub_rx) = channel::<Arc<[u8]>>(128);
 
     let cmd = HubCommand::Connect {
         character_name,
-        guild_id: None,
+        guild_id,
         tx: client_tx,
     };
 
