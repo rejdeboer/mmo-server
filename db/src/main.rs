@@ -2,7 +2,7 @@ use fake::{Fake, faker::internet::en::Username};
 use sqlx::postgres::PgPoolOptions;
 use web_server::domain::SafePassword;
 
-const TEST_PASSWORD: &'static str = "Test123!";
+const TEST_PASSWORD: &str = "Test123!";
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -21,7 +21,7 @@ async fn main() -> anyhow::Result<()> {
 
     for i in 0..2 {
         let username: String = Username().fake();
-        let email = format!("user{}@test.com", i);
+        let email = format!("user{i}@test.com");
         let user_id = sqlx::query!(
             r#"
             INSERT INTO accounts (username, email, passhash) VALUES ($1, $2, $3)
