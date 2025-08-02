@@ -7,11 +7,20 @@ CREATE TABLE IF NOT EXISTS accounts (
 
 CREATE INDEX IF NOT EXISTS "idx_accounts_id" ON "accounts" ("id");
 
+CREATE TABLE IF NOT EXISTS guilds (
+    id SERIAL PRIMARY KEY,
+    -- TODO: Once we implement realms this uniqueness constraint should change
+    name VARCHAR(50) NOT NULL UNIQUE
+);
+
+CREATE INDEX IF NOT EXISTS "idx_guilds_id" ON "guilds" ("id");
+
 CREATE TABLE IF NOT EXISTS characters (
     id SERIAL PRIMARY KEY,
     name VARCHAR(50) NOT NULL,
     account_id INT NOT NULL REFERENCES accounts(id)
         ON DELETE CASCADE,
+    guild_id INT REFERENCES guilds(id),
 
     level INT NOT NULL DEFAULT 1,
     experience BIGINT NOT NULL DEFAULT 0,
@@ -29,3 +38,4 @@ CREATE TABLE IF NOT EXISTS characters (
 
 CREATE INDEX IF NOT EXISTS "idx_characters_id" ON "characters" ("id");
 CREATE INDEX IF NOT EXISTS idx_characters_account_id ON characters(account_id);
+CREATE INDEX IF NOT EXISTS idx_characters_guild_id ON characters(guild_id);
