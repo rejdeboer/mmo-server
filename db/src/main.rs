@@ -15,6 +15,10 @@ async fn main() -> anyhow::Result<()> {
         .hash()
         .unwrap();
 
+    let guild_id = sqlx::query!("INSERT INTO guilds (name) VALUES ('Testing Guild') RETURNING id;")
+        .fetch_one(&pool)
+        .await?;
+
     for i in 0..2 {
         let username: String = Username().fake();
         let email = format!("user{}@test.com", i);
@@ -33,10 +37,11 @@ async fn main() -> anyhow::Result<()> {
         let character_name: String = Username().fake();
         sqlx::query!(
             r#"
-            INSERT INTO characters (name, account_id) VALUES ($1, $2)
+            INSERT INTO characters (name, account_id, guild_id) VALUES ($1, $2, $3)
             "#,
             &character_name,
             user_id.id,
+            guild_id.id,
         )
         .execute(&pool)
         .await?;
