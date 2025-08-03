@@ -164,7 +164,9 @@ pub async fn spawn_app() -> TestApp {
         .await
         .expect("application built");
     let application_port = application.port();
-    let _ = tokio::spawn(application.run_until_stopped()).await;
+
+    #[allow(clippy::let_underscore_future)]
+    let _ = tokio::spawn(application.run_until_stopped());
 
     let pool = get_connection_pool(&settings.database);
     let account = TestAccount::generate();
