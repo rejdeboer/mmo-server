@@ -5,6 +5,7 @@ use tokio::sync::mpsc::error::SendError;
 use crate::social::HubMessage;
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum ReaderError {
     InvalidSchema(InvalidFlatbuffer),
     InvalidActionType(ActionData),
