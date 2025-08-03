@@ -53,7 +53,6 @@ impl TestAccount {
 #[derive(sqlx::FromRow)]
 pub struct TestCharacter {
     pub id: i32,
-    pub name: String,
 }
 
 impl TestCharacter {
@@ -62,7 +61,7 @@ impl TestCharacter {
         sqlx::query_as!(
             TestCharacter,
             "INSERT INTO characters (name, account_id)
-            VALUES ($1, $2) RETURNING id, name",
+            VALUES ($1, $2) RETURNING id",
             &name,
             account_id,
         )
@@ -74,7 +73,7 @@ impl TestCharacter {
 
 pub struct TestApp {
     pub address: String,
-    pub db_pool: PgPool,
+    // pub db_pool: PgPool,
     pub api_client: reqwest::Client,
     pub account: TestAccount,
     pub character: TestCharacter,
@@ -93,7 +92,7 @@ impl TestApp {
     pub async fn login_account(&mut self) {
         let login_response = self
             .api_client
-            .post(&format!("{}/token", &self.address))
+            .post(format!("{}/token", &self.address))
             .json(&LoginBody {
                 email: self.account.email.clone(),
                 password: self.account.password.clone(),
@@ -119,7 +118,7 @@ impl TestApp {
 
         let login_response = self
             .api_client
-            .post(&format!("{}/game/request-entry", &self.address))
+            .post(format!("{}/game/request-entry", &self.address))
             .json(&GameEntryRequest {
                 character_id: self.character.id,
             })
@@ -141,7 +140,7 @@ impl TestApp {
 
     pub async fn create_character(&self, body: CharacterCreate) -> reqwest::Response {
         self.api_client
-            .post(&format!("{}/character", self.address))
+            .post(format!("{}/character", self.address))
             .json(&body)
             .send()
             .await
@@ -165,7 +164,7 @@ pub async fn spawn_app() -> TestApp {
         .await
         .expect("application built");
     let application_port = application.port();
-    let _ = tokio::spawn(application.run_until_stopped());
+    let _ = tokio::spawn(application.run_until_stopped()).await;
 
     let pool = get_connection_pool(&settings.database);
     let account = TestAccount::generate();
@@ -173,8 +172,8 @@ pub async fn spawn_app() -> TestApp {
     let character = TestCharacter::create(&pool, account_id).await;
 
     TestApp {
-        address: format!("http://localhost:{}", application_port),
-        db_pool: pool,
+        address: format!("http://localhost:{application_port}"),
+        // db_pool: pool,
         // jwt_signing_key: settings.application.jwt_signing_key,
         api_client: create_api_client(None),
         account,

@@ -28,7 +28,7 @@ async fn create_character_with_character_token_success() {
 
 #[tokio::test]
 async fn create_character_without_token_failure() {
-    let mut app = spawn_app().await;
+    let app = spawn_app().await;
     let response = app
         .create_character(CharacterCreate {
             name: "rejdeboer".to_string(),
