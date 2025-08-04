@@ -10,52 +10,40 @@ use core::cmp::Ordering;
 use self::flatbuffers::{EndianScalar, Follow};
 use super::*;
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
-pub const ENUM_MIN_EVENT_DATA: u8 = 0;
+pub const ENUM_MIN_ENTITY_ATTRIBUTES: u8 = 0;
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
-pub const ENUM_MAX_EVENT_DATA: u8 = 4;
+pub const ENUM_MAX_ENTITY_ATTRIBUTES: u8 = 1;
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
 #[allow(non_camel_case_types)]
-pub const ENUM_VALUES_EVENT_DATA: [EventData; 5] = [
-  EventData::NONE,
-  EventData::ServerChatMessage,
-  EventData::ServerWhisper,
-  EventData::ServerWhisperReceipt,
-  EventData::ServerSystemMessage,
+pub const ENUM_VALUES_ENTITY_ATTRIBUTES: [EntityAttributes; 2] = [
+  EntityAttributes::NONE,
+  EntityAttributes::PlayerAttributes,
 ];
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[repr(transparent)]
-pub struct EventData(pub u8);
+pub struct EntityAttributes(pub u8);
 #[allow(non_upper_case_globals)]
-impl EventData {
+impl EntityAttributes {
   pub const NONE: Self = Self(0);
-  pub const ServerChatMessage: Self = Self(1);
-  pub const ServerWhisper: Self = Self(2);
-  pub const ServerWhisperReceipt: Self = Self(3);
-  pub const ServerSystemMessage: Self = Self(4);
+  pub const PlayerAttributes: Self = Self(1);
 
   pub const ENUM_MIN: u8 = 0;
-  pub const ENUM_MAX: u8 = 4;
+  pub const ENUM_MAX: u8 = 1;
   pub const ENUM_VALUES: &'static [Self] = &[
     Self::NONE,
-    Self::ServerChatMessage,
-    Self::ServerWhisper,
-    Self::ServerWhisperReceipt,
-    Self::ServerSystemMessage,
+    Self::PlayerAttributes,
   ];
   /// Returns the variant's name or "" if unknown.
   pub fn variant_name(self) -> Option<&'static str> {
     match self {
       Self::NONE => Some("NONE"),
-      Self::ServerChatMessage => Some("ServerChatMessage"),
-      Self::ServerWhisper => Some("ServerWhisper"),
-      Self::ServerWhisperReceipt => Some("ServerWhisperReceipt"),
-      Self::ServerSystemMessage => Some("ServerSystemMessage"),
+      Self::PlayerAttributes => Some("PlayerAttributes"),
       _ => None,
     }
   }
 }
-impl core::fmt::Debug for EventData {
+impl core::fmt::Debug for EntityAttributes {
   fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
     if let Some(name) = self.variant_name() {
       f.write_str(name)
@@ -64,7 +52,7 @@ impl core::fmt::Debug for EventData {
     }
   }
 }
-impl<'a> flatbuffers::Follow<'a> for EventData {
+impl<'a> flatbuffers::Follow<'a> for EntityAttributes {
   type Inner = Self;
   #[inline]
   unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
@@ -73,15 +61,15 @@ impl<'a> flatbuffers::Follow<'a> for EventData {
   }
 }
 
-impl flatbuffers::Push for EventData {
-    type Output = EventData;
+impl flatbuffers::Push for EntityAttributes {
+    type Output = EntityAttributes;
     #[inline]
     unsafe fn push(&self, dst: &mut [u8], _written_len: usize) {
         flatbuffers::emplace_scalar::<u8>(dst, self.0);
     }
 }
 
-impl flatbuffers::EndianScalar for EventData {
+impl flatbuffers::EndianScalar for EntityAttributes {
   type Scalar = u8;
   #[inline]
   fn to_little_endian(self) -> u8 {
@@ -95,7 +83,7 @@ impl flatbuffers::EndianScalar for EventData {
   }
 }
 
-impl<'a> flatbuffers::Verifiable for EventData {
+impl<'a> flatbuffers::Verifiable for EntityAttributes {
   #[inline]
   fn run_verifier(
     v: &mut flatbuffers::Verifier, pos: usize
@@ -105,6 +93,6 @@ impl<'a> flatbuffers::Verifiable for EventData {
   }
 }
 
-impl flatbuffers::SimpleToVerifyInSlice for EventData {}
-pub struct EventDataUnionTableOffset {}
+impl flatbuffers::SimpleToVerifyInSlice for EntityAttributes {}
+pub struct EntityAttributesUnionTableOffset {}
 

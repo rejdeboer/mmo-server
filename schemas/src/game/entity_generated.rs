@@ -2,176 +2,242 @@
 // @generated
 extern crate alloc;
 extern crate flatbuffers;
-use self::flatbuffers::{EndianScalar, Follow};
-use super::*;
 use alloc::boxed::Box;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use core::cmp::Ordering;
 use core::mem;
+use core::cmp::Ordering;
+use self::flatbuffers::{EndianScalar, Follow};
+use super::*;
 pub enum EntityOffset {}
 #[derive(Copy, Clone, PartialEq)]
 
 pub struct Entity<'a> {
-    pub _tab: flatbuffers::Table<'a>,
+  pub _tab: flatbuffers::Table<'a>,
 }
 
 impl<'a> flatbuffers::Follow<'a> for Entity<'a> {
-    type Inner = Entity<'a>;
-    #[inline]
-    unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
-        Self {
-            _tab: flatbuffers::Table::new(buf, loc),
-        }
-    }
+  type Inner = Entity<'a>;
+  #[inline]
+  unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
+    Self { _tab: flatbuffers::Table::new(buf, loc) }
+  }
 }
 
 impl<'a> Entity<'a> {
-    pub const VT_NAME: flatbuffers::VOffsetT = 4;
-    pub const VT_TRANSFORM: flatbuffers::VOffsetT = 6;
-    pub const VT_HP: flatbuffers::VOffsetT = 8;
-    pub const VT_LEVEL: flatbuffers::VOffsetT = 10;
+  pub const VT_ID: flatbuffers::VOffsetT = 4;
+  pub const VT_ATTRIBUTES_TYPE: flatbuffers::VOffsetT = 6;
+  pub const VT_ATTRIBUTES: flatbuffers::VOffsetT = 8;
+  pub const VT_NAME: flatbuffers::VOffsetT = 10;
+  pub const VT_TRANSFORM: flatbuffers::VOffsetT = 12;
+  pub const VT_HP: flatbuffers::VOffsetT = 14;
+  pub const VT_LEVEL: flatbuffers::VOffsetT = 16;
 
-    #[inline]
-    pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
-        Entity { _tab: table }
-    }
-    #[allow(unused_mut)]
-    pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
-        _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
-        args: &'args EntityArgs<'args>,
-    ) -> flatbuffers::WIPOffset<Entity<'bldr>> {
-        let mut builder = EntityBuilder::new(_fbb);
-        builder.add_level(args.level);
-        builder.add_hp(args.hp);
-        if let Some(x) = args.transform {
-            builder.add_transform(x);
-        }
-        if let Some(x) = args.name {
-            builder.add_name(x);
-        }
-        builder.finish()
-    }
+  #[inline]
+  pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
+    Entity { _tab: table }
+  }
+  #[allow(unused_mut)]
+  pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
+    _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
+    args: &'args EntityArgs<'args>
+  ) -> flatbuffers::WIPOffset<Entity<'bldr>> {
+    let mut builder = EntityBuilder::new(_fbb);
+    builder.add_id(args.id);
+    builder.add_level(args.level);
+    builder.add_hp(args.hp);
+    if let Some(x) = args.transform { builder.add_transform(x); }
+    if let Some(x) = args.name { builder.add_name(x); }
+    if let Some(x) = args.attributes { builder.add_attributes(x); }
+    builder.add_attributes_type(args.attributes_type);
+    builder.finish()
+  }
 
-    #[inline]
-    pub fn name(&self) -> &'a str {
-        // Safety:
-        // Created from valid Table for this object
-        // which contains a valid value in this slot
-        unsafe {
-            self._tab
-                .get::<flatbuffers::ForwardsUOffset<&str>>(Entity::VT_NAME, None)
-                .unwrap()
-        }
+
+  #[inline]
+  pub fn id(&self) -> u64 {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<u64>(Entity::VT_ID, Some(0)).unwrap()}
+  }
+  #[inline]
+  pub fn attributes_type(&self) -> EntityAttributes {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<EntityAttributes>(Entity::VT_ATTRIBUTES_TYPE, Some(EntityAttributes::NONE)).unwrap()}
+  }
+  #[inline]
+  pub fn attributes(&self) -> Option<flatbuffers::Table<'a>> {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<flatbuffers::Table<'a>>>(Entity::VT_ATTRIBUTES, None)}
+  }
+  #[inline]
+  pub fn name(&self) -> &'a str {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<&str>>(Entity::VT_NAME, None).unwrap()}
+  }
+  #[inline]
+  pub fn transform(&self) -> &'a Transform {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<Transform>(Entity::VT_TRANSFORM, None).unwrap()}
+  }
+  #[inline]
+  pub fn hp(&self) -> i32 {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<i32>(Entity::VT_HP, Some(0)).unwrap()}
+  }
+  #[inline]
+  pub fn level(&self) -> i32 {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<i32>(Entity::VT_LEVEL, Some(0)).unwrap()}
+  }
+  #[inline]
+  #[allow(non_snake_case)]
+  pub fn attributes_as_player_attributes(&self) -> Option<PlayerAttributes<'a>> {
+    if self.attributes_type() == EntityAttributes::PlayerAttributes {
+      self.attributes().map(|t| {
+       // Safety:
+       // Created from a valid Table for this object
+       // Which contains a valid union in this slot
+       unsafe { PlayerAttributes::init_from_table(t) }
+     })
+    } else {
+      None
     }
-    #[inline]
-    pub fn transform(&self) -> &'a Transform {
-        // Safety:
-        // Created from valid Table for this object
-        // which contains a valid value in this slot
-        unsafe {
-            self._tab
-                .get::<Transform>(Entity::VT_TRANSFORM, None)
-                .unwrap()
-        }
-    }
-    #[inline]
-    pub fn hp(&self) -> i32 {
-        // Safety:
-        // Created from valid Table for this object
-        // which contains a valid value in this slot
-        unsafe { self._tab.get::<i32>(Entity::VT_HP, Some(0)).unwrap() }
-    }
-    #[inline]
-    pub fn level(&self) -> i32 {
-        // Safety:
-        // Created from valid Table for this object
-        // which contains a valid value in this slot
-        unsafe { self._tab.get::<i32>(Entity::VT_LEVEL, Some(0)).unwrap() }
-    }
+  }
+
 }
 
 impl flatbuffers::Verifiable for Entity<'_> {
-    #[inline]
-    fn run_verifier(
-        v: &mut flatbuffers::Verifier,
-        pos: usize,
-    ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
-        use self::flatbuffers::Verifiable;
-        v.visit_table(pos)?
-            .visit_field::<flatbuffers::ForwardsUOffset<&str>>("name", Self::VT_NAME, true)?
-            .visit_field::<Transform>("transform", Self::VT_TRANSFORM, true)?
-            .visit_field::<i32>("hp", Self::VT_HP, false)?
-            .visit_field::<i32>("level", Self::VT_LEVEL, false)?
-            .finish();
-        Ok(())
-    }
+  #[inline]
+  fn run_verifier(
+    v: &mut flatbuffers::Verifier, pos: usize
+  ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
+    use self::flatbuffers::Verifiable;
+    v.visit_table(pos)?
+     .visit_field::<u64>("id", Self::VT_ID, false)?
+     .visit_union::<EntityAttributes, _>("attributes_type", Self::VT_ATTRIBUTES_TYPE, "attributes", Self::VT_ATTRIBUTES, false, |key, v, pos| {
+        match key {
+          EntityAttributes::PlayerAttributes => v.verify_union_variant::<flatbuffers::ForwardsUOffset<PlayerAttributes>>("EntityAttributes::PlayerAttributes", pos),
+          _ => Ok(()),
+        }
+     })?
+     .visit_field::<flatbuffers::ForwardsUOffset<&str>>("name", Self::VT_NAME, true)?
+     .visit_field::<Transform>("transform", Self::VT_TRANSFORM, true)?
+     .visit_field::<i32>("hp", Self::VT_HP, false)?
+     .visit_field::<i32>("level", Self::VT_LEVEL, false)?
+     .finish();
+    Ok(())
+  }
 }
 pub struct EntityArgs<'a> {
+    pub id: u64,
+    pub attributes_type: EntityAttributes,
+    pub attributes: Option<flatbuffers::WIPOffset<flatbuffers::UnionWIPOffset>>,
     pub name: Option<flatbuffers::WIPOffset<&'a str>>,
     pub transform: Option<&'a Transform>,
     pub hp: i32,
     pub level: i32,
 }
 impl<'a> Default for EntityArgs<'a> {
-    #[inline]
-    fn default() -> Self {
-        EntityArgs {
-            name: None,      // required field
-            transform: None, // required field
-            hp: 0,
-            level: 0,
-        }
+  #[inline]
+  fn default() -> Self {
+    EntityArgs {
+      id: 0,
+      attributes_type: EntityAttributes::NONE,
+      attributes: None,
+      name: None, // required field
+      transform: None, // required field
+      hp: 0,
+      level: 0,
     }
+  }
 }
 
 pub struct EntityBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> {
-    fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
-    start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
+  fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
+  start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
 }
 impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> EntityBuilder<'a, 'b, A> {
-    #[inline]
-    pub fn add_name(&mut self, name: flatbuffers::WIPOffset<&'b str>) {
-        self.fbb_
-            .push_slot_always::<flatbuffers::WIPOffset<_>>(Entity::VT_NAME, name);
+  #[inline]
+  pub fn add_id(&mut self, id: u64) {
+    self.fbb_.push_slot::<u64>(Entity::VT_ID, id, 0);
+  }
+  #[inline]
+  pub fn add_attributes_type(&mut self, attributes_type: EntityAttributes) {
+    self.fbb_.push_slot::<EntityAttributes>(Entity::VT_ATTRIBUTES_TYPE, attributes_type, EntityAttributes::NONE);
+  }
+  #[inline]
+  pub fn add_attributes(&mut self, attributes: flatbuffers::WIPOffset<flatbuffers::UnionWIPOffset>) {
+    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(Entity::VT_ATTRIBUTES, attributes);
+  }
+  #[inline]
+  pub fn add_name(&mut self, name: flatbuffers::WIPOffset<&'b  str>) {
+    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(Entity::VT_NAME, name);
+  }
+  #[inline]
+  pub fn add_transform(&mut self, transform: &Transform) {
+    self.fbb_.push_slot_always::<&Transform>(Entity::VT_TRANSFORM, transform);
+  }
+  #[inline]
+  pub fn add_hp(&mut self, hp: i32) {
+    self.fbb_.push_slot::<i32>(Entity::VT_HP, hp, 0);
+  }
+  #[inline]
+  pub fn add_level(&mut self, level: i32) {
+    self.fbb_.push_slot::<i32>(Entity::VT_LEVEL, level, 0);
+  }
+  #[inline]
+  pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> EntityBuilder<'a, 'b, A> {
+    let start = _fbb.start_table();
+    EntityBuilder {
+      fbb_: _fbb,
+      start_: start,
     }
-    #[inline]
-    pub fn add_transform(&mut self, transform: &Transform) {
-        self.fbb_
-            .push_slot_always::<&Transform>(Entity::VT_TRANSFORM, transform);
-    }
-    #[inline]
-    pub fn add_hp(&mut self, hp: i32) {
-        self.fbb_.push_slot::<i32>(Entity::VT_HP, hp, 0);
-    }
-    #[inline]
-    pub fn add_level(&mut self, level: i32) {
-        self.fbb_.push_slot::<i32>(Entity::VT_LEVEL, level, 0);
-    }
-    #[inline]
-    pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> EntityBuilder<'a, 'b, A> {
-        let start = _fbb.start_table();
-        EntityBuilder {
-            fbb_: _fbb,
-            start_: start,
-        }
-    }
-    #[inline]
-    pub fn finish(self) -> flatbuffers::WIPOffset<Entity<'a>> {
-        let o = self.fbb_.end_table(self.start_);
-        self.fbb_.required(o, Entity::VT_NAME, "name");
-        self.fbb_.required(o, Entity::VT_TRANSFORM, "transform");
-        flatbuffers::WIPOffset::new(o.value())
-    }
+  }
+  #[inline]
+  pub fn finish(self) -> flatbuffers::WIPOffset<Entity<'a>> {
+    let o = self.fbb_.end_table(self.start_);
+    self.fbb_.required(o, Entity::VT_NAME,"name");
+    self.fbb_.required(o, Entity::VT_TRANSFORM,"transform");
+    flatbuffers::WIPOffset::new(o.value())
+  }
 }
 
 impl core::fmt::Debug for Entity<'_> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let mut ds = f.debug_struct("Entity");
-        ds.field("name", &self.name());
-        ds.field("transform", &self.transform());
-        ds.field("hp", &self.hp());
-        ds.field("level", &self.level());
-        ds.finish()
-    }
+  fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    let mut ds = f.debug_struct("Entity");
+      ds.field("id", &self.id());
+      ds.field("attributes_type", &self.attributes_type());
+      match self.attributes_type() {
+        EntityAttributes::PlayerAttributes => {
+          if let Some(x) = self.attributes_as_player_attributes() {
+            ds.field("attributes", &x)
+          } else {
+            ds.field("attributes", &"InvalidFlatbuffer: Union discriminant does not match value.")
+          }
+        },
+        _ => {
+          let x: Option<()> = None;
+          ds.field("attributes", &x)
+        },
+      };
+      ds.field("name", &self.name());
+      ds.field("transform", &self.transform());
+      ds.field("hp", &self.hp());
+      ds.field("level", &self.level());
+      ds.finish()
+  }
 }

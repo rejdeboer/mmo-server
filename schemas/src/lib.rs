@@ -9,8 +9,10 @@ pub mod game {
     pub use self::transform_generated::*;
     mod entity_generated;
     pub use self::entity_generated::*;
-    mod character_generated;
-    pub use self::character_generated::*;
+    mod entity_attributes_generated;
+    pub use self::entity_attributes_generated::*;
+    mod player_attributes_generated;
+    pub use self::player_attributes_generated::*;
     mod enter_game_response_generated;
     pub use self::enter_game_response_generated::*;
     mod entity_move_event_generated;

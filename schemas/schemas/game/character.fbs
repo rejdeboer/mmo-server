@@ -1,9 +1,0 @@
-include "entity.fbs";
-
-namespace game;
-
-table Character {
-	entity: game.Entity;
-	// class: uint8;
-}
-

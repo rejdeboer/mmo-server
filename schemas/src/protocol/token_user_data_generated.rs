@@ -2,116 +2,109 @@
 // @generated
 extern crate alloc;
 extern crate flatbuffers;
-use self::flatbuffers::{EndianScalar, Follow};
-use super::*;
 use alloc::boxed::Box;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use core::cmp::Ordering;
 use core::mem;
+use core::cmp::Ordering;
+use self::flatbuffers::{EndianScalar, Follow};
+use super::*;
 pub enum TokenUserDataOffset {}
 #[derive(Copy, Clone, PartialEq)]
 
 pub struct TokenUserData<'a> {
-    pub _tab: flatbuffers::Table<'a>,
+  pub _tab: flatbuffers::Table<'a>,
 }
 
 impl<'a> flatbuffers::Follow<'a> for TokenUserData<'a> {
-    type Inner = TokenUserData<'a>;
-    #[inline]
-    unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
-        Self {
-            _tab: flatbuffers::Table::new(buf, loc),
-        }
-    }
+  type Inner = TokenUserData<'a>;
+  #[inline]
+  unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
+    Self { _tab: flatbuffers::Table::new(buf, loc) }
+  }
 }
 
 impl<'a> TokenUserData<'a> {
-    pub const VT_CHARACTER_ID: flatbuffers::VOffsetT = 4;
+  pub const VT_CHARACTER_ID: flatbuffers::VOffsetT = 4;
 
-    #[inline]
-    pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
-        TokenUserData { _tab: table }
-    }
-    #[allow(unused_mut)]
-    pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
-        _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
-        args: &'args TokenUserDataArgs,
-    ) -> flatbuffers::WIPOffset<TokenUserData<'bldr>> {
-        let mut builder = TokenUserDataBuilder::new(_fbb);
-        builder.add_character_id(args.character_id);
-        builder.finish()
-    }
+  #[inline]
+  pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
+    TokenUserData { _tab: table }
+  }
+  #[allow(unused_mut)]
+  pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
+    _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
+    args: &'args TokenUserDataArgs
+  ) -> flatbuffers::WIPOffset<TokenUserData<'bldr>> {
+    let mut builder = TokenUserDataBuilder::new(_fbb);
+    builder.add_character_id(args.character_id);
+    builder.finish()
+  }
 
-    #[inline]
-    pub fn character_id(&self) -> i32 {
-        // Safety:
-        // Created from valid Table for this object
-        // which contains a valid value in this slot
-        unsafe {
-            self._tab
-                .get::<i32>(TokenUserData::VT_CHARACTER_ID, Some(0))
-                .unwrap()
-        }
-    }
+
+  #[inline]
+  pub fn character_id(&self) -> i32 {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<i32>(TokenUserData::VT_CHARACTER_ID, Some(0)).unwrap()}
+  }
 }
 
 impl flatbuffers::Verifiable for TokenUserData<'_> {
-    #[inline]
-    fn run_verifier(
-        v: &mut flatbuffers::Verifier,
-        pos: usize,
-    ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
-        use self::flatbuffers::Verifiable;
-        v.visit_table(pos)?
-            .visit_field::<i32>("character_id", Self::VT_CHARACTER_ID, false)?
-            .finish();
-        Ok(())
-    }
+  #[inline]
+  fn run_verifier(
+    v: &mut flatbuffers::Verifier, pos: usize
+  ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
+    use self::flatbuffers::Verifiable;
+    v.visit_table(pos)?
+     .visit_field::<i32>("character_id", Self::VT_CHARACTER_ID, false)?
+     .finish();
+    Ok(())
+  }
 }
 pub struct TokenUserDataArgs {
     pub character_id: i32,
 }
 impl<'a> Default for TokenUserDataArgs {
-    #[inline]
-    fn default() -> Self {
-        TokenUserDataArgs { character_id: 0 }
+  #[inline]
+  fn default() -> Self {
+    TokenUserDataArgs {
+      character_id: 0,
     }
+  }
 }
 
 pub struct TokenUserDataBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> {
-    fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
-    start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
+  fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
+  start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
 }
 impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> TokenUserDataBuilder<'a, 'b, A> {
-    #[inline]
-    pub fn add_character_id(&mut self, character_id: i32) {
-        self.fbb_
-            .push_slot::<i32>(TokenUserData::VT_CHARACTER_ID, character_id, 0);
+  #[inline]
+  pub fn add_character_id(&mut self, character_id: i32) {
+    self.fbb_.push_slot::<i32>(TokenUserData::VT_CHARACTER_ID, character_id, 0);
+  }
+  #[inline]
+  pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> TokenUserDataBuilder<'a, 'b, A> {
+    let start = _fbb.start_table();
+    TokenUserDataBuilder {
+      fbb_: _fbb,
+      start_: start,
     }
-    #[inline]
-    pub fn new(
-        _fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
-    ) -> TokenUserDataBuilder<'a, 'b, A> {
-        let start = _fbb.start_table();
-        TokenUserDataBuilder {
-            fbb_: _fbb,
-            start_: start,
-        }
-    }
-    #[inline]
-    pub fn finish(self) -> flatbuffers::WIPOffset<TokenUserData<'a>> {
-        let o = self.fbb_.end_table(self.start_);
-        flatbuffers::WIPOffset::new(o.value())
-    }
+  }
+  #[inline]
+  pub fn finish(self) -> flatbuffers::WIPOffset<TokenUserData<'a>> {
+    let o = self.fbb_.end_table(self.start_);
+    flatbuffers::WIPOffset::new(o.value())
+  }
 }
 
 impl core::fmt::Debug for TokenUserData<'_> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let mut ds = f.debug_struct("TokenUserData");
-        ds.field("character_id", &self.character_id());
-        ds.finish()
-    }
+  fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    let mut ds = f.debug_struct("TokenUserData");
+      ds.field("character_id", &self.character_id());
+      ds.finish()
+  }
 }
 #[inline]
 /// Verifies that a buffer of bytes contains a `TokenUserData`
@@ -120,10 +113,8 @@ impl core::fmt::Debug for TokenUserData<'_> {
 /// catch every error, or be maximally performant. For the
 /// previous, unchecked, behavior use
 /// `root_as_token_user_data_unchecked`.
-pub fn root_as_token_user_data(
-    buf: &[u8],
-) -> Result<TokenUserData, flatbuffers::InvalidFlatbuffer> {
-    flatbuffers::root::<TokenUserData>(buf)
+pub fn root_as_token_user_data(buf: &[u8]) -> Result<TokenUserData, flatbuffers::InvalidFlatbuffer> {
+  flatbuffers::root::<TokenUserData>(buf)
 }
 #[inline]
 /// Verifies that a buffer of bytes contains a size prefixed
@@ -132,10 +123,8 @@ pub fn root_as_token_user_data(
 /// catch every error, or be maximally performant. For the
 /// previous, unchecked, behavior use
 /// `size_prefixed_root_as_token_user_data_unchecked`.
-pub fn size_prefixed_root_as_token_user_data(
-    buf: &[u8],
-) -> Result<TokenUserData, flatbuffers::InvalidFlatbuffer> {
-    flatbuffers::size_prefixed_root::<TokenUserData>(buf)
+pub fn size_prefixed_root_as_token_user_data(buf: &[u8]) -> Result<TokenUserData, flatbuffers::InvalidFlatbuffer> {
+  flatbuffers::size_prefixed_root::<TokenUserData>(buf)
 }
 #[inline]
 /// Verifies, with the given options, that a buffer of bytes
@@ -145,10 +134,10 @@ pub fn size_prefixed_root_as_token_user_data(
 /// previous, unchecked, behavior use
 /// `root_as_token_user_data_unchecked`.
 pub fn root_as_token_user_data_with_opts<'b, 'o>(
-    opts: &'o flatbuffers::VerifierOptions,
-    buf: &'b [u8],
+  opts: &'o flatbuffers::VerifierOptions,
+  buf: &'b [u8],
 ) -> Result<TokenUserData<'b>, flatbuffers::InvalidFlatbuffer> {
-    flatbuffers::root_with_opts::<TokenUserData<'b>>(opts, buf)
+  flatbuffers::root_with_opts::<TokenUserData<'b>>(opts, buf)
 }
 #[inline]
 /// Verifies, with the given verifier options, that a buffer of
@@ -158,37 +147,33 @@ pub fn root_as_token_user_data_with_opts<'b, 'o>(
 /// previous, unchecked, behavior use
 /// `root_as_token_user_data_unchecked`.
 pub fn size_prefixed_root_as_token_user_data_with_opts<'b, 'o>(
-    opts: &'o flatbuffers::VerifierOptions,
-    buf: &'b [u8],
+  opts: &'o flatbuffers::VerifierOptions,
+  buf: &'b [u8],
 ) -> Result<TokenUserData<'b>, flatbuffers::InvalidFlatbuffer> {
-    flatbuffers::size_prefixed_root_with_opts::<TokenUserData<'b>>(opts, buf)
+  flatbuffers::size_prefixed_root_with_opts::<TokenUserData<'b>>(opts, buf)
 }
 #[inline]
 /// Assumes, without verification, that a buffer of bytes contains a TokenUserData and returns it.
 /// # Safety
 /// Callers must trust the given bytes do indeed contain a valid `TokenUserData`.
 pub unsafe fn root_as_token_user_data_unchecked(buf: &[u8]) -> TokenUserData {
-    flatbuffers::root_unchecked::<TokenUserData>(buf)
+  flatbuffers::root_unchecked::<TokenUserData>(buf)
 }
 #[inline]
 /// Assumes, without verification, that a buffer of bytes contains a size prefixed TokenUserData and returns it.
 /// # Safety
 /// Callers must trust the given bytes do indeed contain a valid size prefixed `TokenUserData`.
 pub unsafe fn size_prefixed_root_as_token_user_data_unchecked(buf: &[u8]) -> TokenUserData {
-    flatbuffers::size_prefixed_root_unchecked::<TokenUserData>(buf)
+  flatbuffers::size_prefixed_root_unchecked::<TokenUserData>(buf)
 }
 #[inline]
 pub fn finish_token_user_data_buffer<'a, 'b, A: flatbuffers::Allocator + 'a>(
     fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
-    root: flatbuffers::WIPOffset<TokenUserData<'a>>,
-) {
-    fbb.finish(root, None);
+    root: flatbuffers::WIPOffset<TokenUserData<'a>>) {
+  fbb.finish(root, None);
 }
 
 #[inline]
-pub fn finish_size_prefixed_token_user_data_buffer<'a, 'b, A: flatbuffers::Allocator + 'a>(
-    fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
-    root: flatbuffers::WIPOffset<TokenUserData<'a>>,
-) {
-    fbb.finish_size_prefixed(root, None);
+pub fn finish_size_prefixed_token_user_data_buffer<'a, 'b, A: flatbuffers::Allocator + 'a>(fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>, root: flatbuffers::WIPOffset<TokenUserData<'a>>) {
+  fbb.finish_size_prefixed(root, None);
 }

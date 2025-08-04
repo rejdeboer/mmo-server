@@ -1,5 +1,6 @@
 include "chat.fbs";
 include "common.fbs";
+include "entity.fbs";
 
 namespace game;
 
@@ -9,8 +10,7 @@ table EntityMoveEvent {
 }
 
 table EntitySpawnEvent {
-	entity_id: uint64;
-	transform: game.Transform;
+	entity: game.Entity;
 }
 
 table EntityDespawnEvent {

@@ -8,7 +8,6 @@ fn main() {
         "schemas/game/common.fbs",
         "schemas/game/entity.fbs",
         "schemas/game/event.fbs",
-        "schemas/game/character.fbs",
         "schemas/game/enter_game_response.fbs",
         "schemas/social/common.fbs",
         "schemas/social/action.fbs",

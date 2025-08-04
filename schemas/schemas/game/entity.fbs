@@ -2,7 +2,18 @@ include "common.fbs";
 
 namespace game;
 
+table PlayerAttributes {
+	character_id: int32;
+	guild_name: string;
+}
+
+union EntityAttributes {
+	PlayerAttributes
+}
+
 table Entity {
+	id: uint64;
+	attributes: EntityAttributes;
 	name: string (required);
 	transform: game.Transform (required);
 	hp: int32;

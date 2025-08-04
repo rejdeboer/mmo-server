@@ -1,10 +1,9 @@
-include "character.fbs";
+include "entity.fbs";
 
 namespace game;
 
 table EnterGameResponse {
-	player_entity_id: uint64;
-	character: game.Character;
+	player_entity: game.Entity;
 }
 
 root_type EnterGameResponse;

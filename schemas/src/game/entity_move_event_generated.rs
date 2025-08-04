@@ -2,139 +2,124 @@
 // @generated
 extern crate alloc;
 extern crate flatbuffers;
-use self::flatbuffers::{EndianScalar, Follow};
-use super::*;
 use alloc::boxed::Box;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use core::cmp::Ordering;
 use core::mem;
+use core::cmp::Ordering;
+use self::flatbuffers::{EndianScalar, Follow};
+use super::*;
 pub enum EntityMoveEventOffset {}
 #[derive(Copy, Clone, PartialEq)]
 
 pub struct EntityMoveEvent<'a> {
-    pub _tab: flatbuffers::Table<'a>,
+  pub _tab: flatbuffers::Table<'a>,
 }
 
 impl<'a> flatbuffers::Follow<'a> for EntityMoveEvent<'a> {
-    type Inner = EntityMoveEvent<'a>;
-    #[inline]
-    unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
-        Self {
-            _tab: flatbuffers::Table::new(buf, loc),
-        }
-    }
+  type Inner = EntityMoveEvent<'a>;
+  #[inline]
+  unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
+    Self { _tab: flatbuffers::Table::new(buf, loc) }
+  }
 }
 
 impl<'a> EntityMoveEvent<'a> {
-    pub const VT_ENTITY_ID: flatbuffers::VOffsetT = 4;
-    pub const VT_TRANSFORM: flatbuffers::VOffsetT = 6;
+  pub const VT_ENTITY_ID: flatbuffers::VOffsetT = 4;
+  pub const VT_TRANSFORM: flatbuffers::VOffsetT = 6;
 
-    #[inline]
-    pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
-        EntityMoveEvent { _tab: table }
-    }
-    #[allow(unused_mut)]
-    pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
-        _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
-        args: &'args EntityMoveEventArgs<'args>,
-    ) -> flatbuffers::WIPOffset<EntityMoveEvent<'bldr>> {
-        let mut builder = EntityMoveEventBuilder::new(_fbb);
-        builder.add_entity_id(args.entity_id);
-        if let Some(x) = args.transform {
-            builder.add_transform(x);
-        }
-        builder.finish()
-    }
+  #[inline]
+  pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
+    EntityMoveEvent { _tab: table }
+  }
+  #[allow(unused_mut)]
+  pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
+    _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
+    args: &'args EntityMoveEventArgs<'args>
+  ) -> flatbuffers::WIPOffset<EntityMoveEvent<'bldr>> {
+    let mut builder = EntityMoveEventBuilder::new(_fbb);
+    builder.add_entity_id(args.entity_id);
+    if let Some(x) = args.transform { builder.add_transform(x); }
+    builder.finish()
+  }
 
-    #[inline]
-    pub fn entity_id(&self) -> u64 {
-        // Safety:
-        // Created from valid Table for this object
-        // which contains a valid value in this slot
-        unsafe {
-            self._tab
-                .get::<u64>(EntityMoveEvent::VT_ENTITY_ID, Some(0))
-                .unwrap()
-        }
-    }
-    #[inline]
-    pub fn transform(&self) -> Option<&'a Transform> {
-        // Safety:
-        // Created from valid Table for this object
-        // which contains a valid value in this slot
-        unsafe {
-            self._tab
-                .get::<Transform>(EntityMoveEvent::VT_TRANSFORM, None)
-        }
-    }
+
+  #[inline]
+  pub fn entity_id(&self) -> u64 {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<u64>(EntityMoveEvent::VT_ENTITY_ID, Some(0)).unwrap()}
+  }
+  #[inline]
+  pub fn transform(&self) -> Option<&'a Transform> {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<Transform>(EntityMoveEvent::VT_TRANSFORM, None)}
+  }
 }
 
 impl flatbuffers::Verifiable for EntityMoveEvent<'_> {
-    #[inline]
-    fn run_verifier(
-        v: &mut flatbuffers::Verifier,
-        pos: usize,
-    ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
-        use self::flatbuffers::Verifiable;
-        v.visit_table(pos)?
-            .visit_field::<u64>("entity_id", Self::VT_ENTITY_ID, false)?
-            .visit_field::<Transform>("transform", Self::VT_TRANSFORM, false)?
-            .finish();
-        Ok(())
-    }
+  #[inline]
+  fn run_verifier(
+    v: &mut flatbuffers::Verifier, pos: usize
+  ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
+    use self::flatbuffers::Verifiable;
+    v.visit_table(pos)?
+     .visit_field::<u64>("entity_id", Self::VT_ENTITY_ID, false)?
+     .visit_field::<Transform>("transform", Self::VT_TRANSFORM, false)?
+     .finish();
+    Ok(())
+  }
 }
 pub struct EntityMoveEventArgs<'a> {
     pub entity_id: u64,
     pub transform: Option<&'a Transform>,
 }
 impl<'a> Default for EntityMoveEventArgs<'a> {
-    #[inline]
-    fn default() -> Self {
-        EntityMoveEventArgs {
-            entity_id: 0,
-            transform: None,
-        }
+  #[inline]
+  fn default() -> Self {
+    EntityMoveEventArgs {
+      entity_id: 0,
+      transform: None,
     }
+  }
 }
 
 pub struct EntityMoveEventBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> {
-    fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
-    start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
+  fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
+  start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
 }
 impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> EntityMoveEventBuilder<'a, 'b, A> {
-    #[inline]
-    pub fn add_entity_id(&mut self, entity_id: u64) {
-        self.fbb_
-            .push_slot::<u64>(EntityMoveEvent::VT_ENTITY_ID, entity_id, 0);
+  #[inline]
+  pub fn add_entity_id(&mut self, entity_id: u64) {
+    self.fbb_.push_slot::<u64>(EntityMoveEvent::VT_ENTITY_ID, entity_id, 0);
+  }
+  #[inline]
+  pub fn add_transform(&mut self, transform: &Transform) {
+    self.fbb_.push_slot_always::<&Transform>(EntityMoveEvent::VT_TRANSFORM, transform);
+  }
+  #[inline]
+  pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> EntityMoveEventBuilder<'a, 'b, A> {
+    let start = _fbb.start_table();
+    EntityMoveEventBuilder {
+      fbb_: _fbb,
+      start_: start,
     }
-    #[inline]
-    pub fn add_transform(&mut self, transform: &Transform) {
-        self.fbb_
-            .push_slot_always::<&Transform>(EntityMoveEvent::VT_TRANSFORM, transform);
-    }
-    #[inline]
-    pub fn new(
-        _fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
-    ) -> EntityMoveEventBuilder<'a, 'b, A> {
-        let start = _fbb.start_table();
-        EntityMoveEventBuilder {
-            fbb_: _fbb,
-            start_: start,
-        }
-    }
-    #[inline]
-    pub fn finish(self) -> flatbuffers::WIPOffset<EntityMoveEvent<'a>> {
-        let o = self.fbb_.end_table(self.start_);
-        flatbuffers::WIPOffset::new(o.value())
-    }
+  }
+  #[inline]
+  pub fn finish(self) -> flatbuffers::WIPOffset<EntityMoveEvent<'a>> {
+    let o = self.fbb_.end_table(self.start_);
+    flatbuffers::WIPOffset::new(o.value())
+  }
 }
 
 impl core::fmt::Debug for EntityMoveEvent<'_> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let mut ds = f.debug_struct("EntityMoveEvent");
-        ds.field("entity_id", &self.entity_id());
-        ds.field("transform", &self.transform());
-        ds.finish()
-    }
+  fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    let mut ds = f.debug_struct("EntityMoveEvent");
+      ds.field("entity_id", &self.entity_id());
+      ds.field("transform", &self.transform());
+      ds.finish()
+  }
 }
