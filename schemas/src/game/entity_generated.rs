@@ -30,7 +30,7 @@ impl<'a> Entity<'a> {
   pub const VT_ATTRIBUTES: flatbuffers::VOffsetT = 8;
   pub const VT_NAME: flatbuffers::VOffsetT = 10;
   pub const VT_TRANSFORM: flatbuffers::VOffsetT = 12;
-  pub const VT_HP: flatbuffers::VOffsetT = 14;
+  pub const VT_VITALS: flatbuffers::VOffsetT = 14;
   pub const VT_LEVEL: flatbuffers::VOffsetT = 16;
 
   #[inline]
@@ -45,7 +45,7 @@ impl<'a> Entity<'a> {
     let mut builder = EntityBuilder::new(_fbb);
     builder.add_id(args.id);
     builder.add_level(args.level);
-    builder.add_hp(args.hp);
+    if let Some(x) = args.vitals { builder.add_vitals(x); }
     if let Some(x) = args.transform { builder.add_transform(x); }
     if let Some(x) = args.name { builder.add_name(x); }
     if let Some(x) = args.attributes { builder.add_attributes(x); }
@@ -90,11 +90,11 @@ impl<'a> Entity<'a> {
     unsafe { self._tab.get::<Transform>(Entity::VT_TRANSFORM, None).unwrap()}
   }
   #[inline]
-  pub fn hp(&self) -> i32 {
+  pub fn vitals(&self) -> Vitals<'a> {
     // Safety:
     // Created from valid Table for this object
     // which contains a valid value in this slot
-    unsafe { self._tab.get::<i32>(Entity::VT_HP, Some(0)).unwrap()}
+    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<Vitals>>(Entity::VT_VITALS, None).unwrap()}
   }
   #[inline]
   pub fn level(&self) -> i32 {
@@ -136,7 +136,7 @@ impl flatbuffers::Verifiable for Entity<'_> {
      })?
      .visit_field::<flatbuffers::ForwardsUOffset<&str>>("name", Self::VT_NAME, true)?
      .visit_field::<Transform>("transform", Self::VT_TRANSFORM, true)?
-     .visit_field::<i32>("hp", Self::VT_HP, false)?
+     .visit_field::<flatbuffers::ForwardsUOffset<Vitals>>("vitals", Self::VT_VITALS, true)?
      .visit_field::<i32>("level", Self::VT_LEVEL, false)?
      .finish();
     Ok(())
@@ -148,7 +148,7 @@ pub struct EntityArgs<'a> {
     pub attributes: Option<flatbuffers::WIPOffset<flatbuffers::UnionWIPOffset>>,
     pub name: Option<flatbuffers::WIPOffset<&'a str>>,
     pub transform: Option<&'a Transform>,
-    pub hp: i32,
+    pub vitals: Option<flatbuffers::WIPOffset<Vitals<'a>>>,
     pub level: i32,
 }
 impl<'a> Default for EntityArgs<'a> {
@@ -160,7 +160,7 @@ impl<'a> Default for EntityArgs<'a> {
       attributes: None,
       name: None, // required field
       transform: None, // required field
-      hp: 0,
+      vitals: None, // required field
       level: 0,
     }
   }
@@ -192,8 +192,8 @@ impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> EntityBuilder<'a, 'b, A> {
     self.fbb_.push_slot_always::<&Transform>(Entity::VT_TRANSFORM, transform);
   }
   #[inline]
-  pub fn add_hp(&mut self, hp: i32) {
-    self.fbb_.push_slot::<i32>(Entity::VT_HP, hp, 0);
+  pub fn add_vitals(&mut self, vitals: flatbuffers::WIPOffset<Vitals<'b >>) {
+    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<Vitals>>(Entity::VT_VITALS, vitals);
   }
   #[inline]
   pub fn add_level(&mut self, level: i32) {
@@ -212,6 +212,7 @@ impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> EntityBuilder<'a, 'b, A> {
     let o = self.fbb_.end_table(self.start_);
     self.fbb_.required(o, Entity::VT_NAME,"name");
     self.fbb_.required(o, Entity::VT_TRANSFORM,"transform");
+    self.fbb_.required(o, Entity::VT_VITALS,"vitals");
     flatbuffers::WIPOffset::new(o.value())
   }
 }
@@ -236,7 +237,7 @@ impl core::fmt::Debug for Entity<'_> {
       };
       ds.field("name", &self.name());
       ds.field("transform", &self.transform());
-      ds.field("hp", &self.hp());
+      ds.field("vitals", &self.vitals());
       ds.field("level", &self.level());
       ds.finish()
   }

@@ -7,6 +7,8 @@ pub mod game {
     pub use self::vec_3_generated::*;
     mod transform_generated;
     pub use self::transform_generated::*;
+    mod vitals_generated;
+    pub use self::vitals_generated::*;
     mod entity_generated;
     pub use self::entity_generated::*;
     mod entity_attributes_generated;

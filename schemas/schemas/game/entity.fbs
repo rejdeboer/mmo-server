@@ -2,6 +2,11 @@ include "common.fbs";
 
 namespace game;
 
+table Vitals {
+	hp: int32;
+	max_hp: int32;
+}
+
 table PlayerAttributes {
 	character_id: int32;
 	guild_name: string;
@@ -16,6 +21,6 @@ table Entity {
 	attributes: EntityAttributes;
 	name: string (required);
 	transform: game.Transform (required);
-	hp: int32;
+	vitals: Vitals (required);
 	level: int32;
 }
