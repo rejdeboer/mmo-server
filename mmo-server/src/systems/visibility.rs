@@ -1,10 +1,13 @@
-use bevy::{platform::collections::HashSet, prelude::*};
-
 use crate::{
     application::SpatialGrid,
-    components::{ClientIdComponent, GridCell, InterestedClients, VisibleEntities},
+    components::{
+        CharacterIdComponent, ClientIdComponent, GridCell, InterestedClients, LevelComponent,
+        NameComponent, VisibleEntities, Vitals,
+    },
     events::OutgoingMessage,
+    systems::EntityAttributes,
 };
+use bevy::{platform::collections::HashSet, prelude::*};
 
 const VIEW_RADIUS: f32 = 256.0;
 
@@ -18,6 +21,13 @@ pub fn update_player_visibility(
     )>,
     mut q_interest: Query<&mut InterestedClients>,
     q_transform: Query<&Transform>,
+    q_spawnables: Query<(
+        &NameComponent,
+        &Transform,
+        &Vitals,
+        &LevelComponent,
+        Option<&CharacterIdComponent>,
+    )>,
     grid: Res<SpatialGrid>,
     mut writer: EventWriter<OutgoingMessage>,
 ) {
@@ -52,10 +62,28 @@ pub fn update_player_visibility(
             if let Ok(mut interested) = q_interest.get_mut(entity_to_spawn) {
                 interested.clients.insert(client_id.0);
             }
-            if let Ok(transform) = q_transform.get(entity_to_spawn) {
+            if let Ok((name, transform, vitals, level, character_id)) =
+                q_spawnables.get(entity_to_spawn)
+            {
+                let attributes = match character_id {
+                    Some(cid) => EntityAttributes::Player {
+                        character_id: cid.0,
+                        // TODO: Correctly handle guild
+                        guild_id: None,
+                    },
+                    None => EntityAttributes::Npc,
+                };
+
                 writer.write(OutgoingMessage {
                     client_id: client_id.0,
-                    data: crate::events::OutgoingMessageData::Spawn(entity_to_spawn, *transform),
+                    data: crate::events::OutgoingMessageData::Spawn {
+                        entity: entity_to_spawn,
+                        attributes,
+                        name: name.0.clone(),
+                        transform: *transform,
+                        level: level.0,
+                        vitals: vitals.clone(),
+                    },
                 });
             }
         }

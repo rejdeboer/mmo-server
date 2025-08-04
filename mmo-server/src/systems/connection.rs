@@ -1,5 +1,10 @@
-use std::sync::Arc;
-
+use crate::{
+    application::DatabasePool,
+    components::{
+        CharacterIdComponent, ClientIdComponent, InterestedClients, LevelComponent, NameComponent,
+        VisibleEntities, Vitals,
+    },
+};
 use bevy::prelude::*;
 use bevy_renet::{
     netcode::NetcodeServerTransport,
@@ -10,14 +15,7 @@ use flatbuffers::{FlatBufferBuilder, UnionWIPOffset, WIPOffset, root};
 use schemas::game::{self as schema};
 use schemas::protocol::TokenUserData;
 use sqlx::{Pool, Postgres};
-
-use crate::{
-    application::DatabasePool,
-    components::{
-        CharacterIdComponent, ClientIdComponent, InterestedClients, NameComponent, VisibleEntities,
-        Vitals,
-    },
-};
+use std::sync::Arc;
 
 #[derive(Debug, Clone, sqlx::FromRow)]
 pub struct CharacterRow {
@@ -38,11 +36,12 @@ pub enum EntityAttributes {
         character_id: i32,
         guild_id: Option<i32>,
     },
+    Npc,
 }
 
 impl EntityAttributes {
     pub fn serialize<'a>(
-        self,
+        &self,
         builder: &mut FlatBufferBuilder,
     ) -> (WIPOffset<UnionWIPOffset>, schema::EntityAttributes) {
         match self {
@@ -53,12 +52,17 @@ impl EntityAttributes {
                 let fb_attr = schema::PlayerAttributes::create(
                     builder,
                     &schema::PlayerAttributesArgs {
-                        character_id,
+                        character_id: *character_id,
                         guild_name: None,
                     },
                 )
                 .as_union_value();
                 (fb_attr, schema::EntityAttributes::PlayerAttributes)
+            }
+            EntityAttributes::Npc => {
+                let fb_attr = schema::NpcAttributes::create(builder, &schema::NpcAttributesArgs {})
+                    .as_union_value();
+                (fb_attr, schema::EntityAttributes::NpcAttributes)
             }
         }
     }
@@ -67,7 +71,7 @@ impl EntityAttributes {
 pub fn serialize_entity<'a>(
     builder: &mut FlatBufferBuilder<'a>,
     entity: Entity,
-    attributes: EntityAttributes,
+    attributes: &EntityAttributes,
     name: &str,
     transform: &Transform,
     vitals: &Vitals,
@@ -80,6 +84,7 @@ pub fn serialize_entity<'a>(
         &schema::Vec3::new(pos.x, pos.y, pos.z),
         transform.rotation.y,
     );
+    // TODO: Correctly instantiate vitals max hp according to entity stats
     let fb_vitals = schema::Vitals::new(vitals.hp, vitals.max_hp);
     let fb_name = builder.create_string(name);
 
@@ -174,6 +179,7 @@ fn process_client_connected(
                             InterestedClients::default(),
                             transform,
                             vitals.clone(),
+                            LevelComponent(character.level),
                         ))
                         .id();
 
@@ -186,7 +192,7 @@ fn process_client_connected(
                     let entity_offset = serialize_entity(
                         &mut builder,
                         entity,
-                        attributes,
+                        &attributes,
                         &character.name,
                         &transform,
                         &vitals,

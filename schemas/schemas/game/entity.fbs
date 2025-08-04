@@ -12,8 +12,11 @@ table PlayerAttributes {
 	guild_name: string;
 }
 
+table NpcAttributes {}
+
 union EntityAttributes {
-	PlayerAttributes
+	PlayerAttributes,
+	NpcAttributes
 }
 
 table Entity {

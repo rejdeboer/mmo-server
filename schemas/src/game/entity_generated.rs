@@ -118,6 +118,21 @@ impl<'a> Entity<'a> {
     }
   }
 
+  #[inline]
+  #[allow(non_snake_case)]
+  pub fn attributes_as_npc_attributes(&self) -> Option<NpcAttributes<'a>> {
+    if self.attributes_type() == EntityAttributes::NpcAttributes {
+      self.attributes().map(|t| {
+       // Safety:
+       // Created from a valid Table for this object
+       // Which contains a valid union in this slot
+       unsafe { NpcAttributes::init_from_table(t) }
+     })
+    } else {
+      None
+    }
+  }
+
 }
 
 impl flatbuffers::Verifiable for Entity<'_> {
@@ -131,6 +146,7 @@ impl flatbuffers::Verifiable for Entity<'_> {
      .visit_union::<EntityAttributes, _>("attributes_type", Self::VT_ATTRIBUTES_TYPE, "attributes", Self::VT_ATTRIBUTES, false, |key, v, pos| {
         match key {
           EntityAttributes::PlayerAttributes => v.verify_union_variant::<flatbuffers::ForwardsUOffset<PlayerAttributes>>("EntityAttributes::PlayerAttributes", pos),
+          EntityAttributes::NpcAttributes => v.verify_union_variant::<flatbuffers::ForwardsUOffset<NpcAttributes>>("EntityAttributes::NpcAttributes", pos),
           _ => Ok(()),
         }
      })?
@@ -225,6 +241,13 @@ impl core::fmt::Debug for Entity<'_> {
       match self.attributes_type() {
         EntityAttributes::PlayerAttributes => {
           if let Some(x) = self.attributes_as_player_attributes() {
+            ds.field("attributes", &x)
+          } else {
+            ds.field("attributes", &"InvalidFlatbuffer: Union discriminant does not match value.")
+          }
+        },
+        EntityAttributes::NpcAttributes => {
+          if let Some(x) = self.attributes_as_npc_attributes() {
             ds.field("attributes", &x)
           } else {
             ds.field("attributes", &"InvalidFlatbuffer: Union discriminant does not match value.")

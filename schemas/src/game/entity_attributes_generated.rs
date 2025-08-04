@@ -12,12 +12,13 @@ use super::*;
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
 pub const ENUM_MIN_ENTITY_ATTRIBUTES: u8 = 0;
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
-pub const ENUM_MAX_ENTITY_ATTRIBUTES: u8 = 1;
+pub const ENUM_MAX_ENTITY_ATTRIBUTES: u8 = 2;
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
 #[allow(non_camel_case_types)]
-pub const ENUM_VALUES_ENTITY_ATTRIBUTES: [EntityAttributes; 2] = [
+pub const ENUM_VALUES_ENTITY_ATTRIBUTES: [EntityAttributes; 3] = [
   EntityAttributes::NONE,
   EntityAttributes::PlayerAttributes,
+  EntityAttributes::NpcAttributes,
 ];
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
@@ -27,18 +28,21 @@ pub struct EntityAttributes(pub u8);
 impl EntityAttributes {
   pub const NONE: Self = Self(0);
   pub const PlayerAttributes: Self = Self(1);
+  pub const NpcAttributes: Self = Self(2);
 
   pub const ENUM_MIN: u8 = 0;
-  pub const ENUM_MAX: u8 = 1;
+  pub const ENUM_MAX: u8 = 2;
   pub const ENUM_VALUES: &'static [Self] = &[
     Self::NONE,
     Self::PlayerAttributes,
+    Self::NpcAttributes,
   ];
   /// Returns the variant's name or "" if unknown.
   pub fn variant_name(self) -> Option<&'static str> {
     match self {
       Self::NONE => Some("NONE"),
       Self::PlayerAttributes => Some("PlayerAttributes"),
+      Self::NpcAttributes => Some("NpcAttributes"),
       _ => None,
     }
   }

@@ -1,10 +1,13 @@
+use crate::{
+    components::{NameComponent, Vitals},
+    systems::{EntityAttributes, serialize_entity},
+};
 use bevy::prelude::*;
 use bevy_renet::renet::ClientId;
 use flatbuffers::{FlatBufferBuilder, WIPOffset};
 use schema::ChannelType;
 use schemas::game as schema;
-
-use crate::components::NameComponent;
+use std::sync::Arc;
 
 #[derive(Event, Debug)]
 pub struct IncomingChatMessage {
@@ -30,7 +33,14 @@ pub enum OutgoingMessageData {
     ChatMessage(ChannelType, NameComponent, String),
     Despawn(Entity),
     Movement(Entity, Transform),
-    Spawn(Entity, Transform),
+    Spawn {
+        entity: Entity,
+        attributes: EntityAttributes,
+        name: Arc<str>,
+        transform: Transform,
+        level: i32,
+        vitals: Vitals,
+    },
 }
 
 impl OutgoingMessageData {
@@ -66,18 +76,22 @@ impl OutgoingMessageData {
                 )
                 .as_union_value()
             }
-            Self::Spawn(id, transform) => {
+            Self::Spawn {
+                entity,
+                attributes,
+                name,
+                transform,
+                level,
+                vitals,
+            } => {
                 data_type = schema::EventData::EntitySpawnEvent;
-                let pos = transform.translation;
-                let fb_transform = schema::Transform::new(
-                    &schema::Vec3::new(pos.x, pos.y, pos.z),
-                    transform.rotation.y,
+                let fb_entity = serialize_entity(
+                    builder, *entity, attributes, &name, transform, vitals, *level,
                 );
                 schema::EntitySpawnEvent::create(
                     builder,
                     &schema::EntitySpawnEventArgs {
-                        entity_id: id.to_bits(),
-                        transform: Some(&fb_transform),
+                        entity: Some(fb_entity),
                     },
                 )
                 .as_union_value()

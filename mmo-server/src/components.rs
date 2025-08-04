@@ -30,3 +30,6 @@ pub struct Vitals {
     pub hp: i32,
     pub max_hp: i32,
 }
+
+#[derive(Debug, Component)]
+pub struct LevelComponent(pub i32);
