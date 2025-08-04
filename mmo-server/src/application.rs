@@ -90,7 +90,7 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
             crate::systems::send_transform_updates,
             crate::systems::process_incoming_chat,
             crate::systems::process_client_actions,
-            crate::server::sync_players,
+            crate::systems::sync_players,
         ),
     );
 
