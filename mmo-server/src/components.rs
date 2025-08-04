@@ -24,3 +24,9 @@ pub struct NameComponent(pub Arc<str>);
 pub struct VisibleEntities {
     pub entities: HashSet<Entity>,
 }
+
+#[derive(Debug, Component, Clone)]
+pub struct Vitals {
+    pub hp: i32,
+    pub max_hp: i32,
+}

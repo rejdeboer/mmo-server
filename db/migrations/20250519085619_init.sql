@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS characters (
     level INT NOT NULL DEFAULT 1,
     experience BIGINT NOT NULL DEFAULT 0,
 
+    hp INT NOT NULL DEFAULT 1,
     position_x REAL NOT NULL DEFAULT 0.0,
     position_y REAL NOT NULL DEFAULT 0.0,
     position_z REAL NOT NULL DEFAULT 0.0,

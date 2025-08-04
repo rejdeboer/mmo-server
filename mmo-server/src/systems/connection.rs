@@ -6,8 +6,8 @@ use bevy_renet::{
     renet::{ClientId, DefaultChannel, DisconnectReason, RenetServer, ServerEvent},
 };
 use bevy_tokio_tasks::TokioTasksRuntime;
-use flatbuffers::{FlatBufferBuilder, WIPOffset, root};
-use schemas::game as schema;
+use flatbuffers::{FlatBufferBuilder, UnionWIPOffset, WIPOffset, root};
+use schemas::game::{self as schema};
 use schemas::protocol::TokenUserData;
 use sqlx::{Pool, Postgres};
 
@@ -15,6 +15,7 @@ use crate::{
     application::DatabasePool,
     components::{
         CharacterIdComponent, ClientIdComponent, InterestedClients, NameComponent, VisibleEntities,
+        Vitals,
     },
 };
 
@@ -27,37 +28,82 @@ pub struct CharacterRow {
     pub position_z: f32,
     pub rotation_yaw: f32,
     pub level: i32,
+    pub hp: i32,
+    pub guild_id: Option<i32>,
 }
 
-impl CharacterRow {
-    pub fn encode<'a>(
-        &self,
-        builder: &mut FlatBufferBuilder<'a>,
-    ) -> WIPOffset<schema::Character<'a>> {
-        let transform = schema::Transform::new(
-            &schema::Vec3::new(self.position_x, self.position_y, self.position_z),
-            self.rotation_yaw,
-        );
-        let name = builder.create_string(&self.name);
+#[derive(Debug)]
+pub enum EntityAttributes {
+    Player {
+        character_id: i32,
+        guild_id: Option<i32>,
+    },
+}
 
-        let entity = schema::Entity::create(
-            builder,
-            &schema::EntityArgs {
-                name: Some(name),
-                // TODO: Fill this in
-                hp: 0,
-                level: self.level,
-                transform: Some(&transform),
-            },
-        );
-
-        schema::Character::create(
-            builder,
-            &schema::CharacterArgs {
-                entity: Some(entity),
-            },
-        )
+impl EntityAttributes {
+    pub fn serialize<'a>(
+        self,
+        builder: &mut FlatBufferBuilder,
+    ) -> (WIPOffset<UnionWIPOffset>, schema::EntityAttributes) {
+        match self {
+            EntityAttributes::Player {
+                character_id,
+                guild_id: _,
+            } => {
+                let fb_attr = schema::PlayerAttributes::create(
+                    builder,
+                    &schema::PlayerAttributesArgs {
+                        character_id,
+                        guild_name: None,
+                    },
+                )
+                .as_union_value();
+                (fb_attr, schema::EntityAttributes::PlayerAttributes)
+            }
+        }
     }
+}
+
+pub fn serialize_entity<'a>(
+    builder: &mut FlatBufferBuilder<'a>,
+    entity: Entity,
+    attributes: EntityAttributes,
+    name: &str,
+    transform: &Transform,
+    vitals: &Vitals,
+    level: i32,
+) -> WIPOffset<schema::Entity<'a>> {
+    let (fb_attr, attr_type) = attributes.serialize(builder);
+
+    let pos = transform.translation;
+    let fb_transform = schema::Transform::new(
+        &schema::Vec3::new(pos.x, pos.y, pos.z),
+        transform.rotation.y,
+    );
+
+    // TODO: Vitals should be struct in FB
+    let fb_vitals = schema::Vitals::create(
+        builder,
+        &schema::VitalsArgs {
+            hp: vitals.hp,
+            max_hp: vitals.max_hp,
+        },
+    );
+
+    let fb_name = builder.create_string(name);
+
+    schema::Entity::create(
+        builder,
+        &schema::EntityArgs {
+            id: entity.to_bits(),
+            attributes_type: attr_type,
+            attributes: Some(fb_attr),
+            name: Some(fb_name),
+            vitals: Some(fb_vitals),
+            transform: Some(&fb_transform),
+            level,
+        },
+    )
 }
 
 pub fn handle_connection_events(
@@ -116,47 +162,65 @@ fn process_client_connected(
                     .await
                     .expect("player character data retrieved");
                 ctx.run_on_main_thread(move |ctx| {
-                    let mut builder = FlatBufferBuilder::new();
-                    let character_offset = character.encode(&mut builder);
+                    let mut transform = Transform::from_xyz(
+                        character.position_x,
+                        character.position_y,
+                        character.position_z,
+                    );
+                    transform.rotate_y(character.rotation_yaw);
+                    let vitals = Vitals {
+                        hp: character.hp,
+                        max_hp: character.hp,
+                    };
 
-                    let entity_id = ctx
+                    let entity = ctx
                         .world
                         .spawn((
-                            NameComponent(Arc::from(character.name)),
+                            NameComponent(Arc::from(character.name.clone())),
                             ClientIdComponent(client_id),
                             CharacterIdComponent(character.id),
                             VisibleEntities::default(),
                             InterestedClients::default(),
-                            Transform::from_xyz(
-                                character.position_x,
-                                character.position_y,
-                                character.position_z,
-                            ),
+                            transform,
+                            vitals.clone(),
                         ))
                         .id();
 
+                    let attributes = EntityAttributes::Player {
+                        character_id: character.id,
+                        guild_id: character.guild_id,
+                    };
+
+                    let mut builder = FlatBufferBuilder::new();
+                    let entity_offset = serialize_entity(
+                        &mut builder,
+                        entity,
+                        attributes,
+                        &character.name,
+                        &transform,
+                        &vitals,
+                        character.level,
+                    );
                     let response_offset = schema::EnterGameResponse::create(
                         &mut builder,
                         &schema::EnterGameResponseArgs {
-                            player_entity_id: entity_id.to_bits(),
-                            character: Some(character_offset),
+                            player_entity: Some(entity_offset),
                         },
                     );
                     builder.finish_minimal(response_offset);
                     let response = builder.finished_data().to_vec();
 
                     let mut server = ctx.world.get_resource_mut::<RenetServer>().unwrap();
-                    bevy::log::info!("approving enter game request by client {}", client_id);
+                    info!("approving enter game request by client {}", client_id);
                     server.send_message(client_id, DefaultChannel::ReliableOrdered, response);
                 })
                 .await;
             });
         }
         Err(error) => {
-            bevy::log::error!(
+            error!(
                 ?error,
-                "failed to deserialize user data from client {}; disconnecting",
-                client_id,
+                "failed to deserialize user data from client {}; disconnecting", client_id,
             );
             server.disconnect(client_id);
         }
@@ -170,7 +234,7 @@ async fn load_character_data(
     sqlx::query_as!(
         CharacterRow,
         r#"
-        SELECT id, name, level,
+        SELECT id, guild_id, name, level, hp,
             position_x, position_y, position_z,
             rotation_yaw
         FROM characters
@@ -223,7 +287,7 @@ fn process_client_disconnected(
                 .execute(&db_pool)
                 .await
                 {
-                    bevy::log::error!(?error, "failed to update character");
+                    error!(?error, "failed to update character");
                 };
             });
             return;
