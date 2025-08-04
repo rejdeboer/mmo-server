@@ -86,7 +86,7 @@ impl OutgoingMessageData {
             } => {
                 data_type = schema::EventData::EntitySpawnEvent;
                 let fb_entity = serialize_entity(
-                    builder, *entity, attributes, &name, transform, vitals, *level,
+                    builder, *entity, attributes, name, transform, vitals, *level,
                 );
                 schema::EntitySpawnEvent::create(
                     builder,

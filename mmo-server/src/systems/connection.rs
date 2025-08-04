@@ -40,7 +40,7 @@ pub enum EntityAttributes {
 }
 
 impl EntityAttributes {
-    pub fn serialize<'a>(
+    pub fn serialize(
         &self,
         builder: &mut FlatBufferBuilder,
     ) -> (WIPOffset<UnionWIPOffset>, schema::EntityAttributes) {
