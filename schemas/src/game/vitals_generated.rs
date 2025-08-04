@@ -9,117 +9,131 @@ use core::mem;
 use core::cmp::Ordering;
 use self::flatbuffers::{EndianScalar, Follow};
 use super::*;
-pub enum VitalsOffset {}
-#[derive(Copy, Clone, PartialEq)]
-
-pub struct Vitals<'a> {
-  pub _tab: flatbuffers::Table<'a>,
+// struct Vitals, aligned to 4
+#[repr(transparent)]
+#[derive(Clone, Copy, PartialEq)]
+pub struct Vitals(pub [u8; 8]);
+impl Default for Vitals { 
+  fn default() -> Self { 
+    Self([0; 8])
+  }
+}
+impl core::fmt::Debug for Vitals {
+  fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+    f.debug_struct("Vitals")
+      .field("hp", &self.hp())
+      .field("max_hp", &self.max_hp())
+      .finish()
+  }
 }
 
-impl<'a> flatbuffers::Follow<'a> for Vitals<'a> {
-  type Inner = Vitals<'a>;
+impl flatbuffers::SimpleToVerifyInSlice for Vitals {}
+impl<'a> flatbuffers::Follow<'a> for Vitals {
+  type Inner = &'a Vitals;
   #[inline]
   unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
-    Self { _tab: flatbuffers::Table::new(buf, loc) }
+    <&'a Vitals>::follow(buf, loc)
   }
 }
-
-impl<'a> Vitals<'a> {
-  pub const VT_HP: flatbuffers::VOffsetT = 4;
-  pub const VT_MAX_HP: flatbuffers::VOffsetT = 6;
-
+impl<'a> flatbuffers::Follow<'a> for &'a Vitals {
+  type Inner = &'a Vitals;
   #[inline]
-  pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
-    Vitals { _tab: table }
-  }
-  #[allow(unused_mut)]
-  pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
-    _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
-    args: &'args VitalsArgs
-  ) -> flatbuffers::WIPOffset<Vitals<'bldr>> {
-    let mut builder = VitalsBuilder::new(_fbb);
-    builder.add_max_hp(args.max_hp);
-    builder.add_hp(args.hp);
-    builder.finish()
-  }
-
-
-  #[inline]
-  pub fn hp(&self) -> i32 {
-    // Safety:
-    // Created from valid Table for this object
-    // which contains a valid value in this slot
-    unsafe { self._tab.get::<i32>(Vitals::VT_HP, Some(0)).unwrap()}
-  }
-  #[inline]
-  pub fn max_hp(&self) -> i32 {
-    // Safety:
-    // Created from valid Table for this object
-    // which contains a valid value in this slot
-    unsafe { self._tab.get::<i32>(Vitals::VT_MAX_HP, Some(0)).unwrap()}
+  unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
+    flatbuffers::follow_cast_ref::<Vitals>(buf, loc)
   }
 }
+impl<'b> flatbuffers::Push for Vitals {
+    type Output = Vitals;
+    #[inline]
+    unsafe fn push(&self, dst: &mut [u8], _written_len: usize) {
+        let src = ::core::slice::from_raw_parts(self as *const Vitals as *const u8, <Self as flatbuffers::Push>::size());
+        dst.copy_from_slice(src);
+    }
+    #[inline]
+    fn alignment() -> flatbuffers::PushAlignment {
+        flatbuffers::PushAlignment::new(4)
+    }
+}
 
-impl flatbuffers::Verifiable for Vitals<'_> {
+impl<'a> flatbuffers::Verifiable for Vitals {
   #[inline]
   fn run_verifier(
     v: &mut flatbuffers::Verifier, pos: usize
   ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
     use self::flatbuffers::Verifiable;
-    v.visit_table(pos)?
-     .visit_field::<i32>("hp", Self::VT_HP, false)?
-     .visit_field::<i32>("max_hp", Self::VT_MAX_HP, false)?
-     .finish();
-    Ok(())
-  }
-}
-pub struct VitalsArgs {
-    pub hp: i32,
-    pub max_hp: i32,
-}
-impl<'a> Default for VitalsArgs {
-  #[inline]
-  fn default() -> Self {
-    VitalsArgs {
-      hp: 0,
-      max_hp: 0,
-    }
+    v.in_buffer::<Self>(pos)
   }
 }
 
-pub struct VitalsBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> {
-  fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
-  start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
-}
-impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> VitalsBuilder<'a, 'b, A> {
-  #[inline]
-  pub fn add_hp(&mut self, hp: i32) {
-    self.fbb_.push_slot::<i32>(Vitals::VT_HP, hp, 0);
+impl<'a> Vitals {
+  #[allow(clippy::too_many_arguments)]
+  pub fn new(
+    hp: i32,
+    max_hp: i32,
+  ) -> Self {
+    let mut s = Self([0; 8]);
+    s.set_hp(hp);
+    s.set_max_hp(max_hp);
+    s
   }
-  #[inline]
-  pub fn add_max_hp(&mut self, max_hp: i32) {
-    self.fbb_.push_slot::<i32>(Vitals::VT_MAX_HP, max_hp, 0);
+
+  pub fn hp(&self) -> i32 {
+    let mut mem = core::mem::MaybeUninit::<<i32 as EndianScalar>::Scalar>::uninit();
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    EndianScalar::from_little_endian(unsafe {
+      core::ptr::copy_nonoverlapping(
+        self.0[0..].as_ptr(),
+        mem.as_mut_ptr() as *mut u8,
+        core::mem::size_of::<<i32 as EndianScalar>::Scalar>(),
+      );
+      mem.assume_init()
+    })
   }
-  #[inline]
-  pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> VitalsBuilder<'a, 'b, A> {
-    let start = _fbb.start_table();
-    VitalsBuilder {
-      fbb_: _fbb,
-      start_: start,
+
+  pub fn set_hp(&mut self, x: i32) {
+    let x_le = x.to_little_endian();
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    unsafe {
+      core::ptr::copy_nonoverlapping(
+        &x_le as *const _ as *const u8,
+        self.0[0..].as_mut_ptr(),
+        core::mem::size_of::<<i32 as EndianScalar>::Scalar>(),
+      );
     }
   }
-  #[inline]
-  pub fn finish(self) -> flatbuffers::WIPOffset<Vitals<'a>> {
-    let o = self.fbb_.end_table(self.start_);
-    flatbuffers::WIPOffset::new(o.value())
+
+  pub fn max_hp(&self) -> i32 {
+    let mut mem = core::mem::MaybeUninit::<<i32 as EndianScalar>::Scalar>::uninit();
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    EndianScalar::from_little_endian(unsafe {
+      core::ptr::copy_nonoverlapping(
+        self.0[4..].as_ptr(),
+        mem.as_mut_ptr() as *mut u8,
+        core::mem::size_of::<<i32 as EndianScalar>::Scalar>(),
+      );
+      mem.assume_init()
+    })
   }
+
+  pub fn set_max_hp(&mut self, x: i32) {
+    let x_le = x.to_little_endian();
+    // Safety:
+    // Created from a valid Table for this object
+    // Which contains a valid value in this slot
+    unsafe {
+      core::ptr::copy_nonoverlapping(
+        &x_le as *const _ as *const u8,
+        self.0[4..].as_mut_ptr(),
+        core::mem::size_of::<<i32 as EndianScalar>::Scalar>(),
+      );
+    }
+  }
+
 }
 
-impl core::fmt::Debug for Vitals<'_> {
-  fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-    let mut ds = f.debug_struct("Vitals");
-      ds.field("hp", &self.hp());
-      ds.field("max_hp", &self.max_hp());
-      ds.finish()
-  }
-}

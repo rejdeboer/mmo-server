@@ -80,16 +80,7 @@ pub fn serialize_entity<'a>(
         &schema::Vec3::new(pos.x, pos.y, pos.z),
         transform.rotation.y,
     );
-
-    // TODO: Vitals should be struct in FB
-    let fb_vitals = schema::Vitals::create(
-        builder,
-        &schema::VitalsArgs {
-            hp: vitals.hp,
-            max_hp: vitals.max_hp,
-        },
-    );
-
+    let fb_vitals = schema::Vitals::new(vitals.hp, vitals.max_hp);
     let fb_name = builder.create_string(name);
 
     schema::Entity::create(
@@ -99,7 +90,7 @@ pub fn serialize_entity<'a>(
             attributes_type: attr_type,
             attributes: Some(fb_attr),
             name: Some(fb_name),
-            vitals: Some(fb_vitals),
+            vitals: Some(&fb_vitals),
             transform: Some(&fb_transform),
             level,
         },

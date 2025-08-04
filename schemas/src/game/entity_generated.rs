@@ -90,11 +90,11 @@ impl<'a> Entity<'a> {
     unsafe { self._tab.get::<Transform>(Entity::VT_TRANSFORM, None).unwrap()}
   }
   #[inline]
-  pub fn vitals(&self) -> Vitals<'a> {
+  pub fn vitals(&self) -> &'a Vitals {
     // Safety:
     // Created from valid Table for this object
     // which contains a valid value in this slot
-    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<Vitals>>(Entity::VT_VITALS, None).unwrap()}
+    unsafe { self._tab.get::<Vitals>(Entity::VT_VITALS, None).unwrap()}
   }
   #[inline]
   pub fn level(&self) -> i32 {
@@ -136,7 +136,7 @@ impl flatbuffers::Verifiable for Entity<'_> {
      })?
      .visit_field::<flatbuffers::ForwardsUOffset<&str>>("name", Self::VT_NAME, true)?
      .visit_field::<Transform>("transform", Self::VT_TRANSFORM, true)?
-     .visit_field::<flatbuffers::ForwardsUOffset<Vitals>>("vitals", Self::VT_VITALS, true)?
+     .visit_field::<Vitals>("vitals", Self::VT_VITALS, true)?
      .visit_field::<i32>("level", Self::VT_LEVEL, false)?
      .finish();
     Ok(())
@@ -148,7 +148,7 @@ pub struct EntityArgs<'a> {
     pub attributes: Option<flatbuffers::WIPOffset<flatbuffers::UnionWIPOffset>>,
     pub name: Option<flatbuffers::WIPOffset<&'a str>>,
     pub transform: Option<&'a Transform>,
-    pub vitals: Option<flatbuffers::WIPOffset<Vitals<'a>>>,
+    pub vitals: Option<&'a Vitals>,
     pub level: i32,
 }
 impl<'a> Default for EntityArgs<'a> {
@@ -192,8 +192,8 @@ impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> EntityBuilder<'a, 'b, A> {
     self.fbb_.push_slot_always::<&Transform>(Entity::VT_TRANSFORM, transform);
   }
   #[inline]
-  pub fn add_vitals(&mut self, vitals: flatbuffers::WIPOffset<Vitals<'b >>) {
-    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<Vitals>>(Entity::VT_VITALS, vitals);
+  pub fn add_vitals(&mut self, vitals: &Vitals) {
+    self.fbb_.push_slot_always::<&Vitals>(Entity::VT_VITALS, vitals);
   }
   #[inline]
   pub fn add_level(&mut self, level: i32) {

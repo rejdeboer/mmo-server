@@ -2,7 +2,7 @@ include "common.fbs";
 
 namespace game;
 
-table Vitals {
+struct Vitals {
 	hp: int32;
 	max_hp: int32;
 }
