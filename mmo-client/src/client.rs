@@ -1,3 +1,4 @@
+use crate::Entity;
 use crate::action::{MoveAction, PlayerAction};
 use crate::event::{GameEvent, read_event_batch};
 use flatbuffers::{FlatBufferBuilder, WIPOffset, root};
@@ -19,7 +20,7 @@ pub enum ClientState {
 pub enum ConnectionEvent {
     Connected,
     Disconnected,
-    EnterGameSuccess { character: Character },
+    EnterGameSuccess { player_entity: Entity },
 }
 
 pub struct GameClient {
@@ -77,12 +78,17 @@ impl GameClient {
                 if let Some(message) = self.client.receive_message(DefaultChannel::ReliableOrdered)
                 {
                     match root::<schema::EnterGameResponse>(&message) {
-                        Ok(response) => {
-                            self.state = ClientState::InGame;
-                            return Some(ConnectionEvent::EnterGameSuccess {
-                                character: response.into(),
-                            });
-                        }
+                        Ok(response) => match response.try_into() {
+                            Ok(player_entity) => {
+                                self.state = ClientState::InGame;
+                                return Some(ConnectionEvent::EnterGameSuccess { player_entity });
+                            }
+                            Err(err) => {
+                                tracing::error!(?err, "received invalid player entity");
+                                self.state = ClientState::Disconnected;
+                                return Some(ConnectionEvent::Disconnected);
+                            }
+                        },
                         Err(e) => {
                             tracing::error!("received invalid EnterGameResponse {}", e);
                             self.state = ClientState::Disconnected;

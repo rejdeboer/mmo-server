@@ -26,28 +26,37 @@ pub struct Vitals {
     pub max_hp: i32,
 }
 
-impl TryInto<Entity> for schema::EnterGameResponse<'_> {
+impl TryInto<Entity> for schema::Entity<'_> {
     type Error = &'static str;
 
     fn try_into(self) -> Result<Entity, Self::Error> {
-        let entity = self.player_entity().ok_or("player entity is empty")?;
-        let Some(attributes) = entity.attributes_as_player_attributes() else {
+        let Some(attributes) = self.attributes_as_player_attributes() else {
             return Err("player entity should have player attributes");
         };
 
         let guild_name = attributes.guild_name().map(|n| n.to_string());
 
         Ok(Entity {
-            id: entity.id(),
+            id: self.id(),
             attributes: EntityAttributes::Player {
                 character_id: attributes.character_id(),
                 guild_name,
             },
-            name: entity.name().to_string(),
-            vitals: entity.vitals().into(),
-            level: entity.level(),
-            transform: entity.transform().into(),
+            name: self.name().to_string(),
+            vitals: self.vitals().into(),
+            level: self.level(),
+            transform: self.transform().into(),
         })
+    }
+}
+
+impl TryInto<Entity> for schema::EnterGameResponse<'_> {
+    type Error = &'static str;
+
+    fn try_into(self) -> Result<Entity, Self::Error> {
+        self.player_entity()
+            .ok_or("player entity is empty")?
+            .try_into()
     }
 }
 
