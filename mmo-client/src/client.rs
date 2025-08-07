@@ -1,8 +1,8 @@
-use crate::action::MoveAction;
+use crate::action::{MoveAction, PlayerAction};
+use crate::event::{GameEvent, read_event_batch};
 use crate::types::Character;
-use crate::{PlayerAction, Transform, Vec3};
-use flatbuffers::{FlatBufferBuilder, InvalidFlatbuffer, WIPOffset, root};
-use renet::{Bytes, ConnectionConfig, DefaultChannel, RenetClient};
+use flatbuffers::{FlatBufferBuilder, WIPOffset, root};
+use renet::{ConnectionConfig, DefaultChannel, RenetClient};
 use renet_netcode::{ClientAuthentication, ConnectToken, NetcodeClientTransport};
 use schemas::game as schema;
 use std::net::{IpAddr, SocketAddr, UdpSocket};
@@ -204,64 +204,6 @@ impl GameClient {
 
         self.setup_transport(authentication);
     }
-}
-
-fn read_event_batch(events: &mut Vec<GameEvent>, bytes: Bytes) -> Result<(), InvalidFlatbuffer> {
-    let batch = root::<schema::BatchedEvents>(&bytes)?;
-    let Some(fb_events) = batch.events() else {
-        return Ok(());
-    };
-
-    for event in fb_events {
-        match event.data_type() {
-            schema::EventData::game_ServerChatMessage => {
-                let fb_event = event
-                    .data_as_game_server_chat_message()
-                    .expect("event should be some");
-                events.push(GameEvent::Chat {
-                    channel: fb_event.channel(),
-                    sender_name: fb_event.sender_name().to_string(),
-                    text: fb_event.text().to_string(),
-                })
-            }
-            schema::EventData::EntityMoveEvent => {
-                let fb_event = event
-                    .data_as_entity_move_event()
-                    .expect("event should be some");
-                let transform = fb_event.transform().expect("transform should be some");
-                let pos = transform.position();
-                events.push(GameEvent::MoveEntity {
-                    entity_id: fb_event.entity_id(),
-                    transform: Transform {
-                        position: Vec3::new(pos.x(), pos.y(), pos.z()),
-                        yaw: transform.yaw(),
-                    },
-                })
-            }
-            schema::EventData::EntitySpawnEvent => {
-                let fb_event = event
-                    .data_as_entity_spawn_event()
-                    .expect("event should be entity spawn event");
-                let transform = fb_event.transform().expect("transform should be some");
-                let pos = transform.position();
-                events.push(GameEvent::SpawnEntity {
-                    entity_id: fb_event.entity_id(),
-                    transform: Transform {
-                        position: Vec3::new(pos.x(), pos.y(), pos.z()),
-                        yaw: transform.yaw(),
-                    },
-                })
-            }
-            schema::EventData::EntityDespawnEvent => events.push(GameEvent::DespawnEntity {
-                entity_id: event.data_as_entity_despawn_event().unwrap().entity_id(),
-            }),
-            event_type => {
-                tracing::warn!(?event_type, "unhandled event type");
-            }
-        }
-    }
-
-    Ok(())
 }
 
 // Test that can be used to check if connection is successful with local server
