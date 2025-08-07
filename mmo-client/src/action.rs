@@ -1,8 +1,7 @@
+use crate::domain::Vec3;
 use flatbuffers::{FlatBufferBuilder, WIPOffset};
 use schema::ChannelType;
 use schemas::game as schema;
-
-use crate::Vec3;
 
 // NOTE: We handle move actions separately, since they can be sent unreliably
 pub struct MoveAction {

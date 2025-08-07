@@ -1,5 +1,6 @@
 mod action;
 mod client;
+mod domain;
 mod event;
 mod types;
 mod util;

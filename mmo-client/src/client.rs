@@ -1,6 +1,5 @@
 use crate::action::{MoveAction, PlayerAction};
 use crate::event::{GameEvent, read_event_batch};
-use crate::types::Character;
 use flatbuffers::{FlatBufferBuilder, WIPOffset, root};
 use renet::{ConnectionConfig, DefaultChannel, RenetClient};
 use renet_netcode::{ClientAuthentication, ConnectToken, NetcodeClientTransport};
