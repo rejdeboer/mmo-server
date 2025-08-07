@@ -1,15 +1,12 @@
-use std::net::{IpAddr, SocketAddr, UdpSocket};
-use std::time::{Duration, SystemTime};
-
+use crate::action::MoveAction;
+use crate::types::Character;
+use crate::{PlayerAction, Transform, Vec3};
 use flatbuffers::{FlatBufferBuilder, InvalidFlatbuffer, WIPOffset, root};
 use renet::{Bytes, ConnectionConfig, DefaultChannel, RenetClient};
 use renet_netcode::{ClientAuthentication, ConnectToken, NetcodeClientTransport};
 use schemas::game as schema;
-use schemas::game::ChannelType;
-
-use crate::action::MoveAction;
-use crate::types::Character;
-use crate::{PlayerAction, Transform, Vec3};
+use std::net::{IpAddr, SocketAddr, UdpSocket};
+use std::time::{Duration, SystemTime};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ClientState {
@@ -24,26 +21,6 @@ pub enum ConnectionEvent {
     Connected,
     Disconnected,
     EnterGameSuccess { character: Character },
-}
-
-#[derive(Debug, Clone)]
-pub enum GameEvent {
-    Chat {
-        channel: ChannelType,
-        sender_name: String,
-        text: String,
-    },
-    MoveEntity {
-        entity_id: u64,
-        transform: Transform,
-    },
-    SpawnEntity {
-        entity_id: u64,
-        transform: Transform,
-    },
-    DespawnEntity {
-        entity_id: u64,
-    },
 }
 
 pub struct GameClient {
