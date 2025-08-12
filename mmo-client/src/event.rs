@@ -1,4 +1,4 @@
-use crate::Transform;
+use crate::domain::{Entity, Transform, Vec3};
 use flatbuffers::{InvalidFlatbuffer, root};
 use renet::Bytes;
 use schema::ChannelType;
@@ -15,13 +15,8 @@ pub enum GameEvent {
         entity_id: u64,
         transform: Transform,
     },
-    SpawnEntity {
-        entity_id: u64,
-        transform: Transform,
-    },
-    DespawnEntity {
-        entity_id: u64,
-    },
+    SpawnEntity(Entity),
+    DespawnEntity(u64),
 }
 
 pub fn read_event_batch(
@@ -60,22 +55,22 @@ pub fn read_event_batch(
                 })
             }
             schema::EventData::EntitySpawnEvent => {
-                let fb_event = event
+                let fb_entity = event
                     .data_as_entity_spawn_event()
-                    .expect("event should be entity spawn event");
-                let transform = fb_event.transform().expect("transform should be some");
-                let pos = transform.position();
-                events.push(GameEvent::SpawnEntity {
-                    entity_id: fb_event.entity_id(),
-                    transform: Transform {
-                        position: Vec3::new(pos.x(), pos.y(), pos.z()),
-                        yaw: transform.yaw(),
-                    },
-                })
+                    .expect("event should be entity spawn event")
+                    .entity()
+                    .expect("entity should be some");
+
+                match fb_entity.try_into() {
+                    Ok(entity) => events.push(GameEvent::SpawnEntity(entity)),
+                    Err(err) => {
+                        tracing::error!(?err, "failed to read entity spawn event");
+                    }
+                };
             }
-            schema::EventData::EntityDespawnEvent => events.push(GameEvent::DespawnEntity {
-                entity_id: event.data_as_entity_despawn_event().unwrap().entity_id(),
-            }),
+            schema::EventData::EntityDespawnEvent => events.push(GameEvent::DespawnEntity(
+                event.data_as_entity_despawn_event().unwrap().entity_id(),
+            )),
             event_type => {
                 tracing::warn!(?event_type, "unhandled event type");
             }
