@@ -35,7 +35,8 @@ pub struct CharacterRow {
 pub enum EntityAttributes {
     Player {
         character_id: i32,
-        // guild_id: Option<i32>,
+        #[allow(dead_code)]
+        guild_id: Option<i32>,
     },
     Npc,
 }
@@ -48,7 +49,7 @@ impl EntityAttributes {
         match self {
             EntityAttributes::Player {
                 character_id,
-                // guild_id: _,
+                guild_id: _,
             } => {
                 let fb_attr = schema::PlayerAttributes::create(
                     builder,
