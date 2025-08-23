@@ -17,6 +17,7 @@ async-trait = "0.1.88"
 axum-extra = { version = "0.10", features = ["typed-header"] }
 base64 = "0.12"
 config = "0.11"
+flatbuffers = { workspace = true }
 futures = "0.3"
 futures-util = { version = "0.3", default-features = false, features = [
 	"sink",
@@ -26,6 +27,7 @@ headers = "0.4"
 jsonwebtoken = "9.3"
 kube = { version = "1.1.0", features = ["runtime", "derive"] }
 k8s-openapi = { version = "0.25.0", features = ["latest"] }
+prometheus = { workspace = true }
 rand = { version = "0.8", features = ["std_rng"] }
 schemars = "0.8.6"
 schemas = { path = "../schemas" }
@@ -42,7 +44,6 @@ tower-http = { version = "0.5.0", features = ["fs", "trace"] }
 unicode-segmentation = "1"
 validator = "0.20.0"
 renetcode = "1.0.0"
-flatbuffers = { workspace = true }
 
 [dependencies.axum]
 version = "0.8"

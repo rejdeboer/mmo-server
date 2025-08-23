@@ -17,6 +17,7 @@ bevy-tokio-tasks = "0.16"
 bevy_renet = { git = "https://github.com/lucaspoffo/renet" }
 config = "0.11"
 flatbuffers = { workspace = true }
+prometheus = { workspace = true }
 schemas = { path = "../schemas" }
 secrecy = { version = "0.10.3", features = ["serde"] }
 serde = { version = "1.0.219", features = ["derive"] }
