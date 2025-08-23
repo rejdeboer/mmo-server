@@ -63,11 +63,25 @@ async fn handle_socket(
     let writer = SocketWriter::new(socket_tx, hub_rx);
     let reader = SocketReader::new(ctx.character_id, socket_rx, hub_tx);
 
+    let _guard = ConnectionGuard::new();
     tokio::spawn(async move {
         writer.run().await;
     });
 
-    ACTIVE_WS_CONNECTIONS.inc();
     reader.run().await;
-    ACTIVE_WS_CONNECTIONS.dec();
+}
+
+struct ConnectionGuard;
+
+impl ConnectionGuard {
+    fn new() -> Self {
+        ACTIVE_WS_CONNECTIONS.inc();
+        Self
+    }
+}
+
+impl Drop for ConnectionGuard {
+    fn drop(&mut self) {
+        ACTIVE_WS_CONNECTIONS.dec();
+    }
 }
