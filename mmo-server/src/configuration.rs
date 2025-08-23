@@ -27,6 +27,7 @@ pub struct ServerSettings {
     pub is_secure: bool,
     #[serde(deserialize_with = "deserialize_netcode_key")]
     pub netcode_private_key: [u8; NETCODE_KEY_BYTES],
+    pub metrics_path: String,
 }
 
 #[derive(serde::Deserialize, Clone)]
@@ -79,7 +80,7 @@ impl DatabaseSettings {
     pub fn with_db(&self) -> PgConnectOptions {
         self.without_db()
             .database(&self.db_name)
-            .log_statements(tracing::log::LevelFilter::Trace)
+            .log_statements(bevy::log::tracing::log::LevelFilter::Trace)
     }
 }
 
