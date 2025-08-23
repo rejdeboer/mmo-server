@@ -1,6 +1,30 @@
+use crate::configuration::Environment;
+use once_cell::sync::Lazy;
+use prometheus::IntGauge;
 use tracing::{Subscriber, subscriber::set_global_default};
 use tracing_log::LogTracer;
-use tracing_subscriber::{EnvFilter, Registry, fmt, layer::SubscriberExt};
+use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt};
+
+pub static REGISTRY: Lazy<prometheus::Registry> = Lazy::new(prometheus::Registry::new);
+
+pub static ACTIVE_WS_CONNECTIONS: Lazy<IntGauge> = Lazy::new(|| {
+    IntGauge::new(
+        "social_active_ws_connections",
+        "Current number of active WebSocket connections.",
+    )
+    .unwrap()
+});
+
+pub fn init_telemetry() {
+    register_metrics();
+    let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
+    let environment = Environment::read();
+    if matches!(environment, Environment::Local) {
+        init_subscriber(get_local_subscriber(env_filter));
+    } else {
+        init_subscriber(get_subscriber(env_filter));
+    }
+}
 
 pub fn init_subscriber(subscriber: impl Subscriber + Send + Sync) {
     LogTracer::init().expect("logger init succeeded");
@@ -10,7 +34,9 @@ pub fn init_subscriber(subscriber: impl Subscriber + Send + Sync) {
 pub fn get_local_subscriber(env_filter: EnvFilter) -> impl Subscriber + Send + Sync {
     let fmt_layer = fmt::layer().compact().with_ansi(true);
 
-    Registry::default().with(env_filter).with(fmt_layer)
+    tracing_subscriber::Registry::default()
+        .with(env_filter)
+        .with(fmt_layer)
 }
 
 pub fn get_subscriber(env_filter: EnvFilter) -> impl Subscriber + Send + Sync {
@@ -19,5 +45,13 @@ pub fn get_subscriber(env_filter: EnvFilter) -> impl Subscriber + Send + Sync {
         .with_current_span(true)
         .with_span_list(true);
 
-    Registry::default().with(env_filter).with(fmt_layer)
+    tracing_subscriber::Registry::default()
+        .with(env_filter)
+        .with(fmt_layer)
+}
+
+fn register_metrics() {
+    REGISTRY
+        .register(Box::new(ACTIVE_WS_CONNECTIONS.clone()))
+        .unwrap();
 }
