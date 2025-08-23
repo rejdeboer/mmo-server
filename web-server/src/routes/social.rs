@@ -3,6 +3,7 @@ use crate::{
     auth::CharacterContext,
     error::ApiError,
     social::{HubCommand, HubMessage, SocketReader, SocketWriter},
+    telemetry::ACTIVE_WS_CONNECTIONS,
 };
 use axum::{
     Extension,
@@ -66,5 +67,7 @@ async fn handle_socket(
         writer.run().await;
     });
 
+    ACTIVE_WS_CONNECTIONS.inc();
     reader.run().await;
+    ACTIVE_WS_CONNECTIONS.dec();
 }
