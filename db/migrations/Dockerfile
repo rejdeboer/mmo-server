@@ -1,4 +1,4 @@
-FROM rust:1.87 as builder
+FROM rust:1.89 as builder
 
 RUN cargo install sqlx-cli --version="~0.8" --locked
 

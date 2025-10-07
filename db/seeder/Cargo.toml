@@ -1,5 +1,5 @@
 [package]
-name = "db"
+name = "db-seeder"
 version = "0.1.0"
 edition = "2024"
 
@@ -8,7 +8,7 @@ anyhow = "1.0"
 dotenvy = "0.15"
 fake = "2.3"
 tokio = { version = "1", features = ["full"] }
-web-server = { path = "../web-server" }
+web-server = { path = "../../web-server" }
 
 [dependencies.sqlx]
 version = "0.8.5"

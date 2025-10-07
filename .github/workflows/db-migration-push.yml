@@ -30,7 +30,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          file: "db/Dockerfile"
+          file: "db/migrations/Dockerfile"
           push: true
           tags: rejdeboer/mmo-db-migration:latest
           secrets: |
