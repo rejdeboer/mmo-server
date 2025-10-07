@@ -4,4 +4,4 @@ pub mod configuration;
 mod events;
 mod plugins;
 mod systems;
-pub mod telemetry;
+mod telemetry;

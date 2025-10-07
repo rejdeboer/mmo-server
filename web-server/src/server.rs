@@ -2,7 +2,9 @@ use crate::{
     auth::{account_auth_middleware, character_auth_middleware},
     configuration::{DatabaseSettings, NetcodePrivateKey, Settings},
     realm_resolution::{RealmResolver, create_realm_resolver},
-    routes::{account_create, character_create, character_list, game_entry, login, social},
+    routes::{
+        account_create, character_create, character_list, game_entry, login, metrics_get, social,
+    },
     social::{Hub, HubMessage},
 };
 use axum::{
@@ -82,6 +84,8 @@ impl Application {
             .merge(account_routes)
             .route("/account", post(account_create))
             .route("/token", post(login))
+            // TODO: Should probably not be a public route...
+            .route("/metrics", get(metrics_get))
             .layer(
                 TraceLayer::new_for_http()
                     .make_span_with(DefaultMakeSpan::default().include_headers(true)),

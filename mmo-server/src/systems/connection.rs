@@ -4,6 +4,7 @@ use crate::{
         CharacterIdComponent, ClientIdComponent, InterestedClients, LevelComponent, NameComponent,
         VisibleEntities, Vitals,
     },
+    telemetry::Metrics,
 };
 use bevy::prelude::*;
 use bevy_renet::{
@@ -35,6 +36,7 @@ pub struct CharacterRow {
 pub enum EntityAttributes {
     Player {
         character_id: i32,
+        #[allow(dead_code)]
         guild_id: Option<i32>,
     },
     Npc,
@@ -102,6 +104,7 @@ pub fn serialize_entity<'a>(
     )
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn handle_connection_events(
     mut events: EventReader<ServerEvent>,
     mut commands: Commands,
@@ -115,13 +118,16 @@ pub fn handle_connection_events(
     )>,
     runtime: Res<TokioTasksRuntime>,
     pool: Res<DatabasePool>,
+    metrics: Res<Metrics>,
 ) {
     for event in events.read() {
         match event {
             ServerEvent::ClientConnected { client_id } => {
+                metrics.connected_players.inc();
                 process_client_connected(*client_id, &transport, &mut server, &pool, &runtime)
             }
             ServerEvent::ClientDisconnected { client_id, reason } => {
+                metrics.connected_players.dec();
                 process_client_disconnected(
                     *client_id,
                     reason,

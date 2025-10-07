@@ -48,10 +48,10 @@ pub fn update_player_visibility(
                             continue;
                         }
 
-                        if let Ok(other_transform) = q_transform.get(other_entity) {
-                            if player_pos.distance(other_transform.translation) < VIEW_RADIUS {
-                                new_visible_set.insert(other_entity);
-                            }
+                        if let Ok(other_transform) = q_transform.get(other_entity)
+                            && player_pos.distance(other_transform.translation) < VIEW_RADIUS
+                        {
+                            new_visible_set.insert(other_entity);
                         }
                     }
                 }

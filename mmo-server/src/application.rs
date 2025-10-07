@@ -14,6 +14,7 @@ use std::time::SystemTime;
 use crate::configuration::Settings;
 use crate::events::{IncomingChatMessage, OutgoingMessage};
 use crate::plugins::AgonesPlugin;
+use crate::telemetry::{Metrics, run_metrics_exporter};
 
 #[derive(Resource, Clone)]
 pub struct DatabasePool(pub PgPool);
@@ -75,12 +76,13 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     app.insert_resource(netcode_transport);
     app.insert_resource(settings);
     app.insert_resource(SpatialGrid::default());
+    app.insert_resource(Metrics::default());
 
     app.add_event::<IncomingChatMessage>();
     app.add_event::<OutgoingMessage>();
 
     // TODO: Implement server tick of 20Hz?
-    app.add_systems(Startup, setup_database_pool);
+    app.add_systems(Startup, (setup_database_pool, setup_metrics_exporter));
     app.add_systems(
         Update,
         (
@@ -110,4 +112,18 @@ fn setup_database_pool(
         .runtime()
         .block_on(async move { get_connection_pool(&settings) });
     commands.insert_resource(DatabasePool(pool));
+}
+
+fn setup_metrics_exporter(
+    runtime: Res<TokioTasksRuntime>,
+    metrics: Res<Metrics>,
+    settings: Res<Settings>,
+) {
+    info!("starting metrics exporter");
+    let metrics_clone = metrics.clone();
+    let path = settings.server.metrics_path.clone();
+
+    runtime.spawn_background_task(async move |_ctx| {
+        run_metrics_exporter(metrics_clone, path).await;
+    });
 }

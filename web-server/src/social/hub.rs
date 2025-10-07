@@ -61,14 +61,13 @@ impl Hub {
                 }
             }
             HubCommand::Disconnect => {
-                if let Some(client) = self.clients.remove(&msg.sender_id) {
-                    if let Some(gid) = client.guild_id {
-                        if let Some(members) = self.guilds.get_mut(&gid) {
-                            members.retain(|&id| id != msg.sender_id);
-                            if members.is_empty() {
-                                self.guilds.remove(&gid);
-                            }
-                        }
+                if let Some(client) = self.clients.remove(&msg.sender_id)
+                    && let Some(gid) = client.guild_id
+                    && let Some(members) = self.guilds.get_mut(&gid)
+                {
+                    members.retain(|&id| id != msg.sender_id);
+                    if members.is_empty() {
+                        self.guilds.remove(&gid);
                     }
                 }
             }
