@@ -27,6 +27,7 @@ pub struct CharacterRow {
     pub rotation_yaw: f32,
     pub level: i32,
     pub hp: i32,
+    pub max_hp: i32,
     pub guild_id: Option<i32>,
 }
 
@@ -84,7 +85,6 @@ pub fn serialize_entity<'a>(
         &schema::Vec3::new(pos.x, pos.y, pos.z),
         transform.rotation.y,
     );
-    // TODO: Correctly instantiate vitals max hp according to entity stats
     let fb_vitals = schema::Vitals::new(vitals.hp, vitals.max_hp);
     let fb_name = builder.create_string(name);
 
@@ -166,7 +166,7 @@ fn process_client_connected(
                     transform.rotate_y(character.rotation_yaw);
                     let vitals = Vitals {
                         hp: character.hp,
-                        max_hp: character.hp,
+                        max_hp: character.max_hp,
                     };
 
                     let entity = ctx
