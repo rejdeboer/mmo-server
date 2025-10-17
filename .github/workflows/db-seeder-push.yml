@@ -1,10 +1,10 @@
-name: DB migration push
+name: DB seeder push
 
 on:
   push:
     paths:
-      - ".github/workflows/db-migration-push.yml"
-      - "db/migrations/**"
+      - ".github/workflows/db-seeder-push.yml"
+      - "db/seeder/**"
   workflow_dispatch:
 
 permissions:
@@ -30,9 +30,9 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          file: "db/migrations/Dockerfile"
+          file: "db/seeder/Dockerfile"
           push: true
-          tags: rejdeboer/mmo-db-migration:latest
+          tags: rejdeboer/mmo-db-seeder:latest
           secrets: |
             GIT_AUTH_TOKEN=${{ secrets.PAT }}
 
