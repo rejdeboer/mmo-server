@@ -1132,10 +1132,14 @@ name = "db-seeder"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "axum 0.8.4",
  "dotenvy",
  "fake 2.3.0",
+ "serde 1.0.219",
  "sqlx",
  "tokio",
+ "tower-http 0.5.2",
+ "tracing",
  "web-server",
 ]
 

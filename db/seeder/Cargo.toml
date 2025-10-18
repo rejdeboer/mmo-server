@@ -5,9 +5,13 @@ edition = "2024"
 
 [dependencies]
 anyhow = "1.0"
+axum = "0.8"
 dotenvy = "0.15"
 fake = "2.3"
+serde = { version = "1", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
+tower-http = { version = "0.5.0", features = ["fs", "trace"] }
+tracing = { workspace = true }
 web-server = { path = "../../web-server" }
 
 [dependencies.sqlx]
