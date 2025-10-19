@@ -23,11 +23,11 @@ pub fn sync_players(mut server: ResMut<RenetServer>, mut ev_msg: EventReader<Out
     // TODO: Parallelism?
     for (client_id, events) in client_events {
         let mut player_events = Vec::<WIPOffset<schema::Event>>::with_capacity(events.len());
-        let mut can_be_unreliable = true;
+        let mut channel = DefaultChannel::Unreliable;
 
         for event in events {
-            if can_be_unreliable && !matches!(event, OutgoingMessageData::Movement(_, _)) {
-                can_be_unreliable = false;
+            if !matches!(event, OutgoingMessageData::Movement(_, _)) {
+                channel = DefaultChannel::ReliableOrdered;
             }
             player_events.push(event.encode(&mut builder));
         }
@@ -43,15 +43,10 @@ pub fn sync_players(mut server: ResMut<RenetServer>, mut ev_msg: EventReader<Out
                 events: Some(fb_events),
             },
         );
+
         builder.finish_minimal(batch);
         let data = builder.finished_data().to_vec();
-
-        if can_be_unreliable {
-            server.send_message(client_id, DefaultChannel::Unreliable, data);
-        } else {
-            server.send_message(client_id, DefaultChannel::ReliableOrdered, data);
-        }
-
+        server.send_message(client_id, channel, data);
         builder.reset();
     }
 }
