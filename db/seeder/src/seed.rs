@@ -4,7 +4,7 @@ use web_server::domain::SafePassword;
 
 const TEST_PASSWORD: &str = "Test123!";
 
-pub async fn seed(db_url: &str) -> anyhow::Result<()> {
+pub async fn seed(db_url: &str, count: i32) -> anyhow::Result<()> {
     let pool = PgPoolOptions::new().connect(db_url).await?;
     let passhash = SafePassword::parse(TEST_PASSWORD.to_string())
         .unwrap()
@@ -15,7 +15,7 @@ pub async fn seed(db_url: &str) -> anyhow::Result<()> {
         .fetch_one(&pool)
         .await?;
 
-    for i in 0..2 {
+    for i in 0..count {
         let username: String = Username().fake();
         let email = format!("user{i}@test.com");
         let user_id = sqlx::query!(
