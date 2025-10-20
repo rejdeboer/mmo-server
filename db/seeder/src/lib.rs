@@ -1,2 +1,3 @@
 mod routes;
-mod server;
+pub mod seed;
+// mod server;
