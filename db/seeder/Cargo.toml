@@ -7,7 +7,6 @@ edition = "2024"
 anyhow = "1.0"
 axum = "0.8"
 clap = { version = "4.5.49", features = ["derive"] }
-dotenvy = "0.15"
 fake = "2.3"
 serde = { version = "1", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }

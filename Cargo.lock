@@ -1230,7 +1230,6 @@ dependencies = [
  "anyhow",
  "axum 0.8.4",
  "clap",
- "dotenvy",
  "fake 2.3.0",
  "serde 1.0.219",
  "sqlx",
