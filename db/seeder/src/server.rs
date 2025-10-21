@@ -1,5 +1,8 @@
 use axum::{Router, routing::post};
-use sqlx::{PgPool, postgres::PgPoolOptions};
+use sqlx::{
+    PgConnection, PgPool,
+    postgres::{PgConnectOptions, PgPoolOptions},
+};
 use std::net::SocketAddr;
 use tokio::net::TcpListener;
 use tower_http::trace::{DefaultMakeSpan, TraceLayer};
@@ -17,20 +20,17 @@ pub struct ApplicationState {
 }
 
 impl Application {
-    pub async fn build(settings: Settings) -> Result<Self, std::io::Error> {
-        let address = format!(
-            "{}:{}",
-            settings.application.host, settings.application.port
-        );
+    pub async fn build(host: &str, port: i32, db_url: &str) -> anyhow::Result<()> {
+        let address = format!("{host}:{port}");
 
         let listener = TcpListener::bind(address).await.unwrap();
         let port = listener.local_addr().unwrap().port();
-        let pool = get_connection_pool(&settings.database);
+        let pool = get_connection_pool(db_url);
 
         let application_state = ApplicationState { pool: pool.clone() };
 
         let router = Router::new()
-            .route("/reset", post(account_create))
+            .route("/seed", post(seed_route))
             .layer(
                 TraceLayer::new_for_http()
                     .make_span_with(DefaultMakeSpan::default().include_headers(true)),
@@ -61,6 +61,6 @@ impl Application {
     }
 }
 
-pub fn get_connection_pool(settings: &DatabaseSettings) -> PgPool {
-    PgPoolOptions::new().connect_lazy_with(settings.with_db())
+pub fn get_connection_pool(url: &str) -> Result<PgPool, sqlx::Error> {
+    PgPoolOptions::new().connect_with(url.parse()?)
 }

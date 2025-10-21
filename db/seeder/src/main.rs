@@ -13,6 +13,7 @@ fn cli() -> Command {
             Command::new("serve")
                 .about("Starts HTTP seeding server")
                 .arg(arg!(--port <PORT> "The port to listen on").default_value("8032"))
+                .arg(arg!(--host <HOST> "The host to listen on").default_value("127.0.0.1"))
                 .arg(url_arg.clone()),
         )
         .subcommand(
@@ -29,7 +30,7 @@ async fn main() {
 
     match matches.subcommand() {
         Some(("seed", sub_matches)) => {
-            println!("Seeding database");
+            tracing::info!("Seeding database");
 
             let count = sub_matches
                 .get_one::<i32>("count")
