@@ -1,11 +1,10 @@
 use fake::{Fake, faker::internet::en::Username};
-use sqlx::postgres::PgPoolOptions;
+use sqlx::PgPool;
 use web_server::domain::SafePassword;
 
 const TEST_PASSWORD: &str = "Test123!";
 
-pub async fn seed(db_url: &str, count: u32) -> anyhow::Result<()> {
-    let pool = PgPoolOptions::new().connect(db_url).await?;
+pub async fn seed(pool: PgPool, count: u32) -> anyhow::Result<()> {
     let passhash = SafePassword::parse(TEST_PASSWORD.to_string())
         .unwrap()
         .hash()
@@ -42,6 +41,6 @@ pub async fn seed(db_url: &str, count: u32) -> anyhow::Result<()> {
         .execute(&pool)
         .await?;
     }
-    println!("inserted fake users");
+    tracing::info!("inserted fake users");
     Ok(())
 }

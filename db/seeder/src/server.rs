@@ -1,17 +1,15 @@
 use axum::{Router, routing::post};
-use sqlx::{
-    PgConnection, PgPool,
-    postgres::{PgConnectOptions, PgPoolOptions},
-};
+use sqlx::{PgPool, postgres::PgPoolOptions};
 use std::net::SocketAddr;
 use tokio::net::TcpListener;
 use tower_http::trace::{DefaultMakeSpan, TraceLayer};
+
+use crate::routes::seed_route;
 
 pub struct Application {
     listener: TcpListener,
     router: Router,
     port: u16,
-    pool: PgPool,
 }
 
 #[derive(Clone)]
@@ -25,9 +23,9 @@ impl Application {
 
         let listener = TcpListener::bind(address).await.unwrap();
         let port = listener.local_addr().unwrap().port();
-        let pool = get_connection_pool(db_url);
+        let pool = get_connection_pool(db_url).await?;
 
-        let application_state = ApplicationState { pool: pool.clone() };
+        let application_state = ApplicationState { pool };
 
         let router = Router::new()
             .route("/seed", post(seed_route))
@@ -41,7 +39,6 @@ impl Application {
             listener,
             router,
             port,
-            pool,
         })
     }
 
@@ -61,6 +58,6 @@ impl Application {
     }
 }
 
-pub fn get_connection_pool(url: &str) -> Result<PgPool, sqlx::Error> {
-    PgPoolOptions::new().connect_with(url.parse()?)
+pub async fn get_connection_pool(url: &str) -> Result<PgPool, sqlx::Error> {
+    PgPoolOptions::new().connect_with(url.parse()?).await
 }
