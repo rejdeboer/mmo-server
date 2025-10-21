@@ -1,6 +1,7 @@
 use db_seeder::{
     seed::*,
     server::{Application, get_connection_pool},
+    telemetry::init_telemetry,
 };
 
 use clap::{Command, arg};
@@ -37,6 +38,7 @@ fn cli() -> Command {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    init_telemetry();
     let matches = cli().get_matches();
 
     match matches.subcommand() {

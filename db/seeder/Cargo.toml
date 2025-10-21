@@ -12,6 +12,8 @@ serde = { version = "1", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
 tower-http = { version = "0.5.0", features = ["fs", "trace"] }
 tracing = { workspace = true }
+tracing-log = "0.2.0"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 web-server = { path = "../../web-server" }
 
 [dependencies.sqlx]
