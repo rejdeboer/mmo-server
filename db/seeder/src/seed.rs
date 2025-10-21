@@ -4,7 +4,7 @@ use web_server::domain::SafePassword;
 
 const TEST_PASSWORD: &str = "Test123!";
 
-pub async fn seed(db_url: &str, count: i32) -> anyhow::Result<()> {
+pub async fn seed(db_url: &str, count: u32) -> anyhow::Result<()> {
     let pool = PgPoolOptions::new().connect(db_url).await?;
     let passhash = SafePassword::parse(TEST_PASSWORD.to_string())
         .unwrap()
