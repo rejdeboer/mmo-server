@@ -49,7 +49,7 @@ cargo sqlx migrate run --source ./db/migrations
 
 if [[ "${SEED}" ]]
 then
-	cargo run -p db-seeder
+	cargo run -p db-seeder -- seed -u ${DATABASE_URL}
 	>&2 echo "Database has been seeded"
 fi
 
