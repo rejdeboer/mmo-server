@@ -6,6 +6,8 @@ on:
       - ".github/workflows/server-push.yml"
       - "web-server"
       - "mmo-server"
+      - "Dockerfile"
+      - "Cargo.toml"
   workflow_dispatch:
 
 env:
