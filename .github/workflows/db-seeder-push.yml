@@ -31,8 +31,6 @@ jobs:
           file: "db/seeder/Dockerfile"
           push: true
           tags: rejdeboer/mmo-db-seeder:latest
-          secrets: |
-            GIT_AUTH_TOKEN=${{ secrets.GH_PAT }}
 
   # modify-manifest:
   #   needs: docker
