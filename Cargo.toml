@@ -4,6 +4,7 @@ members = [
 	"mmo-client",
 	"mmo-server",
 	"schemas",
+	"simulator",
 	"web-client",
 	"web-server",
 ]
