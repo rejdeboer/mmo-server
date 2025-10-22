@@ -237,7 +237,7 @@ async fn load_character_data(
     sqlx::query_as!(
         CharacterRow,
         r#"
-        SELECT id, guild_id, name, level, hp,
+        SELECT id, guild_id, name, level, hp, max_hp,
             position_x, position_y, position_z,
             rotation_yaw
         FROM characters
