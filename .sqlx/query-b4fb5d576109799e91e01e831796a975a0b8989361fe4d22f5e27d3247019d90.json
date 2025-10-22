@@ -1,0 +1,76 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT id, guild_id, name, level, hp, max_hp,\n            position_x, position_y, position_z,\n            rotation_yaw\n        FROM characters\n        WHERE id = $1 \n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "guild_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "level",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "hp",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "max_hp",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "position_x",
+        "type_info": "Float4"
+      },
+      {
+        "ordinal": 7,
+        "name": "position_y",
+        "type_info": "Float4"
+      },
+      {
+        "ordinal": 8,
+        "name": "position_z",
+        "type_info": "Float4"
+      },
+      {
+        "ordinal": 9,
+        "name": "rotation_yaw",
+        "type_info": "Float4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "b4fb5d576109799e91e01e831796a975a0b8989361fe4d22f5e27d3247019d90"
+}
