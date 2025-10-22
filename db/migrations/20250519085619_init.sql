@@ -35,7 +35,12 @@ CREATE TABLE IF NOT EXISTS characters (
     is_online BOOLEAN NOT NULL DEFAULT FALSE,
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT fk_account FOREIGN KEY (account_id)
+        REFERENCES accounts(id) ON DELETE CASCADE,
+    CONSTRAINT fk_guild FOREIGN KEY (guild_id)
+        REFERENCES guilds(id)
 );
 
 CREATE INDEX IF NOT EXISTS "idx_characters_id" ON "characters" ("id");

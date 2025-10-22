@@ -10,6 +10,9 @@ pub async fn seed(pool: PgPool, count: u32) -> anyhow::Result<()> {
         .hash()
         .unwrap();
 
+    sqlx::query!("TRUNCATE TABLE characters, accounts, guilds RESTART IDENTITY CASCADE;")
+        .execute(&pool)
+        .await?;
     let guild_id = sqlx::query!("INSERT INTO guilds (name) VALUES ('Testing Guild') RETURNING id;")
         .fetch_one(&pool)
         .await?;
