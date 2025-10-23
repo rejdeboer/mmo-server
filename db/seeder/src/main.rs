@@ -30,7 +30,7 @@ fn cli() -> Command {
                 .arg(
                     arg!(--count <COUNT> "Amount of users to create")
                         .default_value("2")
-                        .value_parser(clap::value_parser!(u32)),
+                        .value_parser(clap::value_parser!(usize)),
                 )
                 .arg(url_arg),
         )
@@ -44,7 +44,7 @@ async fn main() -> anyhow::Result<()> {
     match matches.subcommand() {
         Some(("seed", sub_matches)) => {
             let count = sub_matches
-                .get_one::<u32>("count")
+                .get_one::<usize>("count")
                 .expect("should be set by default");
 
             tracing::info!(?count, "inserting users");

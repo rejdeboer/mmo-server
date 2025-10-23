@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct SeedParameters {
-    pub count: u32,
+    pub count: usize,
 }
 
 pub async fn seed_route(
