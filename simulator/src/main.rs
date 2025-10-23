@@ -9,6 +9,14 @@ struct Args {
     /// The simulation seed to use
     #[arg(short, long)]
     seed: Option<u64>,
+    #[arg(short, long, default_value_t = 10)]
+    clients: usize,
+    #[arg(long, default_value = "http://127.0.0.1:8032/seed")]
+    seeder_endpoint: String,
+    #[arg(long, default_value = "127.0.0.1")]
+    server_host: String,
+    #[arg(long, default_value_t = 8000)]
+    server_port: u32,
 }
 
 #[tokio::main]
