@@ -2,6 +2,7 @@ use clap::Parser;
 use db_seeder::SeedParameters;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
+use simulator::SimulatedClient;
 
 /// A CLI to simulate MMO traffic
 #[derive(Parser, Debug)]
@@ -40,7 +41,12 @@ async fn main() -> anyhow::Result<()> {
         random_seed
     });
 
-    let mut rng = ChaCha8Rng::seed_from_u64(seed);
+    let mut main_rng = ChaCha8Rng::seed_from_u64(seed);
+
+    for i in 0..args.clients {
+        let bot_seed = main_rng.random();
+        let client = SimulatedClient::new(i as i32, bot_seed);
+    }
 
     Ok(())
 }
