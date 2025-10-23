@@ -1,8 +1,4 @@
-use db_seeder::{
-    seed::*,
-    server::{Application, get_connection_pool},
-    telemetry::init_telemetry,
-};
+use db_seeder::{Application, get_connection_pool, init_telemetry, seed_db};
 
 use clap::{Command, arg};
 
@@ -52,7 +48,7 @@ async fn main() -> anyhow::Result<()> {
             let url = sub_matches.get_one::<String>("url").expect("required");
             let pool = get_connection_pool(url).await?;
 
-            seed(pool, *count).await?;
+            seed_db(pool, *count).await?;
         }
         Some(("serve", sub_matches)) => {
             let host = sub_matches

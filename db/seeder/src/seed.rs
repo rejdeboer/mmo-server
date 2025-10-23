@@ -4,7 +4,7 @@ use web_server::domain::SafePassword;
 
 const TEST_PASSWORD: &str = "Test123!";
 
-pub async fn seed(pool: PgPool, count: usize) -> anyhow::Result<()> {
+pub async fn seed_db(pool: PgPool, count: usize) -> anyhow::Result<()> {
     let passhash = SafePassword::parse(TEST_PASSWORD.to_string())
         .unwrap()
         .hash()
@@ -44,6 +44,6 @@ pub async fn seed(pool: PgPool, count: usize) -> anyhow::Result<()> {
         .execute(&pool)
         .await?;
     }
-    tracing::info!("inserted fake users");
+    tracing::info!(?count, "inserted fake users");
     Ok(())
 }

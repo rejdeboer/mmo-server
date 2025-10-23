@@ -1,7 +1,10 @@
-pub mod error;
-pub mod routes;
-pub mod seed;
-pub mod server;
-pub mod telemetry;
+mod error;
+mod routes;
+mod seed;
+mod server;
+mod telemetry;
 
 pub use routes::SeedParameters;
+pub use seed::seed_db;
+pub use server::{Application, get_connection_pool};
+pub use telemetry::init_telemetry;
