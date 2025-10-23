@@ -21,11 +21,15 @@ struct Args {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    tracing_subscriber::fmt::Subscriber::builder()
+        .with_max_level(tracing::Level::INFO)
+        .init();
+
     let args = Args::parse();
 
     let seed = args.seed.unwrap_or_else(|| {
         let random_seed = rand::rng().random();
-        println!("No seed provided, using randomly generated seed: {random_seed}");
+        tracing::info!("no seed provided, generating: {random_seed}");
         random_seed
     });
 
