@@ -49,7 +49,7 @@ async fn main() -> anyhow::Result<()> {
     let mut main_rng = ChaCha8Rng::seed_from_u64(seed);
     let mut tasks = vec![];
 
-    for i in 0..args.clients {
+    for i in 1..=args.clients {
         let bot_seed = main_rng.random();
         let client = SimulatedClient::new(i as i32, bot_seed);
         tasks.push(tokio::spawn(
