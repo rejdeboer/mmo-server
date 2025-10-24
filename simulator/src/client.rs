@@ -30,10 +30,12 @@ impl SimulatedClient {
         self.client.connect_unsecure(host, port, self.character_id);
 
         let mut interval = tokio::time::interval(TICK_DURATION);
-        let dt = TICK_DURATION;
+        let mut last_tick = Instant::now();
 
         loop {
-            interval.tick().await;
+            // TODO: Thoroughly test this simulator timestep
+            let dt = interval.tick().await.duration_since(last_tick);
+            last_tick += dt;
 
             match self.client.get_state() {
                 ClientState::Connecting | ClientState::Connected => {
