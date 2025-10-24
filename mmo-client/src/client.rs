@@ -210,4 +210,3 @@ impl GameClient {
         self.setup_transport(authentication);
     }
 }
-
