@@ -1,8 +1,10 @@
 use clap::Parser;
 use db_seeder::SeedParameters;
+use futures::future::join_all;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use simulator::SimulatedClient;
+use std::time::Duration;
 
 /// A CLI to simulate MMO traffic
 #[derive(Parser, Debug)]
@@ -22,7 +24,10 @@ struct Args {
     server_host: String,
     /// Game server port
     #[arg(long, default_value_t = 8000)]
-    server_port: u32,
+    server_port: u16,
+    /// Duration of the simulation in seconds
+    #[arg(short, long, default_value_t = 60)]
+    duration: u64,
 }
 
 #[tokio::main]
@@ -42,10 +47,35 @@ async fn main() -> anyhow::Result<()> {
     });
 
     let mut main_rng = ChaCha8Rng::seed_from_u64(seed);
+    let mut tasks = vec![];
 
     for i in 0..args.clients {
         let bot_seed = main_rng.random();
         let client = SimulatedClient::new(i as i32, bot_seed);
+        tasks.push(tokio::spawn(
+            client.run(args.server_host.clone(), args.server_port),
+        ));
+    }
+
+    let timeout_duration = Duration::from_secs(args.duration);
+    match tokio::time::timeout(timeout_duration, join_all(tasks)).await {
+        Ok(results) => {
+            tracing::info!("simulation finished naturally");
+            let successful_runs = results
+                .iter()
+                .filter(|res| res.is_ok() && res.as_ref().unwrap().is_ok())
+                .count();
+            tracing::info!(
+                "{successful_runs}/{} bots completed without error",
+                args.clients
+            );
+        }
+        Err(_) => {
+            tracing::info!(
+                "simulation ended after reaching the {} second timeout",
+                args.duration
+            );
+        }
     }
 
     Ok(())
