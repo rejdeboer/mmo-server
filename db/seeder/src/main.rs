@@ -15,7 +15,7 @@ fn cli() -> Command {
                 .arg(
                     arg!(--port <PORT> "The port to listen on")
                         .default_value("8032")
-                        .value_parser(clap::value_parser!(u32)),
+                        .value_parser(clap::value_parser!(u16)),
                 )
                 .arg(arg!(--host <HOST> "The host to listen on").default_value("127.0.0.1"))
                 .arg(url_arg.clone()),
@@ -55,7 +55,7 @@ async fn main() -> anyhow::Result<()> {
                 .get_one::<String>("host")
                 .expect("host should be set by default");
             let port = sub_matches
-                .get_one::<u32>("port")
+                .get_one::<u16>("port")
                 .expect("port should be set by default");
             let url = sub_matches
                 .get_one::<String>("url")

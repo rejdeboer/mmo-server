@@ -18,7 +18,7 @@ pub struct ApplicationState {
 }
 
 impl Application {
-    pub async fn build(host: &str, port: u32, db_url: &str) -> anyhow::Result<Self> {
+    pub async fn build(host: &str, port: u16, db_url: &str) -> anyhow::Result<Self> {
         let address = format!("{host}:{port}");
 
         let listener = TcpListener::bind(address).await.unwrap();
