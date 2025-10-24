@@ -1,6 +1,8 @@
 use crate::domain::Transform;
 use schemas::game as schema;
 
+const SPEED_PRECISION_MULTIPLIER: f32 = 100.0;
+
 #[derive(Debug, Clone)]
 pub struct Entity {
     pub id: u64,
@@ -35,18 +37,17 @@ impl TryInto<Entity> for schema::Entity<'_> {
             return Err("player entity should have player attributes");
         };
 
-        let guild_name = attributes.guild_name().map(|n| n.to_string());
-
         Ok(Entity {
             id: self.id(),
             attributes: EntityAttributes::Player {
                 character_id: attributes.character_id(),
-                guild_name,
+                guild_name: attributes.guild_name().map(&str::to_string),
             },
             name: self.name().to_string(),
             vitals: self.vitals().into(),
             level: self.level(),
             transform: self.transform().into(),
+            movement_speed: self.movement_speed() as f32 / SPEED_PRECISION_MULTIPLIER,
         })
     }
 }
@@ -61,11 +62,11 @@ impl TryInto<Entity> for schema::EnterGameResponse<'_> {
     }
 }
 
-impl Into<Vitals> for &schema::Vitals {
-    fn into(self) -> Vitals {
+impl From<&schema::Vitals> for Vitals {
+    fn from(val: &schema::Vitals) -> Self {
         Vitals {
-            hp: self.hp(),
-            max_hp: self.max_hp(),
+            hp: val.hp(),
+            max_hp: val.max_hp(),
         }
     }
 }
