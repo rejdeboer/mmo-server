@@ -1,4 +1,4 @@
-use mmo_client::{ClientState, ConnectionEvent, GameClient};
+use mmo_client::{ConnectionEvent, Entity, GameClient};
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 use std::time::Duration;
@@ -6,10 +6,16 @@ use tokio::time::Instant;
 
 const TICK_DURATION: Duration = Duration::from_millis(1000 / 30);
 
+pub enum SimulatedClientState {
+    Disconnected,
+    Connected(Entity),
+}
+
 pub struct SimulatedClient {
     client: GameClient,
     character_id: i32,
     rng: ChaCha8Rng,
+    state: SimulatedClientState,
 }
 
 impl SimulatedClient {
@@ -21,6 +27,7 @@ impl SimulatedClient {
             client,
             character_id,
             rng,
+            state: SimulatedClientState::Disconnected,
         }
     }
 
@@ -37,16 +44,16 @@ impl SimulatedClient {
             let dt = interval.tick().await.duration_since(last_tick);
             last_tick += dt;
 
-            match self.client.get_state() {
-                ClientState::Connecting | ClientState::Connected => {
+            match &mut self.state {
+                SimulatedClientState::Disconnected => {
                     if let Some(event) = self.client.poll_connection(dt) {
                         match event {
                             ConnectionEvent::EnterGameSuccess { player_entity } => {
                                 tracing::info!(
                                     character_id = self.character_id,
-                                    ?player_entity,
                                     "successfully entered game"
                                 );
+                                self.state = SimulatedClientState::Connected(player_entity);
                             }
                             ConnectionEvent::Disconnected => {
                                 tracing::error!(
@@ -59,12 +66,8 @@ impl SimulatedClient {
                         }
                     }
                 }
-                ClientState::InGame => {
+                SimulatedClientState::Connected(_entity) => {
                     let _game_events = self.client.update_game(dt);
-                }
-                ClientState::Disconnected => {
-                    tracing::warn!(character_id = self.character_id, "bot is disconnected");
-                    break;
                 }
             }
         }
