@@ -2,7 +2,7 @@ use crate::{
     application::SpatialGrid,
     components::{
         CharacterIdComponent, ClientIdComponent, GridCell, InterestedClients, LevelComponent,
-        NameComponent, VisibleEntities, Vitals,
+        MovementSpeedComponent, NameComponent, VisibleEntities, Vitals,
     },
     events::OutgoingMessage,
     systems::EntityAttributes,
@@ -26,6 +26,7 @@ pub fn update_player_visibility(
         &Transform,
         &Vitals,
         &LevelComponent,
+        &MovementSpeedComponent,
         Option<&CharacterIdComponent>,
     )>,
     grid: Res<SpatialGrid>,
@@ -62,7 +63,7 @@ pub fn update_player_visibility(
             if let Ok(mut interested) = q_interest.get_mut(entity_to_spawn) {
                 interested.clients.insert(client_id.0);
             }
-            if let Ok((name, transform, vitals, level, character_id)) =
+            if let Ok((name, transform, vitals, level, movement_speed, character_id)) =
                 q_spawnables.get(entity_to_spawn)
             {
                 let attributes = match character_id {
@@ -83,6 +84,7 @@ pub fn update_player_visibility(
                         transform: *transform,
                         level: level.0,
                         vitals: vitals.clone(),
+                        movement_speed: movement_speed.0,
                     },
                 });
             }

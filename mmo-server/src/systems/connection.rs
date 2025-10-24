@@ -1,8 +1,8 @@
 use crate::{
     application::DatabasePool,
     components::{
-        CharacterIdComponent, ClientIdComponent, InterestedClients, LevelComponent, NameComponent,
-        VisibleEntities, Vitals,
+        CharacterIdComponent, ClientIdComponent, InterestedClients, LevelComponent,
+        MovementSpeedComponent, NameComponent, VisibleEntities, Vitals,
     },
     telemetry::Metrics,
 };
@@ -17,6 +17,10 @@ use schemas::game::{self as schema};
 use schemas::protocol::TokenUserData;
 use sqlx::{Pool, Postgres};
 use std::sync::Arc;
+
+// TODO: This should probably be done in another module
+const SPEED_PRECISION_MULTIPLIER: f32 = 100.;
+const BASE_MOVEMENT_SPEED: f32 = 7.5;
 
 #[derive(Debug, Clone, sqlx::FromRow)]
 pub struct CharacterRow {
@@ -79,6 +83,7 @@ pub fn serialize_entity<'a>(
     transform: &Transform,
     vitals: &Vitals,
     level: i32,
+    movement_speed: f32,
 ) -> WIPOffset<schema::Entity<'a>> {
     let (fb_attr, attr_type) = attributes.serialize(builder);
 
@@ -90,6 +95,8 @@ pub fn serialize_entity<'a>(
     let fb_vitals = schema::Vitals::new(vitals.hp, vitals.max_hp);
     let fb_name = builder.create_string(name);
 
+    let quantized_speed = (movement_speed * SPEED_PRECISION_MULTIPLIER).round() as u16;
+
     schema::Entity::create(
         builder,
         &schema::EntityArgs {
@@ -100,6 +107,7 @@ pub fn serialize_entity<'a>(
             vitals: Some(&fb_vitals),
             transform: Some(&fb_transform),
             level,
+            movement_speed: quantized_speed,
         },
     )
 }
@@ -186,6 +194,7 @@ fn process_client_connected(
                             transform,
                             vitals.clone(),
                             LevelComponent(character.level),
+                            MovementSpeedComponent(BASE_MOVEMENT_SPEED),
                         ))
                         .id();
 
@@ -203,6 +212,7 @@ fn process_client_connected(
                         &transform,
                         &vitals,
                         character.level,
+                        BASE_MOVEMENT_SPEED,
                     );
                     let response_offset = schema::EnterGameResponse::create(
                         &mut builder,

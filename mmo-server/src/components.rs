@@ -33,3 +33,6 @@ pub struct Vitals {
 
 #[derive(Debug, Component)]
 pub struct LevelComponent(pub i32);
+
+#[derive(Debug, Component, Clone)]
+pub struct MovementSpeedComponent(pub f32);

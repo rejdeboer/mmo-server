@@ -9,6 +9,7 @@ pub struct Entity {
     pub vitals: Vitals,
     pub level: i32,
     pub transform: Transform,
+    pub movement_speed: f32,
 }
 
 #[derive(Debug, Clone)]

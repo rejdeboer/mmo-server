@@ -26,4 +26,5 @@ table Entity {
 	transform: game.Transform (required);
 	vitals: Vitals (required);
 	level: int32;
+	movement_speed: uint16;
 }

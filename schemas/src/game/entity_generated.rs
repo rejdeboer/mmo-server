@@ -20,7 +20,7 @@ impl<'a> flatbuffers::Follow<'a> for Entity<'a> {
   type Inner = Entity<'a>;
   #[inline]
   unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
-    Self { _tab: flatbuffers::Table::new(buf, loc) }
+    Self { _tab: unsafe { flatbuffers::Table::new(buf, loc) } }
   }
 }
 
@@ -32,6 +32,7 @@ impl<'a> Entity<'a> {
   pub const VT_TRANSFORM: flatbuffers::VOffsetT = 12;
   pub const VT_VITALS: flatbuffers::VOffsetT = 14;
   pub const VT_LEVEL: flatbuffers::VOffsetT = 16;
+  pub const VT_MOVEMENT_SPEED: flatbuffers::VOffsetT = 18;
 
   #[inline]
   pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
@@ -49,6 +50,7 @@ impl<'a> Entity<'a> {
     if let Some(x) = args.transform { builder.add_transform(x); }
     if let Some(x) = args.name { builder.add_name(x); }
     if let Some(x) = args.attributes { builder.add_attributes(x); }
+    builder.add_movement_speed(args.movement_speed);
     builder.add_attributes_type(args.attributes_type);
     builder.finish()
   }
@@ -104,6 +106,13 @@ impl<'a> Entity<'a> {
     unsafe { self._tab.get::<i32>(Entity::VT_LEVEL, Some(0)).unwrap()}
   }
   #[inline]
+  pub fn movement_speed(&self) -> u16 {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<u16>(Entity::VT_MOVEMENT_SPEED, Some(0)).unwrap()}
+  }
+  #[inline]
   #[allow(non_snake_case)]
   pub fn attributes_as_player_attributes(&self) -> Option<PlayerAttributes<'a>> {
     if self.attributes_type() == EntityAttributes::PlayerAttributes {
@@ -154,6 +163,7 @@ impl flatbuffers::Verifiable for Entity<'_> {
      .visit_field::<Transform>("transform", Self::VT_TRANSFORM, true)?
      .visit_field::<Vitals>("vitals", Self::VT_VITALS, true)?
      .visit_field::<i32>("level", Self::VT_LEVEL, false)?
+     .visit_field::<u16>("movement_speed", Self::VT_MOVEMENT_SPEED, false)?
      .finish();
     Ok(())
   }
@@ -166,6 +176,7 @@ pub struct EntityArgs<'a> {
     pub transform: Option<&'a Transform>,
     pub vitals: Option<&'a Vitals>,
     pub level: i32,
+    pub movement_speed: u16,
 }
 impl<'a> Default for EntityArgs<'a> {
   #[inline]
@@ -178,6 +189,7 @@ impl<'a> Default for EntityArgs<'a> {
       transform: None, // required field
       vitals: None, // required field
       level: 0,
+      movement_speed: 0,
     }
   }
 }
@@ -214,6 +226,10 @@ impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> EntityBuilder<'a, 'b, A> {
   #[inline]
   pub fn add_level(&mut self, level: i32) {
     self.fbb_.push_slot::<i32>(Entity::VT_LEVEL, level, 0);
+  }
+  #[inline]
+  pub fn add_movement_speed(&mut self, movement_speed: u16) {
+    self.fbb_.push_slot::<u16>(Entity::VT_MOVEMENT_SPEED, movement_speed, 0);
   }
   #[inline]
   pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> EntityBuilder<'a, 'b, A> {
@@ -262,6 +278,7 @@ impl core::fmt::Debug for Entity<'_> {
       ds.field("transform", &self.transform());
       ds.field("vitals", &self.vitals());
       ds.field("level", &self.level());
+      ds.field("movement_speed", &self.movement_speed());
       ds.finish()
   }
 }

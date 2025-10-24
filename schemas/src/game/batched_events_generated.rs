@@ -20,7 +20,7 @@ impl<'a> flatbuffers::Follow<'a> for BatchedEvents<'a> {
   type Inner = BatchedEvents<'a>;
   #[inline]
   unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
-    Self { _tab: flatbuffers::Table::new(buf, loc) }
+    Self { _tab: unsafe { flatbuffers::Table::new(buf, loc) } }
   }
 }
 
@@ -157,14 +157,14 @@ pub fn size_prefixed_root_as_batched_events_with_opts<'b, 'o>(
 /// # Safety
 /// Callers must trust the given bytes do indeed contain a valid `BatchedEvents`.
 pub unsafe fn root_as_batched_events_unchecked(buf: &[u8]) -> BatchedEvents {
-  flatbuffers::root_unchecked::<BatchedEvents>(buf)
+  unsafe { flatbuffers::root_unchecked::<BatchedEvents>(buf) }
 }
 #[inline]
 /// Assumes, without verification, that a buffer of bytes contains a size prefixed BatchedEvents and returns it.
 /// # Safety
 /// Callers must trust the given bytes do indeed contain a valid size prefixed `BatchedEvents`.
 pub unsafe fn size_prefixed_root_as_batched_events_unchecked(buf: &[u8]) -> BatchedEvents {
-  flatbuffers::size_prefixed_root_unchecked::<BatchedEvents>(buf)
+  unsafe { flatbuffers::size_prefixed_root_unchecked::<BatchedEvents>(buf) }
 }
 #[inline]
 pub fn finish_batched_events_buffer<'a, 'b, A: flatbuffers::Allocator + 'a>(

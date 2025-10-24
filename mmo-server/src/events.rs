@@ -40,6 +40,7 @@ pub enum OutgoingMessageData {
         transform: Transform,
         level: i32,
         vitals: Vitals,
+        movement_speed: f32,
     },
 }
 
@@ -83,10 +84,18 @@ impl OutgoingMessageData {
                 transform,
                 level,
                 vitals,
+                movement_speed,
             } => {
                 data_type = schema::EventData::EntitySpawnEvent;
                 let fb_entity = serialize_entity(
-                    builder, *entity, attributes, name, transform, vitals, *level,
+                    builder,
+                    *entity,
+                    attributes,
+                    name,
+                    transform,
+                    vitals,
+                    *level,
+                    *movement_speed,
                 );
                 schema::EntitySpawnEvent::create(
                     builder,
