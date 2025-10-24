@@ -19,21 +19,21 @@ pub struct Transform {
     pub yaw: f32,
 }
 
-impl Into<Transform> for &schema::Transform {
-    fn into(self) -> Transform {
+impl From<&schema::Transform> for Transform {
+    fn from(val: &schema::Transform) -> Self {
         Transform {
-            position: self.position().into(),
-            yaw: self.yaw(),
+            position: val.position().into(),
+            yaw: val.yaw(),
         }
     }
 }
 
-impl Into<Vec3> for &schema::Vec3 {
-    fn into(self) -> Vec3 {
+impl From<&schema::Vec3> for Vec3 {
+    fn from(val: &schema::Vec3) -> Self {
         Vec3 {
-            x: self.x(),
-            y: self.y(),
-            z: self.z(),
+            x: val.x(),
+            y: val.y(),
+            z: val.z(),
         }
     }
 }
