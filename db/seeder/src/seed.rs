@@ -18,7 +18,7 @@ pub async fn seed_db(pool: PgPool, count: usize) -> anyhow::Result<()> {
         .await?;
 
     for i in 0..count {
-        let username: String = Username().fake();
+        let username: String = format!("{}{i}", Username().fake::<String>());
         let email = format!("user{i}@test.com");
         let user_id = sqlx::query!(
             r#"
