@@ -75,6 +75,7 @@ impl EntityAttributes {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn serialize_entity<'a>(
     builder: &mut FlatBufferBuilder<'a>,
     entity: Entity,
