@@ -20,7 +20,7 @@ impl<'a> flatbuffers::Follow<'a> for ClientWhisperByName<'a> {
   type Inner = ClientWhisperByName<'a>;
   #[inline]
   unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
-    Self { _tab: unsafe { flatbuffers::Table::new(buf, loc) } }
+    Self { _tab: flatbuffers::Table::new(buf, loc) }
   }
 }
 
