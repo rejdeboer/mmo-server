@@ -10,6 +10,14 @@ use schemas::game as schema;
 use std::sync::Arc;
 
 #[derive(Event, Debug)]
+pub struct MoveActionEvent {
+    pub entity: Entity,
+    pub yaw: u16,
+    pub forward: i8,
+    pub sideways: i8,
+}
+
+#[derive(Event, Debug)]
 pub struct IncomingChatMessage {
     pub author: Entity,
     pub channel: ChannelType,

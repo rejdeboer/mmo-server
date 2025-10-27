@@ -1,4 +1,7 @@
-use crate::{components::ClientIdComponent, events::IncomingChatMessage};
+use crate::{
+    components::ClientIdComponent,
+    events::{IncomingChatMessage, MoveActionEvent},
+};
 use bevy::prelude::*;
 use bevy_renet::renet::{DefaultChannel, RenetServer};
 use flatbuffers::root;
@@ -57,9 +60,10 @@ fn process_player_move_action(
     action: schema::PlayerMoveAction,
     commands: &mut Commands,
 ) {
-    let fb_transform = action.transform().unwrap();
-    let pos = fb_transform.position();
-    let transform = Transform::from_xyz(pos.x(), pos.y(), pos.z())
-        .with_rotation(Quat::from_rotation_y(fb_transform.yaw()));
-    commands.entity(entity).insert(transform);
+    commands.send_event(MoveActionEvent {
+        entity,
+        yaw: action.yaw(),
+        forward: action.forward(),
+        sideways: action.sideways(),
+    });
 }
