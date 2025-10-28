@@ -1,10 +1,11 @@
 include "chat.fbs";
-include "common.fbs";
 
 namespace game;
 
 table PlayerMoveAction {
-	transform: game.Transform;
+	yaw: uint16;
+	forward: byte;
+	sideways: byte;
 }
 
 table PlayerJumpAction {}

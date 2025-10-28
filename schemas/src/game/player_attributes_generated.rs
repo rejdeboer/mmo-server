@@ -20,7 +20,7 @@ impl<'a> flatbuffers::Follow<'a> for PlayerAttributes<'a> {
   type Inner = PlayerAttributes<'a>;
   #[inline]
   unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
-    Self { _tab: unsafe { flatbuffers::Table::new(buf, loc) } }
+    Self { _tab: flatbuffers::Table::new(buf, loc) }
   }
 }
 

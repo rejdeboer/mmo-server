@@ -20,7 +20,7 @@ impl<'a> flatbuffers::Follow<'a> for BatchedActions<'a> {
   type Inner = BatchedActions<'a>;
   #[inline]
   unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
-    Self { _tab: unsafe { flatbuffers::Table::new(buf, loc) } }
+    Self { _tab: flatbuffers::Table::new(buf, loc) }
   }
 }
 
@@ -157,14 +157,14 @@ pub fn size_prefixed_root_as_batched_actions_with_opts<'b, 'o>(
 /// # Safety
 /// Callers must trust the given bytes do indeed contain a valid `BatchedActions`.
 pub unsafe fn root_as_batched_actions_unchecked(buf: &[u8]) -> BatchedActions {
-  unsafe { flatbuffers::root_unchecked::<BatchedActions>(buf) }
+  flatbuffers::root_unchecked::<BatchedActions>(buf)
 }
 #[inline]
 /// Assumes, without verification, that a buffer of bytes contains a size prefixed BatchedActions and returns it.
 /// # Safety
 /// Callers must trust the given bytes do indeed contain a valid size prefixed `BatchedActions`.
 pub unsafe fn size_prefixed_root_as_batched_actions_unchecked(buf: &[u8]) -> BatchedActions {
-  unsafe { flatbuffers::size_prefixed_root_unchecked::<BatchedActions>(buf) }
+  flatbuffers::size_prefixed_root_unchecked::<BatchedActions>(buf)
 }
 #[inline]
 pub fn finish_batched_actions_buffer<'a, 'b, A: flatbuffers::Allocator + 'a>(

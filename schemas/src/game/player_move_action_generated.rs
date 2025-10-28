@@ -20,12 +20,14 @@ impl<'a> flatbuffers::Follow<'a> for PlayerMoveAction<'a> {
   type Inner = PlayerMoveAction<'a>;
   #[inline]
   unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
-    Self { _tab: unsafe { flatbuffers::Table::new(buf, loc) } }
+    Self { _tab: flatbuffers::Table::new(buf, loc) }
   }
 }
 
 impl<'a> PlayerMoveAction<'a> {
-  pub const VT_TRANSFORM: flatbuffers::VOffsetT = 4;
+  pub const VT_YAW: flatbuffers::VOffsetT = 4;
+  pub const VT_FORWARD: flatbuffers::VOffsetT = 6;
+  pub const VT_SIDEWAYS: flatbuffers::VOffsetT = 8;
 
   #[inline]
   pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
@@ -34,20 +36,36 @@ impl<'a> PlayerMoveAction<'a> {
   #[allow(unused_mut)]
   pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
     _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
-    args: &'args PlayerMoveActionArgs<'args>
+    args: &'args PlayerMoveActionArgs
   ) -> flatbuffers::WIPOffset<PlayerMoveAction<'bldr>> {
     let mut builder = PlayerMoveActionBuilder::new(_fbb);
-    if let Some(x) = args.transform { builder.add_transform(x); }
+    builder.add_yaw(args.yaw);
+    builder.add_sideways(args.sideways);
+    builder.add_forward(args.forward);
     builder.finish()
   }
 
 
   #[inline]
-  pub fn transform(&self) -> Option<&'a Transform> {
+  pub fn yaw(&self) -> u16 {
     // Safety:
     // Created from valid Table for this object
     // which contains a valid value in this slot
-    unsafe { self._tab.get::<Transform>(PlayerMoveAction::VT_TRANSFORM, None)}
+    unsafe { self._tab.get::<u16>(PlayerMoveAction::VT_YAW, Some(0)).unwrap()}
+  }
+  #[inline]
+  pub fn forward(&self) -> i8 {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<i8>(PlayerMoveAction::VT_FORWARD, Some(0)).unwrap()}
+  }
+  #[inline]
+  pub fn sideways(&self) -> i8 {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<i8>(PlayerMoveAction::VT_SIDEWAYS, Some(0)).unwrap()}
   }
 }
 
@@ -58,19 +76,25 @@ impl flatbuffers::Verifiable for PlayerMoveAction<'_> {
   ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
     use self::flatbuffers::Verifiable;
     v.visit_table(pos)?
-     .visit_field::<Transform>("transform", Self::VT_TRANSFORM, false)?
+     .visit_field::<u16>("yaw", Self::VT_YAW, false)?
+     .visit_field::<i8>("forward", Self::VT_FORWARD, false)?
+     .visit_field::<i8>("sideways", Self::VT_SIDEWAYS, false)?
      .finish();
     Ok(())
   }
 }
-pub struct PlayerMoveActionArgs<'a> {
-    pub transform: Option<&'a Transform>,
+pub struct PlayerMoveActionArgs {
+    pub yaw: u16,
+    pub forward: i8,
+    pub sideways: i8,
 }
-impl<'a> Default for PlayerMoveActionArgs<'a> {
+impl<'a> Default for PlayerMoveActionArgs {
   #[inline]
   fn default() -> Self {
     PlayerMoveActionArgs {
-      transform: None,
+      yaw: 0,
+      forward: 0,
+      sideways: 0,
     }
   }
 }
@@ -81,8 +105,16 @@ pub struct PlayerMoveActionBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> {
 }
 impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> PlayerMoveActionBuilder<'a, 'b, A> {
   #[inline]
-  pub fn add_transform(&mut self, transform: &Transform) {
-    self.fbb_.push_slot_always::<&Transform>(PlayerMoveAction::VT_TRANSFORM, transform);
+  pub fn add_yaw(&mut self, yaw: u16) {
+    self.fbb_.push_slot::<u16>(PlayerMoveAction::VT_YAW, yaw, 0);
+  }
+  #[inline]
+  pub fn add_forward(&mut self, forward: i8) {
+    self.fbb_.push_slot::<i8>(PlayerMoveAction::VT_FORWARD, forward, 0);
+  }
+  #[inline]
+  pub fn add_sideways(&mut self, sideways: i8) {
+    self.fbb_.push_slot::<i8>(PlayerMoveAction::VT_SIDEWAYS, sideways, 0);
   }
   #[inline]
   pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> PlayerMoveActionBuilder<'a, 'b, A> {
@@ -102,7 +134,9 @@ impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> PlayerMoveActionBuilder<'a, 'b,
 impl core::fmt::Debug for PlayerMoveAction<'_> {
   fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
     let mut ds = f.debug_struct("PlayerMoveAction");
-      ds.field("transform", &self.transform());
+      ds.field("yaw", &self.yaw());
+      ds.field("forward", &self.forward());
+      ds.field("sideways", &self.sideways());
       ds.finish()
   }
 }
