@@ -29,6 +29,7 @@ pub fn process_move_action_events(
         let forward = transform.forward();
         let right = transform.right();
 
+        // TODO: dt is caclulated incorrectly for movement, need to design another system
         let forward_movement =
             forward * (event.forward as f32 / MOVEMENT_QUANTIZATION_FACTOR) * movement_speed.0 * dt;
         let sideways_movement =
