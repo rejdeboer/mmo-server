@@ -12,7 +12,7 @@ use std::net::{IpAddr, SocketAddr, UdpSocket};
 use std::time::SystemTime;
 
 use crate::configuration::Settings;
-use crate::events::{IncomingChatMessage, OutgoingMessage};
+use crate::events::{IncomingChatMessage, MoveActionEvent, OutgoingMessage};
 use crate::plugins::AgonesPlugin;
 use crate::telemetry::{Metrics, run_metrics_exporter};
 
@@ -80,6 +80,7 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
 
     app.add_event::<IncomingChatMessage>();
     app.add_event::<OutgoingMessage>();
+    app.add_event::<MoveActionEvent>();
 
     // TODO: Implement server tick of 20Hz?
     app.add_systems(Startup, (setup_database_pool, setup_metrics_exporter));
