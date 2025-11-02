@@ -12,7 +12,7 @@ use std::net::{IpAddr, SocketAddr, UdpSocket};
 use std::time::SystemTime;
 
 use crate::configuration::Settings;
-use crate::events::{IncomingChatMessage, MoveActionEvent, OutgoingMessage};
+use crate::messages::{IncomingChatMessage, MoveActionMessage, OutgoingMessage};
 use crate::plugins::AgonesPlugin;
 use crate::telemetry::{Metrics, run_metrics_exporter};
 
@@ -78,9 +78,9 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     app.insert_resource(SpatialGrid::default());
     app.insert_resource(Metrics::default());
 
-    app.add_event::<IncomingChatMessage>();
-    app.add_event::<OutgoingMessage>();
-    app.add_event::<MoveActionEvent>();
+    app.add_message::<IncomingChatMessage>();
+    app.add_message::<OutgoingMessage>();
+    app.add_message::<MoveActionMessage>();
 
     // TODO: Implement server tick of 20Hz?
     app.add_systems(Startup, (setup_database_pool, setup_metrics_exporter));
@@ -93,7 +93,7 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
             crate::systems::send_transform_updates,
             crate::systems::process_incoming_chat,
             crate::systems::process_client_actions,
-            crate::systems::process_move_action_events,
+            crate::systems::process_move_action_messages,
             crate::systems::sync_players,
         ),
     );

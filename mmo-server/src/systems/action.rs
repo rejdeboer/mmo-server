@@ -1,6 +1,6 @@
 use crate::{
     components::ClientIdComponent,
-    events::{IncomingChatMessage, MoveActionEvent},
+    messages::{IncomingChatMessage, MoveActionMessage},
 };
 use bevy::prelude::*;
 use bevy_renet::renet::{DefaultChannel, RenetServer};
@@ -30,7 +30,7 @@ fn process_message(entity: Entity, message: bevy_renet::renet::Bytes, commands: 
                 match action.data_type() {
                     schema::ActionData::game_ClientChatMessage => {
                         let chat_message = action.data_as_game_client_chat_message().unwrap();
-                        commands.send_event(IncomingChatMessage {
+                        commands.write_message(IncomingChatMessage {
                             author: entity,
                             channel: chat_message.channel(),
                             text: chat_message.text().to_string(),
@@ -60,7 +60,7 @@ fn process_player_move_action(
     action: schema::PlayerMoveAction,
     commands: &mut Commands,
 ) {
-    commands.send_event(MoveActionEvent {
+    commands.write_message(MoveActionMessage {
         entity,
         yaw: action.yaw(),
         forward: action.forward(),

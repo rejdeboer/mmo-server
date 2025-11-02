@@ -115,7 +115,7 @@ pub fn serialize_entity<'a>(
 
 #[allow(clippy::too_many_arguments)]
 pub fn handle_connection_events(
-    mut events: EventReader<ServerEvent>,
+    mut events: MessageReader<ServerEvent>,
     mut commands: Commands,
     mut server: ResMut<RenetServer>,
     transport: Res<NetcodeServerTransport>,

@@ -3,14 +3,14 @@ use schemas::game::ChannelType;
 
 use crate::{
     components::{ClientIdComponent, NameComponent, VisibleEntities},
-    events::{IncomingChatMessage, OutgoingMessage, OutgoingMessageData},
+    messages::{IncomingChatMessage, OutgoingMessage, OutgoingMessageData},
 };
 
 const MAX_SAY_DISTANCE: f32 = 32.0;
 
 pub fn process_incoming_chat(
-    mut chat_reader: EventReader<IncomingChatMessage>,
-    mut writer: EventWriter<OutgoingMessage>,
+    mut chat_reader: MessageReader<IncomingChatMessage>,
+    mut writer: MessageWriter<OutgoingMessage>,
     q_authors: Query<(
         &ClientIdComponent,
         &NameComponent,
@@ -19,15 +19,15 @@ pub fn process_incoming_chat(
     )>,
     q_recipients: Query<(&ClientIdComponent, &Transform)>,
 ) {
-    for event in chat_reader.read() {
-        let Ok((author_id, name, author_transform, visible)) = q_authors.get(event.author) else {
-            error!(entity=?event.author, "chat author does not exist");
+    for msg in chat_reader.read() {
+        let Ok((author_id, name, author_transform, visible)) = q_authors.get(msg.author) else {
+            error!(entity=?msg.author, "chat author does not exist");
             continue;
         };
 
         writer.write(OutgoingMessage::new(
             author_id.0,
-            OutgoingMessageData::ChatMessage(event.channel, name.clone(), event.text.clone()),
+            OutgoingMessageData::ChatMessage(msg.channel, name.clone(), msg.text.clone()),
         ));
 
         for entity in visible.entities.iter() {
@@ -35,7 +35,7 @@ pub fn process_incoming_chat(
                 continue;
             };
 
-            if event.channel == ChannelType::Say
+            if msg.channel == ChannelType::Say
                 && author_transform
                     .translation
                     .distance(recipient_transform.translation)
@@ -47,7 +47,7 @@ pub fn process_incoming_chat(
             // TODO: Do we have to clone text here? Probably should use Arc
             writer.write(OutgoingMessage::new(
                 recipient_id.0,
-                OutgoingMessageData::ChatMessage(event.channel, name.clone(), event.text.clone()),
+                OutgoingMessageData::ChatMessage(msg.channel, name.clone(), msg.text.clone()),
             ));
         }
     }

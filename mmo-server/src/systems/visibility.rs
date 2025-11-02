@@ -4,7 +4,7 @@ use crate::{
         CharacterIdComponent, ClientIdComponent, GridCell, InterestedClients, LevelComponent,
         MovementSpeedComponent, NameComponent, VisibleEntities, Vitals,
     },
-    events::OutgoingMessage,
+    messages::OutgoingMessage,
     systems::EntityAttributes,
 };
 use bevy::{platform::collections::HashSet, prelude::*};
@@ -30,7 +30,7 @@ pub fn update_player_visibility(
         Option<&CharacterIdComponent>,
     )>,
     grid: Res<SpatialGrid>,
-    mut writer: EventWriter<OutgoingMessage>,
+    mut writer: MessageWriter<OutgoingMessage>,
 ) {
     // TODO: Parallelism?
     for (player_entity, player_transform, player_cell, client_id, mut visible) in
@@ -77,7 +77,7 @@ pub fn update_player_visibility(
 
                 writer.write(OutgoingMessage {
                     client_id: client_id.0,
-                    data: crate::events::OutgoingMessageData::Spawn {
+                    data: crate::messages::OutgoingMessageData::Spawn {
                         entity: entity_to_spawn,
                         attributes,
                         name: name.0.clone(),
@@ -96,7 +96,7 @@ pub fn update_player_visibility(
             }
             writer.write(OutgoingMessage {
                 client_id: client_id.0,
-                data: crate::events::OutgoingMessageData::Despawn(entity_to_despawn),
+                data: crate::messages::OutgoingMessageData::Despawn(entity_to_despawn),
             });
         }
 

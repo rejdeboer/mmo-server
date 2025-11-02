@@ -66,7 +66,7 @@ impl SimulatedClient {
                         }
                     }
                 }
-                SimulatedClientState::Connected(_entity) => {
+                SimulatedClientState::Connected(entity) => {
                     let _game_events = self.client.update_game(dt);
                 }
             }

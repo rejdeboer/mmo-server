@@ -1,7 +1,7 @@
 pub mod application;
 mod components;
 pub mod configuration;
-mod events;
+mod messages;
 mod plugins;
 mod systems;
 mod telemetry;
