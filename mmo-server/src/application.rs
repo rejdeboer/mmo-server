@@ -1,3 +1,4 @@
+use avian3d::PhysicsPlugins;
 use bevy::log::LogPlugin;
 use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
@@ -32,6 +33,7 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     app.add_plugins(NetcodeServerPlugin);
     app.add_plugins(TokioTasksPlugin::default());
     app.add_plugins(AgonesPlugin);
+    app.add_plugins(PhysicsPlugins::new(PostUpdate));
 
     let ip_addr = IpAddr::V4(
         settings

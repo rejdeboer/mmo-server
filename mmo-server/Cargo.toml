@@ -12,6 +12,7 @@ agones = ["dep:agones"]
 
 [dependencies]
 agones = { version = "1.50", optional = true }
+avian3d = "0.4.1"
 base64 = "0.12.0"
 bevy-tokio-tasks = "0.17"
 bevy_renet = { git = "https://github.com/lucaspoffo/renet" }
