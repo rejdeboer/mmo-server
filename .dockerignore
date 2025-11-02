@@ -1,6 +1,7 @@
 tests
 target
 scripts
+assets
 
 schemas/schemas
 schemas/build.rs
