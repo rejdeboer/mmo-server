@@ -1,5 +1,6 @@
 use avian3d::prelude::*;
 use bevy::app::ScheduleRunnerPlugin;
+use bevy::asset::RenderAssetUsages;
 use bevy::gltf::{GltfLoaderSettings, GltfPlugin};
 use bevy::image::{CompressedImageFormatSupport, CompressedImageFormats};
 use bevy::log::LogPlugin;
@@ -159,6 +160,8 @@ fn setup_world(mut commands: Commands, assets: Res<AssetServer>) {
     commands.spawn((
         SceneRoot(
             assets.load_with_settings("world.gltf#Scene0", |s: &mut GltfLoaderSettings| {
+                s.load_materials = RenderAssetUsages::empty();
+                s.load_meshes = RenderAssetUsages::empty();
                 s.load_cameras = false;
                 s.load_animations = false;
                 s.load_animations = false;
