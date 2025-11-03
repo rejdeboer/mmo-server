@@ -12,9 +12,8 @@ agones = ["dep:agones"]
 
 [dependencies]
 agones = { version = "1.50", optional = true }
-avian3d = "0.4.1"
 base64 = "0.12.0"
-bevy-tokio-tasks = "0.17"
+bevy-tokio-tasks = { version = "0.17", default-features = false }
 bevy_renet = { git = "https://github.com/lucaspoffo/renet" }
 config = "0.11"
 flatbuffers = { workspace = true }
@@ -25,10 +24,15 @@ serde = { version = "1.0.219", features = ["derive"] }
 serde-aux = "4.7.0"
 tokio = { workspace = true }
 
+[dependencies.avian3d]
+version = "0.4.1"
+default-features = false
+features = ["3d", "collider-from-mesh", "parry-f32", "f32"]
+
 [dependencies.bevy]
 version = "0.17"
 default-features = false
-features = ["bevy_state", "bevy_log", "bevy_gltf", "debug"]
+features = ["bevy_asset", "bevy_gltf", "bevy_log", "bevy_state", "debug"]
 
 [dependencies.sqlx]
 version = "0.8.5"

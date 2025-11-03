@@ -1,8 +1,9 @@
 use avian3d::prelude::*;
-use bevy::gltf::GltfPlugin;
+use bevy::app::ScheduleRunnerPlugin;
+use bevy::gltf::{GltfLoaderSettings, GltfPlugin};
+use bevy::image::{CompressedImageFormatSupport, CompressedImageFormats};
 use bevy::log::LogPlugin;
 use bevy::mesh::MeshPlugin;
-use bevy::pbr::PbrPlugin;
 use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 use bevy::scene::ScenePlugin;
@@ -14,7 +15,7 @@ use bevy_renet::renet::{ConnectionConfig, RenetServer};
 use bevy_tokio_tasks::{TokioTasksPlugin, TokioTasksRuntime};
 use sqlx::{PgPool, postgres::PgPoolOptions};
 use std::net::{IpAddr, SocketAddr, UdpSocket};
-use std::time::SystemTime;
+use std::time::{Duration, SystemTime};
 
 use crate::configuration::Settings;
 use crate::messages::{IncomingChatMessage, MoveActionMessage, OutgoingMessage};
@@ -31,9 +32,14 @@ pub struct SpatialGrid {
 
 pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     let mut app = App::new();
-    app.add_plugins(MinimalPlugins);
+    app.add_plugins(
+        MinimalPlugins.set(ScheduleRunnerPlugin::run_loop(Duration::from_secs_f64(
+            1.0 / 20.0,
+        ))),
+    );
 
     // Asset plugins
+    app.insert_resource(CompressedImageFormatSupport(CompressedImageFormats::NONE));
     app.add_plugins((
         AssetPlugin::default(),
         GltfPlugin::default(),
@@ -42,8 +48,6 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
         ScenePlugin,
         TransformPlugin,
     ));
-    app.init_asset::<Shader>();
-    app.add_plugins(PbrPlugin::default());
 
     app.add_plugins(LogPlugin::default());
     app.add_plugins(RenetServerPlugin);
@@ -101,7 +105,6 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     app.add_message::<OutgoingMessage>();
     app.add_message::<MoveActionMessage>();
 
-    // TODO: Implement server tick of 20Hz?
     app.add_systems(
         Startup,
         (setup_database_pool, setup_world, setup_metrics_exporter),
@@ -154,9 +157,14 @@ fn setup_metrics_exporter(
 
 fn setup_world(mut commands: Commands, assets: Res<AssetServer>) {
     commands.spawn((
-        SceneRoot(assets.load("world.gltf#Scene0")),
+        SceneRoot(
+            assets.load_with_settings("world.gltf#Scene0", |s: &mut GltfLoaderSettings| {
+                s.load_cameras = false;
+                s.load_animations = false;
+                s.load_animations = false;
+            }),
+        ),
         ColliderConstructorHierarchy::new(ColliderConstructor::ConvexHullFromMesh),
         RigidBody::Static,
-        Transform::from_xyz(0., 0., 0.),
     ));
 }
