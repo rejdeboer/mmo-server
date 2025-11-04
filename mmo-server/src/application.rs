@@ -5,8 +5,10 @@ use bevy::gltf::{GltfLoaderSettings, GltfPlugin};
 use bevy::image::{CompressedImageFormatSupport, CompressedImageFormats};
 use bevy::log::LogPlugin;
 use bevy::mesh::MeshPlugin;
+use bevy::pbr::PbrPlugin;
 use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
+use bevy::render::RenderDebugFlags;
 use bevy::scene::ScenePlugin;
 use bevy_renet::RenetServerPlugin;
 use bevy_renet::netcode::{
@@ -44,11 +46,16 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     app.add_plugins((
         AssetPlugin::default(),
         GltfPlugin::default(),
-        ImagePlugin::default(),
         MeshPlugin,
+        // PbrPlugin {
+        //     prepass_enabled: false,
+        //     use_gpu_instance_buffer_builder: false,
+        //     add_default_deferred_lighting_plugin: false,
+        //     debug_flags: RenderDebugFlags::default(),
+        // },
         ScenePlugin,
-        TransformPlugin,
     ));
+    app.register_type::<StandardMaterial>();
 
     app.add_plugins(LogPlugin::default());
     app.add_plugins(RenetServerPlugin);
@@ -142,6 +149,21 @@ fn setup_database_pool(
     commands.insert_resource(DatabasePool(pool));
 }
 
+fn setup_world(mut commands: Commands, assets: Res<AssetServer>) {
+    commands.spawn((
+        SceneRoot(
+            assets.load_with_settings("world.gltf#Scene0", |s: &mut GltfLoaderSettings| {
+                s.load_materials = RenderAssetUsages::empty();
+                s.load_cameras = false;
+                s.load_animations = false;
+                s.load_animations = false;
+            }),
+        ),
+        ColliderConstructorHierarchy::new(ColliderConstructor::ConvexHullFromMesh),
+        RigidBody::Static,
+    ));
+}
+
 fn setup_metrics_exporter(
     runtime: Res<TokioTasksRuntime>,
     metrics: Res<Metrics>,
@@ -154,20 +176,4 @@ fn setup_metrics_exporter(
     runtime.spawn_background_task(async move |_ctx| {
         run_metrics_exporter(metrics_clone, path).await;
     });
-}
-
-fn setup_world(mut commands: Commands, assets: Res<AssetServer>) {
-    commands.spawn((
-        SceneRoot(
-            assets.load_with_settings("world.gltf#Scene0", |s: &mut GltfLoaderSettings| {
-                s.load_materials = RenderAssetUsages::empty();
-                s.load_meshes = RenderAssetUsages::empty();
-                s.load_cameras = false;
-                s.load_animations = false;
-                s.load_animations = false;
-            }),
-        ),
-        ColliderConstructorHierarchy::new(ColliderConstructor::ConvexHullFromMesh),
-        RigidBody::Static,
-    ));
 }

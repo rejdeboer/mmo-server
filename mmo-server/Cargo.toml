@@ -32,7 +32,14 @@ features = ["3d", "collider-from-mesh", "parry-f32", "f32"]
 [dependencies.bevy]
 version = "0.17"
 default-features = false
-features = ["bevy_asset", "bevy_gltf", "bevy_log", "bevy_state", "debug"]
+features = [
+	"bevy_asset",
+	"bevy_gltf",
+	"bevy_log",
+	"bevy_state",
+	"debug",
+	"reflect_auto_register",
+]
 
 [dependencies.sqlx]
 version = "0.8.5"
