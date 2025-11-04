@@ -5,10 +5,8 @@ use bevy::gltf::{GltfLoaderSettings, GltfPlugin};
 use bevy::image::{CompressedImageFormatSupport, CompressedImageFormats};
 use bevy::log::LogPlugin;
 use bevy::mesh::MeshPlugin;
-use bevy::pbr::PbrPlugin;
 use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
-use bevy::render::RenderDebugFlags;
 use bevy::scene::ScenePlugin;
 use bevy_renet::RenetServerPlugin;
 use bevy_renet::netcode::{
@@ -47,15 +45,10 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
         AssetPlugin::default(),
         GltfPlugin::default(),
         MeshPlugin,
-        // PbrPlugin {
-        //     prepass_enabled: false,
-        //     use_gpu_instance_buffer_builder: false,
-        //     add_default_deferred_lighting_plugin: false,
-        //     debug_flags: RenderDebugFlags::default(),
-        // },
         ScenePlugin,
     ));
-    app.register_type::<StandardMaterial>();
+    app.init_asset::<StandardMaterial>();
+    app.register_type::<MeshMaterial3d<StandardMaterial>>();
 
     app.add_plugins(LogPlugin::default());
     app.add_plugins(RenetServerPlugin);
