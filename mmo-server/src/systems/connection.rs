@@ -6,6 +6,7 @@ use crate::{
     },
     telemetry::Metrics,
 };
+use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_renet::{
     netcode::NetcodeServerTransport,
@@ -196,6 +197,7 @@ fn process_client_connected(
                             vitals.clone(),
                             LevelComponent(character.level),
                             MovementSpeedComponent(BASE_MOVEMENT_SPEED),
+                            Collider::capsule(1.0, 0.5),
                         ))
                         .id();
 
