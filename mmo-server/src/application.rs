@@ -148,7 +148,7 @@ fn setup_world(mut commands: Commands, assets: Res<AssetServer>) {
             assets.load_with_settings("world.gltf#Scene0", |s: &mut GltfLoaderSettings| {
                 s.load_materials = RenderAssetUsages::empty();
                 s.load_cameras = false;
-                s.load_animations = false;
+                s.load_lights = false;
                 s.load_animations = false;
             }),
         ),
