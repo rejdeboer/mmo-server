@@ -1,0 +1,4 @@
+database:
+  require_ssl: true
+realm_resolver:
+  type: kube
