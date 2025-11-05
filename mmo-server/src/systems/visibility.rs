@@ -9,6 +9,15 @@ use crate::{
 };
 use bevy::{platform::collections::HashSet, prelude::*};
 
+type SpawnableComponents<'a> = (
+    &'a NameComponent,
+    &'a Transform,
+    &'a Vitals,
+    &'a LevelComponent,
+    &'a MovementSpeedComponent,
+    Option<&'a CharacterIdComponent>,
+);
+
 const VIEW_RADIUS: f32 = 256.0;
 
 pub fn update_player_visibility(
@@ -21,14 +30,7 @@ pub fn update_player_visibility(
     )>,
     mut q_interest: Query<&mut InterestedClients>,
     q_transform: Query<&Transform>,
-    q_spawnables: Query<(
-        &NameComponent,
-        &Transform,
-        &Vitals,
-        &LevelComponent,
-        &MovementSpeedComponent,
-        Option<&CharacterIdComponent>,
-    )>,
+    q_spawnables: Query<SpawnableComponents>,
     grid: Res<SpatialGrid>,
     mut writer: MessageWriter<OutgoingMessage>,
 ) {
