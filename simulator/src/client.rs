@@ -1,5 +1,5 @@
-use mmo_client::{ConnectionEvent, Entity, GameClient};
-use rand::SeedableRng;
+use mmo_client::{ConnectionEvent, Entity, GameClient, MoveAction};
+use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use std::time::Duration;
 use tokio::time::Instant;
@@ -66,8 +66,16 @@ impl SimulatedClient {
                         }
                     }
                 }
-                SimulatedClientState::Connected(entity) => {
+                SimulatedClientState::Connected(_entity) => {
                     let _game_events = self.client.update_game(dt);
+
+                    let move_action = MoveAction {
+                        forward: self.rng.random::<f32>(),
+                        sideways: self.rng.random::<f32>(),
+                        yaw: 0.,
+                    };
+
+                    self.client.send_actions(Some(move_action), vec![]);
                 }
             }
         }
