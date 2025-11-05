@@ -111,17 +111,31 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
         (setup_database_pool, setup_world, setup_metrics_exporter),
     );
     app.add_systems(
+        PreUpdate,
+        (
+            crate::systems::process_client_actions,
+            (
+                crate::systems::process_incoming_chat,
+                crate::systems::process_move_action_messages,
+            ),
+        )
+            .chain(),
+    );
+    app.add_systems(
         Update,
         (
             crate::systems::handle_connection_events,
             crate::systems::update_spatial_grid,
-            crate::systems::update_player_visibility,
             crate::systems::send_transform_updates,
-            crate::systems::process_incoming_chat,
-            crate::systems::process_client_actions,
-            crate::systems::process_move_action_messages,
-            crate::systems::sync_players,
         ),
+    );
+    app.add_systems(
+        PostUpdate,
+        (
+            crate::systems::update_player_visibility,
+            crate::systems::sync_players,
+        )
+            .after(PhysicsSystems::Last),
     );
 
     Ok((app, port))
