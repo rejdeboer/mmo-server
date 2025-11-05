@@ -126,14 +126,17 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
         (
             crate::systems::handle_connection_events,
             crate::systems::update_spatial_grid,
-            crate::systems::send_transform_updates,
         ),
     );
     app.add_systems(
         PostUpdate,
         (
             crate::systems::update_player_visibility,
-            crate::systems::sync_players,
+            (
+                crate::systems::send_transform_updates,
+                crate::systems::sync_players,
+            )
+                .chain(),
         )
             .after(PhysicsSystems::Last),
     );
