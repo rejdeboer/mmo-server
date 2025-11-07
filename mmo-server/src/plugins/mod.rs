@@ -14,6 +14,6 @@ mod debug;
 pub use debug::AppPlugin;
 
 #[cfg(not(feature = "debug"))]
-mod app;
+mod headless;
 #[cfg(not(feature = "debug"))]
-pub use app::AppPlugin;
+pub use headless::AppPlugin;
