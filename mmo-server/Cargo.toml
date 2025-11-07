@@ -9,6 +9,7 @@ path = "src/lib.rs"
 [features]
 default = []
 agones = ["dep:agones"]
+debug = ["bevy/bevy_winit", "bevy/bevy_pbr", "avian3d/debug-plugin"]
 
 [dependencies]
 agones = { version = "1.50", optional = true }

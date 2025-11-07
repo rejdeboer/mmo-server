@@ -33,24 +33,35 @@ pub struct SpatialGrid {
 
 pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     let mut app = App::new();
-    app.add_plugins(
-        MinimalPlugins.set(ScheduleRunnerPlugin::run_loop(Duration::from_secs_f64(
+
+    #[cfg(feature = "debug")]
+    {
+        app.add_plugins(DefaultPlugins);
+        app.add_plugins(ScheduleRunnerPlugin::run_loop(Duration::from_secs_f64(
             1.0 / 20.0,
-        ))),
-    );
+        )));
+    }
 
-    // Asset plugins
-    app.insert_resource(CompressedImageFormatSupport(CompressedImageFormats::NONE));
-    app.add_plugins((
-        AssetPlugin::default(),
-        GltfPlugin::default(),
-        MeshPlugin,
-        ScenePlugin,
-    ));
-    app.init_asset::<StandardMaterial>();
-    app.register_type::<MeshMaterial3d<StandardMaterial>>();
+    #[cfg(not(feature = "debug"))]
+    {
+        app.add_plugins(MinimalPlugins.set(ScheduleRunnerPlugin::run_loop(
+            Duration::from_secs_f64(1.0 / 20.0),
+        )));
 
-    app.add_plugins(LogPlugin::default());
+        // Asset plugins
+        app.insert_resource(CompressedImageFormatSupport(CompressedImageFormats::NONE));
+        app.add_plugins((
+            AssetPlugin::default(),
+            GltfPlugin::default(),
+            MeshPlugin,
+            ScenePlugin,
+        ));
+        app.init_asset::<StandardMaterial>();
+        app.register_type::<MeshMaterial3d<StandardMaterial>>();
+
+        app.add_plugins(LogPlugin::default());
+    }
+
     app.add_plugins(RenetServerPlugin);
     app.add_plugins(NetcodeServerPlugin);
     app.add_plugins(TokioTasksPlugin::default());
@@ -170,6 +181,7 @@ fn setup_world(mut commands: Commands, assets: Res<AssetServer>) {
             }),
         ),
         ColliderConstructorHierarchy::new(ColliderConstructor::ConvexHullFromMesh),
+        Transform::from_xyz(0., 0., 0.),
         RigidBody::Static,
     ));
 }
