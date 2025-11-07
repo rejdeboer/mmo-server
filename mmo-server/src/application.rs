@@ -23,6 +23,8 @@ use crate::messages::{IncomingChatMessage, MoveActionMessage, OutgoingMessage};
 use crate::plugins::AgonesPlugin;
 use crate::telemetry::{Metrics, run_metrics_exporter};
 
+const TICK_RATE: Duration = Duration::from_secs_f64(1. / 20.);
+
 #[derive(Resource, Clone)]
 pub struct DatabasePool(pub PgPool);
 
@@ -38,15 +40,13 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     {
         app.add_plugins(DefaultPlugins);
         app.add_plugins(ScheduleRunnerPlugin::run_loop(Duration::from_secs_f64(
-            1.0 / 20.0,
+            TICK_RATE,
         )));
     }
 
     #[cfg(not(feature = "debug"))]
     {
-        app.add_plugins(MinimalPlugins.set(ScheduleRunnerPlugin::run_loop(
-            Duration::from_secs_f64(1.0 / 20.0),
-        )));
+        app.add_plugins(MinimalPlugins.set(ScheduleRunnerPlugin::run_loop(TICK_RATE)));
 
         // Asset plugins
         app.insert_resource(CompressedImageFormatSupport(CompressedImageFormats::NONE));
