@@ -197,6 +197,7 @@ fn process_client_connected(
                             vitals.clone(),
                             LevelComponent(character.level),
                             MovementSpeedComponent(BASE_MOVEMENT_SPEED),
+                            RigidBody::Dynamic,
                             Collider::capsule(1.0, 0.5),
                         ))
                         .id();
