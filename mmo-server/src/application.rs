@@ -1,13 +1,8 @@
 use avian3d::prelude::*;
-use bevy::app::ScheduleRunnerPlugin;
 use bevy::asset::RenderAssetUsages;
-use bevy::gltf::{GltfLoaderSettings, GltfPlugin};
-use bevy::image::{CompressedImageFormatSupport, CompressedImageFormats};
-use bevy::log::LogPlugin;
-use bevy::mesh::MeshPlugin;
+use bevy::gltf::GltfLoaderSettings;
 use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
-use bevy::scene::ScenePlugin;
 use bevy_renet::RenetServerPlugin;
 use bevy_renet::netcode::{
     NetcodeServerPlugin, NetcodeServerTransport, ServerAuthentication, ServerConfig,
@@ -16,14 +11,14 @@ use bevy_renet::renet::{ConnectionConfig, RenetServer};
 use bevy_tokio_tasks::{TokioTasksPlugin, TokioTasksRuntime};
 use sqlx::{PgPool, postgres::PgPoolOptions};
 use std::net::{IpAddr, SocketAddr, UdpSocket};
-use std::time::{Duration, SystemTime};
+use std::time::SystemTime;
 
 use crate::configuration::Settings;
 use crate::messages::{IncomingChatMessage, MoveActionMessage, OutgoingMessage};
-use crate::plugins::AgonesPlugin;
+use crate::plugins::{AgonesPlugin, AppPlugin};
 use crate::telemetry::{Metrics, run_metrics_exporter};
 
-const TICK_RATE: Duration = Duration::from_secs_f64(1. / 20.);
+pub const TICK_SECS: f64 = 1. / 20.;
 
 #[derive(Resource, Clone)]
 pub struct DatabasePool(pub PgPool);
@@ -36,32 +31,7 @@ pub struct SpatialGrid {
 pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     let mut app = App::new();
 
-    #[cfg(feature = "debug")]
-    {
-        app.add_plugins(DefaultPlugins);
-        app.add_plugins(ScheduleRunnerPlugin::run_loop(Duration::from_secs_f64(
-            TICK_RATE,
-        )));
-    }
-
-    #[cfg(not(feature = "debug"))]
-    {
-        app.add_plugins(MinimalPlugins.set(ScheduleRunnerPlugin::run_loop(TICK_RATE)));
-
-        // Asset plugins
-        app.insert_resource(CompressedImageFormatSupport(CompressedImageFormats::NONE));
-        app.add_plugins((
-            AssetPlugin::default(),
-            GltfPlugin::default(),
-            MeshPlugin,
-            ScenePlugin,
-        ));
-        app.init_asset::<StandardMaterial>();
-        app.register_type::<MeshMaterial3d<StandardMaterial>>();
-
-        app.add_plugins(LogPlugin::default());
-    }
-
+    app.add_plugins(AppPlugin);
     app.add_plugins(RenetServerPlugin);
     app.add_plugins(NetcodeServerPlugin);
     app.add_plugins(TokioTasksPlugin::default());

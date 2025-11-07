@@ -7,3 +7,13 @@ pub use agones::AgonesPlugin;
 mod agones_mock;
 #[cfg(not(feature = "agones"))]
 pub use agones_mock::AgonesPlugin;
+
+#[cfg(feature = "debug")]
+mod debug;
+#[cfg(feature = "debug")]
+pub use debug::AppPlugin;
+
+#[cfg(not(feature = "debug"))]
+mod app;
+#[cfg(not(feature = "debug"))]
+pub use app::AppPlugin;
