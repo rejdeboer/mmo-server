@@ -144,7 +144,7 @@ fn setup_world(mut commands: Commands, assets: Res<AssetServer>) {
                 s.load_animations = false;
             }),
         ),
-        ColliderConstructorHierarchy::new(ColliderConstructor::ConvexHullFromMesh),
+        ColliderConstructorHierarchy::new(ColliderConstructor::ConvexDecompositionFromMesh),
         Transform::from_xyz(0., 0., 0.),
         RigidBody::Static,
     ));

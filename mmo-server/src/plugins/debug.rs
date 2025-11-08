@@ -1,10 +1,11 @@
+use avian3d::prelude::PhysicsDebugPlugin;
 use bevy::prelude::*;
 
 pub struct AppPlugin;
 
 impl Plugin for AppPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(DefaultPlugins);
+        app.add_plugins((DefaultPlugins, PhysicsDebugPlugin));
         info!("running in debug mode");
 
         app.add_systems(Startup, setup_camera);
