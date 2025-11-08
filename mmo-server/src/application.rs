@@ -18,8 +18,6 @@ use crate::messages::{IncomingChatMessage, MoveActionMessage, OutgoingMessage};
 use crate::plugins::{AgonesPlugin, AppPlugin};
 use crate::telemetry::{Metrics, run_metrics_exporter};
 
-pub const TICK_SECS: f64 = 1. / 20.;
-
 #[derive(Resource, Clone)]
 pub struct DatabasePool(pub PgPool);
 
@@ -77,6 +75,7 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
         socket,
     )?;
 
+    app.insert_resource(Time::<Fixed>::from_hz(20.));
     app.insert_resource(netcode_server);
     app.insert_resource(netcode_transport);
     app.insert_resource(settings);
@@ -92,7 +91,7 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
         (setup_database_pool, setup_world, setup_metrics_exporter),
     );
     app.add_systems(
-        PreUpdate,
+        FixedPreUpdate,
         (
             crate::systems::process_client_actions,
             (
@@ -102,15 +101,10 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
         )
             .chain(),
     );
+    app.add_systems(Update, crate::systems::handle_connection_events);
+    app.add_systems(FixedUpdate, crate::systems::update_spatial_grid);
     app.add_systems(
-        Update,
-        (
-            crate::systems::handle_connection_events,
-            crate::systems::update_spatial_grid,
-        ),
-    );
-    app.add_systems(
-        PostUpdate,
+        FixedPostUpdate,
         (
             crate::systems::update_player_visibility,
             (
