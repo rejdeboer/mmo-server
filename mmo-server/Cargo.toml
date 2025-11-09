@@ -19,7 +19,6 @@ debug = [
 	"avian3d/debug-plugin",
 ]
 profiling = [
-	"bevy/bevy_dev_tools",
 	"bevy/trace_tracy",
 ]
 
