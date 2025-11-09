@@ -142,9 +142,10 @@ fn setup_world(mut commands: Commands, assets: Res<AssetServer>) {
                 s.load_animations = false;
             }),
         ),
-        Transform::from_xyz(0., 0., 0.),
+        // TODO: We are trying to match Godot here to make it work, but this is hacky
+        Transform::from_xyz(0., -2., 0.),
         RigidBody::Static,
-        ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
+        ColliderConstructorHierarchy::new(ColliderConstructor::ConvexHullFromMesh),
     ));
 }
 
