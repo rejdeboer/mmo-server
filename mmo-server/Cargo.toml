@@ -32,8 +32,7 @@ serde-aux = "4.7.0"
 tokio = { workspace = true }
 
 [dependencies.avian3d]
-# version = "0.4.1"
-path = "../../avian/crates/avian3d"
+version = "0.4.1"
 default-features = false
 features = ["3d", "bevy_scene", "collider-from-mesh", "parry-f32", "f32"]
 
