@@ -1,5 +1,6 @@
 use crate::{
     application::DatabasePool,
+    collision::GameLayer,
     components::{
         CharacterIdComponent, ClientIdComponent, InterestedClients, LevelComponent,
         MovementSpeedComponent, NameComponent, VisibleEntities, Vitals,
@@ -199,6 +200,7 @@ fn process_client_connected(
                             MovementSpeedComponent(BASE_MOVEMENT_SPEED),
                             RigidBody::Dynamic,
                             Collider::capsule(1.0, 0.5),
+                            CollisionLayers::new(GameLayer::Player, [GameLayer::Ground]),
                         ))
                         .id();
 
