@@ -1,12 +1,17 @@
 use avian3d::prelude::PhysicsDebugPlugin;
-use bevy::prelude::*;
+use bevy::{dev_tools::DevToolsPlugin, prelude::*};
 use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 
 pub struct AppPlugin;
 
 impl Plugin for AppPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((DefaultPlugins, PhysicsDebugPlugin, PanOrbitCameraPlugin));
+        app.add_plugins((
+            DefaultPlugins,
+            DevToolsPlugin,
+            PhysicsDebugPlugin,
+            PanOrbitCameraPlugin,
+        ));
         info!("running in debug mode");
 
         app.add_systems(Startup, setup_camera);
