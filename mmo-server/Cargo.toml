@@ -9,7 +9,13 @@ path = "src/lib.rs"
 [features]
 default = []
 agones = ["dep:agones"]
-debug = ["bevy/bevy_winit", "bevy/bevy_pbr", "bevy/debug", "bevy/wayland", "avian3d/debug-plugin"]
+debug = [
+	"bevy/bevy_winit",
+	"bevy/bevy_pbr",
+	"bevy/debug",
+	"bevy/wayland",
+	"avian3d/debug-plugin",
+]
 
 [dependencies]
 agones = { version = "1.50", optional = true }
@@ -26,9 +32,10 @@ serde-aux = "4.7.0"
 tokio = { workspace = true }
 
 [dependencies.avian3d]
-version = "0.4.1"
+# version = "0.4.1"
+path = "../../avian/crates/avian3d"
 default-features = false
-features = ["3d", "collider-from-mesh", "parry-f32", "f32"]
+features = ["3d", "bevy_scene", "collider-from-mesh", "parry-f32", "f32"]
 
 [dependencies.bevy]
 version = "0.17"
@@ -37,6 +44,7 @@ features = [
 	"bevy_asset",
 	"bevy_gltf",
 	"bevy_log",
+	"bevy_scene",
 	"bevy_state",
 	"reflect_auto_register",
 ]

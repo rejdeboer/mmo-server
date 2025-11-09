@@ -134,21 +134,19 @@ fn setup_database_pool(
 }
 
 fn setup_world(mut commands: Commands, assets: Res<AssetServer>) {
-    commands
-        .spawn((
-            SceneRoot(assets.load_with_settings(
-                "world.gltf#Scene0",
-                |s: &mut GltfLoaderSettings| {
-                    s.load_materials = RenderAssetUsages::empty();
-                    s.load_cameras = false;
-                    s.load_lights = false;
-                    s.load_animations = false;
-                },
-            )),
-            Transform::from_xyz(0., 0., 0.),
-            RigidBody::Static,
-        ))
-        .observe(add_colliders_to_loaded_scene);
+    commands.spawn((
+        SceneRoot(
+            assets.load_with_settings("world.gltf#Scene0", |s: &mut GltfLoaderSettings| {
+                s.load_materials = RenderAssetUsages::empty();
+                s.load_cameras = false;
+                s.load_lights = false;
+                s.load_animations = false;
+            }),
+        ),
+        Transform::from_xyz(0., 0., 0.),
+        ColliderConstructorHierarchy::new(ColliderConstructor::ConvexHullFromMesh),
+        RigidBody::Static,
+    ))
 }
 
 fn setup_metrics_exporter(
@@ -163,12 +161,4 @@ fn setup_metrics_exporter(
     runtime.spawn_background_task(async move |_ctx| {
         run_metrics_exporter(metrics_clone, path).await;
     });
-}
-
-fn add_colliders_to_loaded_scene(scene_ready: On<SceneInstanceReady>, mut commands: Commands) {
-    commands
-        .entity(scene_ready.entity)
-        .insert(ColliderConstructorHierarchy::new(
-            ColliderConstructor::TrimeshFromMesh,
-        ));
 }
