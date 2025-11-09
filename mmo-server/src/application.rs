@@ -3,7 +3,6 @@ use bevy::asset::RenderAssetUsages;
 use bevy::gltf::GltfLoaderSettings;
 use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
-use bevy::scene::SceneInstanceReady;
 use bevy_renet::RenetServerPlugin;
 use bevy_renet::netcode::{
     NetcodeServerPlugin, NetcodeServerTransport, ServerAuthentication, ServerConfig,
@@ -144,9 +143,9 @@ fn setup_world(mut commands: Commands, assets: Res<AssetServer>) {
             }),
         ),
         Transform::from_xyz(0., 0., 0.),
-        ColliderConstructorHierarchy::new(ColliderConstructor::ConvexHullFromMesh),
         RigidBody::Static,
-    ))
+        ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
+    ));
 }
 
 fn setup_metrics_exporter(
