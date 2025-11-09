@@ -199,7 +199,7 @@ fn process_client_connected(
                             LevelComponent(character.level),
                             MovementSpeedComponent(BASE_MOVEMENT_SPEED),
                             RigidBody::Dynamic,
-                            Collider::capsule(1.0, 0.5),
+                            Collider::capsule(0.5, 1.0),
                             CollisionLayers::new(
                                 GameLayer::Player,
                                 [GameLayer::Default, GameLayer::Ground],
