@@ -15,9 +15,12 @@ debug = [
 	"bevy/bevy_winit",
 	"bevy/bevy_pbr",
 	"bevy/debug",
-	"bevy/trace",
 	"bevy/wayland",
 	"avian3d/debug-plugin",
+]
+profiling = [
+	"bevy/bevy_dev_tools",
+	"bevy/trace_tracy",
 ]
 
 [dependencies]
