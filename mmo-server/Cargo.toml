@@ -11,9 +11,11 @@ default = []
 agones = ["dep:agones"]
 debug = [
 	"dep:bevy_panorbit_camera",
+	"bevy/bevy_dev_tools",
 	"bevy/bevy_winit",
 	"bevy/bevy_pbr",
 	"bevy/debug",
+	"bevy/trace",
 	"bevy/wayland",
 	"avian3d/debug-plugin",
 ]
