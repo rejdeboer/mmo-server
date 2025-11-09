@@ -2,6 +2,7 @@ use crate::{
     components::{ClientIdComponent, InterestedClients, MovementSpeedComponent},
     messages::{MoveActionMessage, OutgoingMessage, OutgoingMessageData},
 };
+use avian3d::prelude::LinearVelocity;
 use bevy::prelude::*;
 use std::f32::consts::TAU;
 
@@ -12,14 +13,12 @@ const MOVEMENT_QUANTIZATION_FACTOR: f32 = 127.0;
 // TODO: Parallelism?
 pub fn process_move_action_messages(
     mut reader: MessageReader<MoveActionMessage>,
-    mut q_transform: Query<(&mut Transform, &MovementSpeedComponent)>,
-    time: Res<Time>,
+    mut q_transform: Query<(&mut Transform, &mut LinearVelocity, &MovementSpeedComponent)>,
 ) {
-    let dt = time.delta_secs();
-
     reader.read().for_each(|msg| {
-        let Ok((mut transform, movement_speed)) = q_transform.get_mut(msg.entity) else {
-            error!(entity = ?msg.entity, "could not find transform");
+        let Ok((mut transform, mut velocity, movement_speed)) = q_transform.get_mut(msg.entity)
+        else {
+            error!(entity = ?msg.entity, "could not find entity");
             return;
         };
 
@@ -29,13 +28,13 @@ pub fn process_move_action_messages(
         let forward = transform.forward();
         let right = transform.right();
 
-        // TODO: dt is caclulated incorrectly for movement, need to design another system
-        let forward_movement =
-            forward * (msg.forward as f32 / MOVEMENT_QUANTIZATION_FACTOR) * movement_speed.0 * dt;
-        let sideways_movement =
-            right * (msg.sideways as f32 / MOVEMENT_QUANTIZATION_FACTOR) * movement_speed.0 * dt;
+        let forward_input = msg.forward as f32 / MOVEMENT_QUANTIZATION_FACTOR;
+        let sideways_input = msg.sideways as f32 / MOVEMENT_QUANTIZATION_FACTOR;
 
-        transform.translation += forward_movement + sideways_movement;
+        let direction = (forward * forward_input) + (right * sideways_input);
+        let target_velocity = direction.normalize_or_zero() * movement_speed.0;
+        velocity.x = target_velocity.x;
+        velocity.z = target_velocity.z;
     })
 }
 
