@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy_tokio_tasks::TaskContext;
+use prometheus::process_collector::ProcessCollector;
 use prometheus::{Encoder, Gauge, IntGauge, Registry, TextEncoder};
 use std::fs::File;
 use std::io::Write;
@@ -35,6 +36,9 @@ impl Default for Metrics {
         )
         .unwrap();
         registry.register(Box::new(tick_rate.clone())).unwrap();
+
+        let process_collector = ProcessCollector::for_self();
+        registry.register(Box::new(process_collector)).unwrap();
 
         Self {
             registry: Arc::new(Mutex::new(registry)),
