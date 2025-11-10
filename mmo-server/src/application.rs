@@ -158,7 +158,7 @@ fn setup_metrics_exporter(
     let metrics_clone = metrics.clone();
     let path = settings.server.metrics_path.clone();
 
-    runtime.spawn_background_task(async move |_ctx| {
-        run_metrics_exporter(metrics_clone, path).await;
+    runtime.spawn_background_task(async move |ctx| {
+        run_metrics_exporter(ctx, metrics_clone, path).await;
     });
 }
