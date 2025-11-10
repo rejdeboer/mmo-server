@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use prometheus::{Encoder, IntGauge, Registry, TextEncoder};
+use prometheus::{Encoder, Gauge, IntGauge, Registry, TextEncoder};
 use std::fs::File;
 use std::io::Write;
 use std::sync::Arc;
@@ -10,6 +10,7 @@ use tokio::time::{Duration, interval};
 pub struct Metrics {
     pub registry: Arc<Mutex<Registry>>,
     pub connected_players: Arc<IntGauge>,
+    pub tick_rate: Arc<Gauge>,
 }
 
 impl Default for Metrics {
@@ -18,9 +19,16 @@ impl Default for Metrics {
 
         let connected_players = IntGauge::new(
             "connected_players_count",
-            "Current number of connected players.",
+            "Current number of connected players",
         )
         .unwrap();
+
+        let tick_rate = Gauge::new(
+            "server_tick_rate_hz",
+            "The server's current tick rate in Hz",
+        )
+        .unwrap();
+
         registry
             .register(Box::new(connected_players.clone()))
             .unwrap();
@@ -28,6 +36,7 @@ impl Default for Metrics {
         Self {
             registry: Arc::new(Mutex::new(registry)),
             connected_players: Arc::new(connected_players),
+            tick_rate: Arc::new(tick_rate),
         }
     }
 }
