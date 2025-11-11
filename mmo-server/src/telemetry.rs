@@ -13,10 +13,10 @@ const EXPORT_INTERVAL_SECS: f32 = 5.;
 #[derive(Resource, Clone)]
 pub struct Metrics {
     pub registry: Arc<Mutex<Registry>>,
-    pub connected_players: Arc<IntGauge>,
-    pub tick_rate: Arc<Gauge>,
-    pub network_packets_total: Arc<IntCounterVec>,
-    pub network_bytes_total: Arc<IntCounterVec>,
+    pub connected_players: IntGauge,
+    pub tick_rate: Gauge,
+    pub network_packets_total: IntCounterVec,
+    pub network_bytes_total: IntCounterVec,
 }
 
 impl Default for Metrics {
@@ -68,10 +68,10 @@ impl Default for Metrics {
 
         Self {
             registry: Arc::new(Mutex::new(registry)),
-            connected_players: Arc::new(connected_players),
-            tick_rate: Arc::new(tick_rate),
-            network_packets_total: Arc::new(network_packets_total),
-            network_bytes_total: Arc::new(network_bytes_total),
+            connected_players,
+            tick_rate,
+            network_packets_total,
+            network_bytes_total,
         }
     }
 }
