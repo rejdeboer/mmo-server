@@ -47,6 +47,9 @@ impl Default for Metrics {
             &["direction", "channel"],
         )
         .unwrap();
+        registry
+            .register(Box::new(network_packets_total.clone()))
+            .unwrap();
 
         let network_bytes_total = IntCounterVec::new(
             Opts::new(
@@ -56,6 +59,9 @@ impl Default for Metrics {
             &["direction", "channel"],
         )
         .unwrap();
+        registry
+            .register(Box::new(network_bytes_total.clone()))
+            .unwrap();
 
         let process_collector = ProcessCollector::for_self();
         registry.register(Box::new(process_collector)).unwrap();
