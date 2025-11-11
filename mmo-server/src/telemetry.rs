@@ -101,13 +101,14 @@ pub async fn run_metrics_exporter(ctx: TaskContext, metrics: Metrics, path: Stri
             continue;
         }
 
-        match File::create(&path) {
+        let task_path = path.clone();
+        tokio::task::spawn_blocking(move || match File::create(&task_path) {
             Ok(mut file) => {
                 if let Err(err) = file.write_all(&buffer) {
                     error!(?err, "failed to write metrics to file");
                 }
             }
             Err(err) => error!(?err, "failed to create metrics file"),
-        }
+        });
     }
 }
