@@ -38,6 +38,53 @@ pub struct CharacterRow {
     pub guild_id: Option<i32>,
 }
 
+#[derive(Bundle)]
+pub struct CharacterBundle {
+    id: CharacterIdComponent,
+    client_id: ClientIdComponent,
+    name: NameComponent,
+    transform: Transform,
+    vitals: Vitals,
+    movement_speed: MovementSpeedComponent,
+    level: LevelComponent,
+    visible_entities: VisibleEntities,
+    interested_clients: InterestedClients,
+    body: RigidBody,
+    collider: Collider,
+    collision_layers: CollisionLayers,
+    locked_axes: LockedAxes,
+}
+
+impl CharacterBundle {
+    pub fn new(
+        id: i32,
+        client_id: u64,
+        name: &str,
+        transform: Transform,
+        vitals: Vitals,
+        level: i32,
+    ) -> Self {
+        Self {
+            id: CharacterIdComponent(id),
+            client_id: ClientIdComponent(client_id),
+            name: NameComponent(Arc::from(name)),
+            transform,
+            vitals: vitals.clone(),
+            movement_speed: MovementSpeedComponent(BASE_MOVEMENT_SPEED),
+            level: LevelComponent(level),
+            visible_entities: VisibleEntities::default(),
+            interested_clients: InterestedClients::default(),
+            body: RigidBody::Dynamic,
+            locked_axes: LockedAxes::ROTATION_LOCKED,
+            collider: Collider::capsule(1., 2.),
+            collision_layers: CollisionLayers::new(
+                GameLayer::Player,
+                [GameLayer::Default, GameLayer::Ground],
+            ),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub enum EntityAttributes {
     Player {
@@ -188,23 +235,13 @@ fn process_client_connected(
 
                     let entity = ctx
                         .world
-                        .spawn((
-                            NameComponent(Arc::from(character.name.clone())),
-                            ClientIdComponent(client_id),
-                            CharacterIdComponent(character.id),
-                            VisibleEntities::default(),
-                            InterestedClients::default(),
+                        .spawn(CharacterBundle::new(
+                            character.id,
+                            client_id,
+                            &character.name,
                             transform,
                             vitals.clone(),
-                            LevelComponent(character.level),
-                            MovementSpeedComponent(BASE_MOVEMENT_SPEED),
-                            RigidBody::Dynamic,
-                            LockedAxes::ROTATION_LOCKED,
-                            Collider::capsule(1., 2.),
-                            CollisionLayers::new(
-                                GameLayer::Player,
-                                [GameLayer::Default, GameLayer::Ground],
-                            ),
+                            character.level,
                         ))
                         .id();
 
