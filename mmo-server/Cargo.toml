@@ -51,6 +51,7 @@ features = [
 	"bevy_log",
 	"bevy_scene",
 	"bevy_state",
+	"multi_threaded",
 	"reflect_auto_register",
 ]
 
