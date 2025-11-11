@@ -1,6 +1,7 @@
 use crate::{
     components::ClientIdComponent,
     messages::{IncomingChatMessage, MoveActionMessage},
+    telemetry::Metrics,
 };
 use bevy::prelude::*;
 use bevy_renet::renet::{DefaultChannel, RenetServer};
@@ -11,13 +12,30 @@ pub fn process_client_actions(
     mut server: ResMut<RenetServer>,
     clients: Query<(Entity, &ClientIdComponent)>,
     mut commands: Commands,
+    metrics: Res<Metrics>,
 ) {
     for (entity, client_id) in clients.iter() {
         if let Some(message) = server.receive_message(client_id.0, DefaultChannel::Unreliable) {
+            metrics
+                .network_packets_total
+                .with_label_values(&["incoming", "unreliable"])
+                .inc();
+            metrics
+                .network_bytes_total
+                .with_label_values(&["incoming", "unreliable"])
+                .inc_by(message.len() as u64);
             process_message(entity, message, &mut commands);
         } else if let Some(message) =
             server.receive_message(client_id.0, DefaultChannel::ReliableOrdered)
         {
+            metrics
+                .network_packets_total
+                .with_label_values(&["incoming", "reliable"])
+                .inc();
+            metrics
+                .network_bytes_total
+                .with_label_values(&["incoming", "reliable"])
+                .inc_by(message.len() as u64);
             process_message(entity, message, &mut commands);
         }
     }
