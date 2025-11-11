@@ -1,11 +1,18 @@
-use crate::messages::{OutgoingMessage, OutgoingMessageData};
+use crate::{
+    messages::{OutgoingMessage, OutgoingMessageData},
+    telemetry::Metrics,
+};
 use bevy::{platform::collections::HashMap, prelude::*};
 use bevy_renet::renet::{ClientId, DefaultChannel, RenetServer};
 use flatbuffers::{FlatBufferBuilder, WIPOffset};
 use schemas::game as schema;
 
 // TODO: Maybe use change detection for transform changes
-pub fn sync_players(mut server: ResMut<RenetServer>, mut ev_msg: MessageReader<OutgoingMessage>) {
+pub fn sync_players(
+    mut server: ResMut<RenetServer>,
+    mut ev_msg: MessageReader<OutgoingMessage>,
+    metrics: Res<Metrics>,
+) {
     let mut client_messages: HashMap<ClientId, Vec<&OutgoingMessageData>> = HashMap::new();
     for event in ev_msg.read() {
         client_messages
@@ -46,6 +53,21 @@ pub fn sync_players(mut server: ResMut<RenetServer>, mut ev_msg: MessageReader<O
 
         builder.finish_minimal(batch);
         let data = builder.finished_data().to_vec();
+
+        let channel_label = match channel {
+            DefaultChannel::Unreliable => "unreliable",
+            _ => "reliable",
+        };
+        let metric_labels = &["outgoing", channel_label];
+        metrics
+            .network_packets_total
+            .with_label_values(metric_labels)
+            .inc();
+        metrics
+            .network_bytes_total
+            .with_label_values(metric_labels)
+            .inc_by(data.len() as u64);
+
         server.send_message(client_id, channel, data);
         builder.reset();
     }
