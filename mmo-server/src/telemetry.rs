@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_tokio_tasks::TaskContext;
 use prometheus::process_collector::ProcessCollector;
-use prometheus::{Encoder, Gauge, IntGauge, Registry, TextEncoder};
+use prometheus::{Encoder, Gauge, IntCounterVec, IntGauge, Opts, Registry, TextEncoder};
 use std::fs::File;
 use std::io::Write;
 use std::sync::Arc;
@@ -15,6 +15,8 @@ pub struct Metrics {
     pub registry: Arc<Mutex<Registry>>,
     pub connected_players: Arc<IntGauge>,
     pub tick_rate: Arc<Gauge>,
+    pub network_packets_total: Arc<IntCounterVec>,
+    pub network_bytes_total: Arc<IntCounterVec>,
 }
 
 impl Default for Metrics {
@@ -37,6 +39,24 @@ impl Default for Metrics {
         .unwrap();
         registry.register(Box::new(tick_rate.clone())).unwrap();
 
+        let network_packets_total = IntCounterVec::new(
+            Opts::new(
+                "network_packets_total",
+                "The total number of packets sent / received",
+            ),
+            &["direction", "channel"],
+        )
+        .unwrap();
+
+        let network_bytes_total = IntCounterVec::new(
+            Opts::new(
+                "network_packets_total",
+                "The total number of bytes sent / received",
+            ),
+            &["direction", "channel"],
+        )
+        .unwrap();
+
         let process_collector = ProcessCollector::for_self();
         registry.register(Box::new(process_collector)).unwrap();
 
@@ -44,6 +64,8 @@ impl Default for Metrics {
             registry: Arc::new(Mutex::new(registry)),
             connected_players: Arc::new(connected_players),
             tick_rate: Arc::new(tick_rate),
+            network_packets_total: Arc::new(network_packets_total),
+            network_bytes_total: Arc::new(network_bytes_total),
         }
     }
 }
