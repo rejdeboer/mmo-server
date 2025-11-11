@@ -26,8 +26,6 @@ pub fn sync_players(
     }
 
     let mut builder = FlatBufferBuilder::new();
-
-    // TODO: Parallelism?
     for (client_id, messages) in client_messages {
         let mut player_messages = Vec::<WIPOffset<schema::Event>>::with_capacity(messages.len());
         let mut channel = DefaultChannel::Unreliable;
