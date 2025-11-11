@@ -53,7 +53,7 @@ impl Default for Metrics {
 
         let network_bytes_total = IntCounterVec::new(
             Opts::new(
-                "network_packets_total",
+                "network_bytes_total",
                 "The total number of bytes sent / received",
             ),
             &["direction", "channel"],
