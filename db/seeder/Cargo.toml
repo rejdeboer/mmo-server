@@ -17,7 +17,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 web-server = { path = "../../web-server" }
 
 [dependencies.sqlx]
-version = "0.8.5"
+version = "0.8.6"
 default-features = false
 features = [
 	"runtime-tokio-native-tls",

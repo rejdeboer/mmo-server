@@ -1,4 +1,4 @@
-FROM lukemathwalker/cargo-chef:latest-rust-1.90.0 AS chef
+FROM lukemathwalker/cargo-chef:latest-rust-1.91.0 AS chef
 WORKDIR /app
 RUN apt update && apt install lld clang -y
 
@@ -13,7 +13,7 @@ COPY . ./
 ENV SQLX_OFFLINE true
 RUN cargo build --release -p db-seeder 
 
-FROM debian:bookworm-slim AS db-seeder
+FROM debian:trixie-slim AS db-seeder
 WORKDIR /app
 RUN apt-get update -y \
 	&& apt-get install -y --no-install-recommends openssl ca-certificates \
