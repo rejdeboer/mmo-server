@@ -21,7 +21,7 @@ pub struct Metrics {
 
 impl Default for Metrics {
     fn default() -> Self {
-        let registry = Registry::new();
+        let registry = Registry::new_custom(Some("game".to_string()), None).unwrap();
 
         let connected_players = IntGauge::new(
             "connected_players_count",

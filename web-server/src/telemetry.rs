@@ -5,7 +5,8 @@ use tracing::{Subscriber, subscriber::set_global_default};
 use tracing_log::LogTracer;
 use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt};
 
-pub static REGISTRY: Lazy<prometheus::Registry> = Lazy::new(prometheus::Registry::new);
+pub static REGISTRY: Lazy<prometheus::Registry> =
+    Lazy::new(|| prometheus::Registry::new_custom(Some("web".to_string()), None).unwrap());
 
 pub static ACTIVE_WS_CONNECTIONS: Lazy<IntGauge> = Lazy::new(|| {
     IntGauge::new(
