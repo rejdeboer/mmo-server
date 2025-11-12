@@ -1,8 +1,8 @@
-FROM rust:1.90 as builder
+FROM rust:1.91 as builder
 
 RUN cargo install sqlx-cli --version="~0.8" --locked
 
-FROM debian:bookworm-slim as migrator
+FROM debian:trixie-slim as migrator
 
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /usr/local/cargo/bin/sqlx /usr/local/bin/sqlx

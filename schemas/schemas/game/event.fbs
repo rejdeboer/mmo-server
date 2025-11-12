@@ -17,10 +17,15 @@ table EntityDespawnEvent {
 	entity_id: uint64;
 }
 
+table PongEvent {
+	sequence: uint32;
+}
+
 union EventData {
 	EntityMoveEvent,
 	EntitySpawnEvent,
 	EntityDespawnEvent,
+	PongEvent,
 	game.ServerChatMessage,
 }
 

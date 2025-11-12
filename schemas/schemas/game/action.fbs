@@ -10,10 +10,21 @@ table PlayerMoveAction {
 
 table PlayerJumpAction {}
 
+table PingAction {
+	sequence: uint32;
+}
+
+table RttReportAction {
+	ping_sequence: uint32;
+	rtt_ms: float32;
+}
+
 union ActionData {
 	game.ClientChatMessage,
 	PlayerMoveAction,
 	PlayerJumpAction,
+	PingAction,
+	RttReportAction,
 }
 
 table Action {
