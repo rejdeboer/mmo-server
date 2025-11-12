@@ -10,6 +10,7 @@ use sqlx::{
 
 pub enum Environment {
     Local,
+    Staging,
     Production,
 }
 
@@ -45,8 +46,16 @@ impl Environment {
     pub fn as_str(&self) -> &'static str {
         match self {
             Environment::Local => "local",
+            Environment::Staging => "staging",
             Environment::Production => "production",
         }
+    }
+
+    pub fn read() -> Self {
+        std::env::var("ENVIRONMENT")
+            .unwrap_or_else(|_| "local".into())
+            .try_into()
+            .expect("parsed ENVIRONMENT")
     }
 }
 
