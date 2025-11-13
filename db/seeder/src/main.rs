@@ -1,70 +1,76 @@
-use db_seeder::{Application, get_connection_pool, init_telemetry, seed_db};
+use clap::{Parser, Subcommand, arg};
+use db_seeder::{Application, ServerSettings, get_configuration, init_telemetry, seed_db};
+use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
 
-use clap::{Command, arg};
+/// A CLI to seed an MMO database
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
 
-fn cli() -> Command {
-    let url_arg = arg!(--url <URL> "The DB to seed");
-    Command::new("db-seeder")
-        .about("A CLI to seed the MMO database")
-        .subcommand_required(true)
-        .arg_required_else_help(true)
-        .allow_external_subcommands(false)
-        .subcommand(
-            Command::new("serve")
-                .about("Starts HTTP seeding server")
-                .arg(
-                    arg!(--port <PORT> "The port to listen on")
-                        .default_value("8032")
-                        .value_parser(clap::value_parser!(u16)),
-                )
-                .arg(arg!(--host <HOST> "The host to listen on").default_value("127.0.0.1"))
-                .arg(url_arg.clone()),
-        )
-        .subcommand(
-            Command::new("seed")
-                .about("Seeds a given MMO DB")
-                .arg(
-                    arg!(--count <COUNT> "Amount of users to create")
-                        .default_value("2")
-                        .value_parser(clap::value_parser!(usize)),
-                )
-                .arg(url_arg),
-        )
+    /// The URL of the DB to seed
+    #[arg(global = true, long)]
+    db_url: Option<String>,
+}
+
+#[derive(Subcommand, Debug)]
+enum Commands {
+    /// Starts HTTP seeding server
+    Serve {
+        /// The port to listen on
+        #[arg(long)]
+        port: Option<u16>,
+        /// The host to listen on
+        #[arg(long)]
+        host: Option<String>,
+    },
+    /// Seeds a given MMO DB
+    Seed {
+        /// The number of users to create
+        #[arg(short, long, default_value_t = 2)]
+        count: usize,
+    },
 }
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     init_telemetry();
-    let matches = cli().get_matches();
+    let cli = Cli::parse();
+    let settings = get_configuration()?;
+    let pg_connect_options = match cli.db_url {
+        Some(url) => PgConnectOptions::from(url.parse()?),
+        None => settings
+            .database
+            .expect("No CLI arg provided, so expected DB settings to be set by config file")
+            .with_db(),
+    };
+    let pool = PgPoolOptions::new()
+        .connect_with(pg_connect_options)
+        .await?;
 
-    match matches.subcommand() {
-        Some(("seed", sub_matches)) => {
-            let count = sub_matches
-                .get_one::<usize>("count")
-                .expect("should be set by default");
-
+    match &cli.command {
+        Commands::Seed { count } => {
             tracing::info!(?count, "inserting users");
-
-            let url = sub_matches.get_one::<String>("url").expect("required");
-            let pool = get_connection_pool(url).await?;
-
             seed_db(pool, *count).await?;
         }
-        Some(("serve", sub_matches)) => {
-            let host = sub_matches
-                .get_one::<String>("host")
-                .expect("host should be set by default");
-            let port = sub_matches
-                .get_one::<u16>("port")
-                .expect("port should be set by default");
-            let url = sub_matches
-                .get_one::<String>("url")
-                .expect("db url is required");
+        Commands::Serve { port, host } => {
+            let mut server_settings = settings.server.unwrap_or(ServerSettings {
+                host: "127.0.0.1".to_string(),
+                port: 8032,
+            });
 
-            let app = Application::build(host, *port, url).await?;
+            if let Some(host) = host {
+                server_settings.host = host.clone();
+            }
+
+            if let Some(port) = port {
+                server_settings.port = *port;
+            }
+
+            let app = Application::build(server_settings, pool).await?;
             app.run_until_stopped().await?;
         }
-        _ => unreachable!(),
     };
 
     Ok(())

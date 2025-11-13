@@ -8,5 +8,5 @@ mod telemetry;
 pub use configuration::*;
 pub use routes::SeedParameters;
 pub use seed::seed_db;
-pub use server::{Application, get_connection_pool};
+pub use server::Application;
 pub use telemetry::init_telemetry;

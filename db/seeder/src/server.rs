@@ -1,15 +1,13 @@
+use crate::{ServerSettings, routes::seed_route};
 use axum::{Router, routing::post};
-use sqlx::{PgPool, postgres::PgPoolOptions};
+use sqlx::PgPool;
 use std::net::SocketAddr;
 use tokio::net::TcpListener;
 use tower_http::trace::{DefaultMakeSpan, TraceLayer};
 
-use crate::routes::seed_route;
-
 pub struct Application {
     listener: TcpListener,
     router: Router,
-    port: u16,
 }
 
 #[derive(Clone)]
@@ -18,12 +16,9 @@ pub struct ApplicationState {
 }
 
 impl Application {
-    pub async fn build(host: &str, port: u16, db_url: &str) -> anyhow::Result<Self> {
-        let address = format!("{host}:{port}");
-
+    pub async fn build(settings: ServerSettings, pool: PgPool) -> anyhow::Result<Self> {
+        let address = format!("{}:{}", settings.host, settings.port);
         let listener = TcpListener::bind(address).await.unwrap();
-        let port = listener.local_addr().unwrap().port();
-        let pool = get_connection_pool(db_url).await?;
 
         let application_state = ApplicationState { pool };
 
@@ -35,11 +30,7 @@ impl Application {
             )
             .with_state(application_state);
 
-        Ok(Self {
-            listener,
-            router,
-            port,
-        })
+        Ok(Self { listener, router })
     }
 
     pub async fn run_until_stopped(self) -> Result<(), std::io::Error> {
@@ -52,12 +43,4 @@ impl Application {
         )
         .await
     }
-
-    pub fn port(&self) -> u16 {
-        self.port
-    }
-}
-
-pub async fn get_connection_pool(url: &str) -> Result<PgPool, sqlx::Error> {
-    PgPoolOptions::new().connect_with(url.parse()?).await
 }

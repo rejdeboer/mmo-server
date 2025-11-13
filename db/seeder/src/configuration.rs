@@ -1,15 +1,11 @@
 use secrecy::{ExposeSecret, SecretString};
-use serde::{Deserialize, Deserializer};
 use serde_aux::field_attributes::deserialize_number_from_string;
-use sqlx::{
-    ConnectOptions,
-    postgres::{PgConnectOptions, PgSslMode},
-};
+use sqlx::{ConnectOptions, postgres::PgConnectOptions};
 
 #[derive(serde::Deserialize, Clone)]
 pub struct Settings {
-    pub server: ServerSettings,
-    pub database: DatabaseSettings,
+    pub server: Option<ServerSettings>,
+    pub database: Option<DatabaseSettings>,
 }
 
 #[derive(serde::Deserialize, Clone)]
@@ -27,12 +23,15 @@ pub struct DatabaseSettings {
     pub port: u16,
     pub host: String,
     pub db_name: String,
-    pub require_ssl: bool,
 }
 
 impl DatabaseSettings {
     pub fn with_db(&self) -> PgConnectOptions {
-        self.without_db()
+        PgConnectOptions::new()
+            .host(&self.host)
+            .username(&self.username)
+            .password(self.password.expose_secret())
+            .port(self.port)
             .database(&self.db_name)
             .log_statements(tracing::log::LevelFilter::Trace)
     }
@@ -40,9 +39,9 @@ impl DatabaseSettings {
 
 pub fn get_configuration() -> Result<Settings, config::ConfigError> {
     let mut settings = config::Config::default();
-    let base_path = std::env::current_dir().expect("detirmined current directory");
+    let base_path = std::env::current_dir().expect("determined current directory");
 
     settings.merge(config::File::from(base_path.join("settings")).required(false))?;
-    settings.merge(config::Environment::new().separator("_"))?;
+    settings.merge(config::Environment::with_prefix("SEEDER").separator("_"))?;
     settings.try_into()
 }
