@@ -1,6 +1,6 @@
 use crate::configuration::Environment;
 use once_cell::sync::Lazy;
-use prometheus::{IntGauge, process_collector::ProcessCollector};
+use prometheus::IntGauge;
 use tracing::{Subscriber, subscriber::set_global_default};
 use tracing_log::LogTracer;
 use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt};
@@ -56,6 +56,11 @@ fn register_metrics() {
         .register(Box::new(ACTIVE_WS_CONNECTIONS.clone()))
         .unwrap();
 
-    let process_collector = ProcessCollector::for_self();
-    REGISTRY.register(Box::new(process_collector)).unwrap();
+    #[cfg(target_os = "linux")]
+    {
+        use prometheus::process_collector::ProcessCollector;
+
+        let process_collector = ProcessCollector::for_self();
+        REGISTRY.register(Box::new(process_collector)).unwrap();
+    }
 }

@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 use bevy_tokio_tasks::TaskContext;
-use prometheus::process_collector::ProcessCollector;
 use prometheus::{Encoder, Gauge, IntCounterVec, IntGauge, Opts, Registry, TextEncoder};
 use std::fs::File;
 use std::io::Write;
@@ -63,8 +62,13 @@ impl Default for Metrics {
             .register(Box::new(network_bytes_total.clone()))
             .unwrap();
 
-        let process_collector = ProcessCollector::for_self();
-        registry.register(Box::new(process_collector)).unwrap();
+        #[cfg(target_os = "linux")]
+        {
+            use prometheus::process_collector::ProcessCollector;
+
+            let process_collector = ProcessCollector::for_self();
+            registry.register(Box::new(process_collector)).unwrap();
+        }
 
         Self {
             registry: Arc::new(Mutex::new(registry)),
