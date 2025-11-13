@@ -22,5 +22,5 @@ RUN apt-get update -y \
 	&& rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/target/release/db-seeder db-seeder
-CMD ["./db-seeder"]
+CMD ["./db-seeder", "serve"]
 

@@ -1,9 +1,11 @@
+mod configuration;
 mod error;
 mod routes;
 mod seed;
 mod server;
 mod telemetry;
 
+pub use configuration::*;
 pub use routes::SeedParameters;
 pub use seed::seed_db;
 pub use server::{Application, get_connection_pool};
