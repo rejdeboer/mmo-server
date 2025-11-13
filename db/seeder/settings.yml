@@ -1,0 +1,9 @@
+server:
+  host: "127.0.0.1"
+  port: 8032
+database:
+  host: "localhost"
+  port: 5432
+  username: "postgres"
+  password: "password"
+  db_name: "mmo"
