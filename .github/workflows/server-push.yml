@@ -157,29 +157,29 @@ jobs:
         with:
           push: true
           target: web-server
-          tags: rejdeboer/web-server:latest
+          tags: rejdeboer/web-server:${{ github.sha }}
       - name: Build and push mmo-server
         uses: docker/build-push-action@v6
         with:
           push: true
           target: mmo-server
-          tags: rejdeboer/mmo-server:latest
+          tags: rejdeboer/mmo-server:${{ github.sha }}
 
-  # modify-manifest:
-  #   needs: docker
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Check out config repo
-  #       uses: actions/checkout@v3
-  #       with:
-  #         repository: 'rejdeboer/multiplayer-deployment'
-  #         token: ${{ secrets.PAT }}
-  #
-  #     - name: Modify application image
-  #       run: |
-  #         git config user.email rick.deboer@live.nl
-  #         git config user.name rejdeboer
-  #         sed -i "s+rejdeboer.azurecr.io/multiplayer-websocket:.*+rejdeboer.azurecr.io/multiplayer-websocket:${{ github.sha }}+g" deploy/multiplayer-websocket-deployment.yml
-  #         git add .
-  #         git commit -m 'automated: update multiplayer-websocket image'
-  #         git push origin master
+  modify-manifest:
+    needs: docker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out config repo
+        uses: actions/checkout@v3
+        with:
+          repository: 'rejdeboer/multiplayer-deployment'
+
+      - name: Modify application image
+        run: |
+          git config user.email rick.deboer@live.nl
+          git config user.name rejdeboer
+          sed -i "s+rejdeboer/web-server:.*+web-server:${{ github.sha }}+g" deploy/staging/patches/web-server-deployment-patch.yml
+          sed -i "s+rejdeboer/mmo-server:.*+mmo-server:${{ github.sha }}+g" deploy/staging/patches/mmo-server-deployment-patch.yml
+          git add .
+          git commit -m 'automated: update multiplayer-websocket image'
+          git push origin master

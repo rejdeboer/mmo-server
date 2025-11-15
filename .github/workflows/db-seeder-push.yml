@@ -32,21 +32,20 @@ jobs:
           push: true
           tags: rejdeboer/mmo-db-seeder:latest
 
-  # modify-manifest:
-  #   needs: docker
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Check out config repo
-  #       uses: actions/checkout@v3
-  #       with:
-  #         repository: 'rejdeboer/mmo-deployment'
-  #         token: ${{ secrets.GH_PAT }}
-  #
-  #     - name: Modify application image
-  #       run: |
-  #         git config user.email rick.deboer@live.nl
-  #         git config user.name rejdeboer
-  #         sed -i "s+rejdeboer.azurecr.io/mmo-db-migration:.*+rejdeboer.azurecr.io/multiplayer-db-migration:${{ github.sha }}+g" pre-deploy/migration.job.yml
-  #         git add .
-  #         git commit -m 'automated: update multiplayer-db-migration image'
-  #         git push origin master
+  modify-manifest:
+    needs: docker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out config repo
+        uses: actions/checkout@v3
+        with:
+          repository: 'rejdeboer/mmo-deployment'
+
+      - name: Modify application image
+        run: |
+          git config user.email rick.deboer@live.nl
+          git config user.name rejdeboer
+          sed -i "s+rejdeboer/mmo-db-seeder:.*+rejdeboer/mmo-db-seeder:${{ github.sha }}+g" deploy/base/db-seeder.yml
+          git add .
+          git commit -m 'automated: update mmo-db-seeder image'
+          git push origin master
