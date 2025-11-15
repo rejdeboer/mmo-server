@@ -172,7 +172,7 @@ jobs:
       - name: Check out config repo
         uses: actions/checkout@v3
         with:
-          repository: 'rejdeboer/multiplayer-deployment'
+          repository: 'rejdeboer/mmo-deployment'
           token: ${{ secrets.GH_PAT }}
 
       - name: Modify application image
