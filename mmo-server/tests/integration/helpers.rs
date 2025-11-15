@@ -156,7 +156,7 @@ pub fn spawn_app(character_count: usize) -> TestScenario {
 
     let settings = {
         let mut c = get_configuration().expect("configuration fetched");
-        c.database.db_name = Username().fake();
+        c.database.name = Username().fake();
         c.server.port = 0;
         c
     };
@@ -234,7 +234,7 @@ fn init_db(
             .await
             .expect("connected to postgres");
         connection
-            .execute(format!(r#"CREATE DATABASE "{}";"#, settings.database.db_name).as_str())
+            .execute(format!(r#"CREATE DATABASE "{}";"#, settings.database.name).as_str())
             .await
             .expect("db created");
 

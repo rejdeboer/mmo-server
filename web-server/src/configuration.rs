@@ -35,7 +35,7 @@ pub struct DatabaseSettings {
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub port: u16,
     pub host: String,
-    pub db_name: String,
+    pub name: String,
     pub require_ssl: bool,
 }
 
@@ -108,7 +108,7 @@ impl DatabaseSettings {
     }
     pub fn with_db(&self) -> PgConnectOptions {
         self.without_db()
-            .database(&self.db_name)
+            .database(&self.name)
             .log_statements(tracing::log::LevelFilter::Trace)
     }
 }

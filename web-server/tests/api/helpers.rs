@@ -154,7 +154,7 @@ pub async fn spawn_app() -> TestApp {
 
     let settings = {
         let mut c = get_configuration().expect("configuration fetched");
-        c.database.db_name = Username().fake();
+        c.database.name = Username().fake();
         c.application.port = 0;
         c
     };
@@ -198,7 +198,7 @@ async fn configure_database(config: &DatabaseSettings) -> PgPool {
         .await
         .expect("connected to postgres");
     connection
-        .execute(format!(r#"CREATE DATABASE "{}";"#, config.db_name).as_str())
+        .execute(format!(r#"CREATE DATABASE "{}";"#, config.name).as_str())
         .await
         .expect("db created");
 

@@ -22,7 +22,7 @@ pub struct DatabaseSettings {
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub port: u16,
     pub host: String,
-    pub db_name: String,
+    pub name: String,
 }
 
 impl DatabaseSettings {
@@ -32,7 +32,7 @@ impl DatabaseSettings {
             .username(&self.username)
             .password(self.password.expose_secret())
             .port(self.port)
-            .database(&self.db_name)
+            .database(&self.name)
             .log_statements(tracing::log::LevelFilter::Trace)
     }
 }
