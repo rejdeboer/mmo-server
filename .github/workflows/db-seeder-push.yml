@@ -48,4 +48,4 @@ jobs:
           sed -i "s+rejdeboer/mmo-db-seeder:.*+rejdeboer/mmo-db-seeder:${{ github.sha }}+g" deploy/base/db-seeder.yml
           git add .
           git commit -m 'automated: update mmo-db-seeder image'
-          git push origin master
+          git push origin main

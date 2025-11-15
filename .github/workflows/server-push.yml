@@ -181,5 +181,5 @@ jobs:
           sed -i "s+rejdeboer/web-server:.*+web-server:${{ github.sha }}+g" deploy/staging/patches/web-server-deployment-patch.yml
           sed -i "s+rejdeboer/mmo-server:.*+mmo-server:${{ github.sha }}+g" deploy/staging/patches/mmo-server-deployment-patch.yml
           git add .
-          git commit -m 'automated: update multiplayer-websocket image'
-          git push origin master
+          git commit -m 'automated: update application images'
+          git push origin main

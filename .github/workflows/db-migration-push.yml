@@ -48,4 +48,4 @@ jobs:
           sed -i "s+rejdeboer/mmo-db-migration:.*+rejdeboer/mmo-db-migration:${{ github.sha }}+g" pre-deploy/migration.job.yml
           git add .
           git commit -m 'automated: update mmo-db-migration image'
-          git push origin master
+          git push origin main

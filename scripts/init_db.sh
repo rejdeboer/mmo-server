@@ -47,9 +47,9 @@ export DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@localhost:${DB_PORT}/${
 cargo sqlx database create
 cargo sqlx migrate run --source ./db/migrations 
 
-if [[ "${SEED}" ]]
+if [[ -z "${SEED}" ]]
 then
-	cargo run -p db-seeder -- seed --url ${DATABASE_URL}
+	cargo run -p db-seeder -- seed --db-url ${DATABASE_URL}
 	>&2 echo "Database has been seeded"
 fi
 
