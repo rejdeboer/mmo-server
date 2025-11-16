@@ -1,0 +1,33 @@
+name: "push-image"
+description: "Build and push Docker image"
+inputs:
+  tag:
+    description: "Image tag"
+    required: false
+    default: "${GIT_BRANCH}-${GIT_SHA:0:7}-$(date +%s)"
+  image:
+    description: "Image name"
+    required: true
+  context:
+    description: "Build context"
+    required: false
+    default: "."
+  target:
+    description: "Build target"
+    required: false
+    default: ""
+  file:
+    description: "Dockerfile"
+    required: false
+    default: "Dockerfile"
+runs:
+  using: "composite"
+  steps:
+    - name: Build and push
+      uses: docker/build-push-action@v6
+      with:
+        context: ${{ inputs.context }}
+        push: true
+        file: ${{ inputs.file }}
+        target: ${{ inputs.target }}
+        tags: ${{ inputs.image }}:${{ inputs.tag }}
