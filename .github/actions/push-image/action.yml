@@ -4,7 +4,7 @@ inputs:
   tag:
     description: "Image tag"
     required: false
-    default: "${GIT_BRANCH}-${GIT_SHA:0:7}-$(date +%s)"
+    default: ""
   image:
     description: "Image name"
     required: true
@@ -23,6 +23,21 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Compute tag if not provided
+      id: compute_tag
+      shell: bash
+      run: |
+        if [ -n "${{ inputs.tag }}" ]; then
+          echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        BRANCH="${GITHUB_REF_NAME:-$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)}"
+        SAFE_BRANCH="$(echo "$BRANCH" | sed -E 's/[^A-Za-z0-9._-]+/-/g' | tr '[:upper:]' '[:lower:]')"
+        SHORT_SHA="${GITHUB_SHA:0:7}"
+        TS="$(date +%s)"
+        TAG="${SAFE_BRANCH}-${SHORT_SHA}-${TS}"
+        echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
     - name: Build and push
       uses: docker/build-push-action@v6
       with:
@@ -30,4 +45,4 @@ runs:
         push: true
         file: ${{ inputs.file }}
         target: ${{ inputs.target }}
-        tags: ${{ inputs.image }}:${{ inputs.tag }}
+        tags: ${{ inputs.image }}:${{ steps.compute_tag.outputs.tag }}
