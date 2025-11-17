@@ -8,6 +8,4 @@ realm_resolver:
   type: local
   host: 127.0.0.1
   port: 8000
-metrics:
-  enabled: false
 

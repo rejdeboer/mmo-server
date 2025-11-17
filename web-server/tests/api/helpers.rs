@@ -156,7 +156,6 @@ pub async fn spawn_app() -> TestApp {
         let mut c = get_configuration().expect("configuration fetched");
         c.database.name = Username().fake();
         c.application.port = 0;
-        c.metrics.enabled = false;
         c
     };
 

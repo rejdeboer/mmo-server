@@ -6,6 +6,3 @@ database:
   username: "postgres"
   password: "password"
   name: "mmo"
-metrics:
-  enabled: true
-  port: 8002

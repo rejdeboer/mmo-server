@@ -99,8 +99,8 @@ impl Application {
             router: app_router,
         };
 
-        let metrics_server = if settings.metrics.enabled {
-            let metrics_adderess = format!("127.0.0.1:{}", settings.metrics.port);
+        let metrics_server = if let Some(metrics_settings) = settings.metrics {
+            let metrics_adderess = format!("127.0.0.1:{}", metrics_settings.port);
             let listener = TcpListener::bind(metrics_adderess).await.unwrap();
             let router = Router::new().route("/metrics", get(metrics_get));
             Some(Server { listener, router })
