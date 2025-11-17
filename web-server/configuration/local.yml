@@ -9,5 +9,5 @@ realm_resolver:
   host: 127.0.0.1
   port: 8000
 metrics:
-  host: 127.0.0.1
+  enabled: false
 

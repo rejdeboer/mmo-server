@@ -21,11 +21,14 @@ use tokio::{
 };
 use tower_http::trace::{DefaultMakeSpan, TraceLayer};
 
+pub struct Server {
+    pub listener: TcpListener,
+    pub router: Router,
+}
+
 pub struct Application {
-    app_listener: TcpListener,
-    metrics_listener: TcpListener,
-    app_router: Router,
-    metrics_router: Router,
+    app_server: Server,
+    metrics_server: Option<Server>,
     port: u16,
     hub_rx: Receiver<HubMessage>,
     pool: PgPool,
@@ -91,16 +94,23 @@ impl Application {
                     .make_span_with(DefaultMakeSpan::default().include_headers(true)),
             )
             .with_state(application_state);
+        let app_server = Server {
+            listener: app_listener,
+            router: app_router,
+        };
 
-        let metrics_adderess = format!("127.0.0.1:{}", settings.metrics.port);
-        let metrics_listener = TcpListener::bind(metrics_adderess).await.unwrap();
-        let metrics_router = Router::new().route("/metrics", get(metrics_get));
+        let metrics_server = if settings.metrics.enabled {
+            let metrics_adderess = format!("127.0.0.1:{}", settings.metrics.port);
+            let listener = TcpListener::bind(metrics_adderess).await.unwrap();
+            let router = Router::new().route("/metrics", get(metrics_get));
+            Some(Server { listener, router })
+        } else {
+            None
+        };
 
         Ok(Self {
-            app_listener,
-            metrics_listener,
-            app_router,
-            metrics_router,
+            app_server,
+            metrics_server,
             port,
             hub_rx,
             pool,
@@ -108,17 +118,16 @@ impl Application {
     }
 
     pub async fn run_until_stopped(self) -> Result<(), std::io::Error> {
-        tracing::info!("listening on {}", self.app_listener.local_addr().unwrap());
         tracing::info!(
-            "exposing metrics on {}/metrics",
-            self.metrics_listener.local_addr().unwrap()
+            "listening on {}",
+            self.app_server.listener.local_addr().unwrap()
         );
 
         start_social_hub(self.pool, self.hub_rx);
 
         let app_server = {
-            let listener = self.app_listener;
-            let app = self.app_router;
+            let listener = self.app_server.listener;
+            let app = self.app_server.router;
             tokio::spawn(async move {
                 axum::serve(
                     listener,
@@ -128,21 +137,31 @@ impl Application {
             })
         };
 
-        let metrics_server = {
-            let listener = self.metrics_listener;
-            let app = self.metrics_router;
-            tokio::spawn(async move {
-                axum::serve(
-                    listener,
-                    app.into_make_service_with_connect_info::<SocketAddr>(),
-                )
-                .await
-            })
-        };
+        if let Some(server) = self.metrics_server {
+            tracing::info!(
+                "exposing metrics on {}/metrics",
+                server.listener.local_addr().unwrap()
+            );
 
-        let (r1, r2) = tokio::join!(app_server, metrics_server);
-        r1??;
-        r2??;
+            let metrics_server = {
+                let listener = server.listener;
+                let app = server.router;
+                tokio::spawn(async move {
+                    axum::serve(
+                        listener,
+                        app.into_make_service_with_connect_info::<SocketAddr>(),
+                    )
+                    .await
+                })
+            };
+
+            let (r1, r2) = tokio::join!(app_server, metrics_server);
+            r1??;
+            r2??;
+        } else {
+            app_server.await??;
+        }
+
         Ok(())
     }
 

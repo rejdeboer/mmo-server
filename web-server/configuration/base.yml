@@ -7,4 +7,5 @@ database:
   password: "password"
   name: "mmo"
 metrics:
+  enabled: true
   port: 8002

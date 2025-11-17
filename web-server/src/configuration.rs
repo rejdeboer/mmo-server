@@ -42,6 +42,7 @@ pub struct DatabaseSettings {
 
 #[derive(serde::Deserialize, Clone)]
 pub struct MetricsSettings {
+    pub enabled: bool,
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub port: u16,
 }
