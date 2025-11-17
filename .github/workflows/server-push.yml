@@ -4,8 +4,8 @@ on:
   push:
     paths:
       - ".github/workflows/server-push.yml"
-      - "web-server/*"
-      - "mmo-server/*"
+      - "web-server/**"
+      - "mmo-server/**"
       - "Dockerfile"
       - "Cargo.toml"
   workflow_dispatch:
