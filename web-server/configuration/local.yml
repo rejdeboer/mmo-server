@@ -8,4 +8,5 @@ realm_resolver:
   type: local
   host: 127.0.0.1
   port: 8000
-
+telemetry:
+  tracing_format: pretty

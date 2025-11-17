@@ -2,3 +2,5 @@ database:
   require_ssl: true
 realm_resolver:
   type: kube
+telemetry:
+  tracing_format: json

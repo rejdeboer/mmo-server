@@ -1,5 +1,7 @@
-use crate::configuration::Environment;
+use crate::configuration::{TelemetrySettings, TracingFormat};
 use once_cell::sync::Lazy;
+use opentelemetry::global;
+use opentelemetry_otlp::{Protocol, WithExportConfig};
 use prometheus::IntGauge;
 use tracing::{Subscriber, subscriber::set_global_default};
 use tracing_log::LogTracer;
@@ -16,35 +18,57 @@ pub static ACTIVE_WS_CONNECTIONS: Lazy<IntGauge> = Lazy::new(|| {
     .unwrap()
 });
 
-pub fn init_telemetry() {
+pub fn init_telemetry(settings: &TelemetrySettings) {
     register_metrics();
-    let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
-    let environment = Environment::read();
-    if matches!(environment, Environment::Local) {
-        init_subscriber(get_local_subscriber(env_filter));
-    } else {
-        init_subscriber(get_subscriber(env_filter));
-    }
+    init_subscriber(settings);
 }
 
-pub fn init_subscriber(subscriber: impl Subscriber + Send + Sync) {
+pub fn init_subscriber(settings: &TelemetrySettings) {
+    let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
+
+    let (pretty, json) = match settings.tracing_format {
+        TracingFormat::Pretty => (Some(fmt::layer().compact().with_ansi(true)), None),
+        TracingFormat::Json => (
+            None,
+            Some(
+                fmt::layer()
+                    .json()
+                    .with_current_span(true)
+                    .with_span_list(true),
+            ),
+        ),
+    };
+
+    let otel = if let Some(endpoint) = &settings.otel_exporter_endpoint {
+        let exporter = opentelemetry_otlp::SpanExporter::builder()
+            .with_tonic()
+            .with_protocol(Protocol::Grpc)
+            .with_endpoint(endpoint)
+            .build()
+            .expect("tracing exporter built");
+
+        let tracer_provider = opentelemetry_sdk::trace::SdkTracerProvider::builder()
+            .with_batch_exporter(exporter)
+            .build();
+        global::set_tracer_provider(tracer_provider);
+
+        let otel_layer = tracing_opentelemetry::layer().with_tracer(global::tracer(""));
+        Some(otel_layer)
+    } else {
+        None
+    };
+
+    let subscriber = tracing_subscriber::Registry::default()
+        .with(env_filter)
+        .with(pretty)
+        .with(json)
+        .with(otel);
     LogTracer::init().expect("logger init succeeded");
     set_global_default(subscriber).expect("set subscriber succeeded");
 }
 
 pub fn get_local_subscriber(env_filter: EnvFilter) -> impl Subscriber + Send + Sync {
     let fmt_layer = fmt::layer().compact().with_ansi(true);
-
-    tracing_subscriber::Registry::default()
-        .with(env_filter)
-        .with(fmt_layer)
-}
-
-pub fn get_subscriber(env_filter: EnvFilter) -> impl Subscriber + Send + Sync {
-    let fmt_layer = fmt::layer()
-        .json()
-        .with_current_span(true)
-        .with_span_list(true);
 
     tracing_subscriber::Registry::default()
         .with(env_filter)

@@ -8,6 +8,7 @@ use sqlx::{
 
 pub enum Environment {
     Local,
+    Staging,
     Production,
 }
 
@@ -16,6 +17,7 @@ pub struct Settings {
     pub application: ApplicationSettings,
     pub database: DatabaseSettings,
     pub realm_resolver: RealmResolverSettings,
+    pub telemetry: TelemetrySettings,
     pub metrics: Option<MetricsSettings>,
 }
 
@@ -38,6 +40,19 @@ pub struct DatabaseSettings {
     pub host: String,
     pub name: String,
     pub require_ssl: bool,
+}
+
+#[derive(serde::Deserialize, Clone)]
+#[serde(rename_all = "lowercase")]
+pub enum TracingFormat {
+    Pretty,
+    Json,
+}
+
+#[derive(serde::Deserialize, Clone)]
+pub struct TelemetrySettings {
+    pub tracing_format: TracingFormat,
+    pub otel_exporter_endpoint: Option<String>,
 }
 
 #[derive(serde::Deserialize, Clone)]
@@ -74,6 +89,7 @@ impl Environment {
     pub fn as_str(&self) -> &'static str {
         match self {
             Environment::Local => "local",
+            Environment::Staging => "staging",
             Environment::Production => "production",
         }
     }
@@ -91,9 +107,10 @@ impl TryFrom<String> for Environment {
     fn try_from(value: String) -> Result<Self, Self::Error> {
         match value.to_lowercase().as_str() {
             "local" => Ok(Self::Local),
+            "staging" => Ok(Self::Staging),
             "production" => Ok(Self::Production),
             other => Err(format!(
-                "{other} is not a supported environment. Use either `local` or `production`."
+                "{other} is not a supported environment. Use either `local`, `staging`, or `production`."
             )),
         }
     }
@@ -128,7 +145,6 @@ pub fn get_configuration() -> Result<Settings, config::ConfigError> {
     settings.merge(config::File::from(configuration_directory.join("base")).required(true))?;
 
     let environment = Environment::read();
-
     settings.merge(
         config::File::from(configuration_directory.join(environment.as_str())).required(true),
     )?;

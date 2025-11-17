@@ -3,18 +3,21 @@ use fake::Fake;
 use fake::faker::internet::en::{Password, SafeEmail, Username};
 use once_cell::sync::Lazy;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
-use tracing_subscriber::EnvFilter;
-use web_server::configuration::{DatabaseSettings, get_configuration};
+use web_server::configuration::{
+    DatabaseSettings, TelemetrySettings, TracingFormat, get_configuration,
+};
 use web_server::domain::SafePassword;
 use web_server::routes::{
     CharacterCreate, GameEntryRequest, GameEntryResponse, LoginBody, TokenResponse,
 };
 use web_server::server::{Application, get_connection_pool};
-use web_server::telemetry::{get_local_subscriber, init_subscriber};
+use web_server::telemetry::init_subscriber;
 
 static TRACING: Lazy<()> = Lazy::new(|| {
-    let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
-    init_subscriber(get_local_subscriber(env_filter));
+    init_subscriber(&TelemetrySettings {
+        tracing_format: TracingFormat::Pretty,
+        otel_exporter_endpoint: None,
+    });
 });
 
 #[derive(sqlx::FromRow)]

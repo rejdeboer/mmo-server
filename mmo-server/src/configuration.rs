@@ -64,9 +64,10 @@ impl TryFrom<String> for Environment {
     fn try_from(value: String) -> Result<Self, Self::Error> {
         match value.to_lowercase().as_str() {
             "local" => Ok(Self::Local),
+            "staging" => Ok(Self::Staging),
             "production" => Ok(Self::Production),
             other => Err(format!(
-                "{other} is not a supported environment. Use either `local` or `production`."
+                "{other} is not a supported environment. Use either `local`, `staging`, or `production`."
             )),
         }
     }

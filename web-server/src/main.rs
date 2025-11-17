@@ -6,9 +6,8 @@ use web_server::{
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    init_telemetry();
-
     let settings = configuration::get_configuration().expect("config fetched");
+    init_telemetry(&settings.telemetry);
 
     let application = Application::build(settings).await?;
     application.run_until_stopped().await?;
