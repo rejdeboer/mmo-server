@@ -16,6 +16,7 @@ pub struct Settings {
     pub application: ApplicationSettings,
     pub database: DatabaseSettings,
     pub realm_resolver: RealmResolverSettings,
+    pub metrics: MetricsSettings,
 }
 
 #[derive(serde::Deserialize, Clone)]
@@ -37,6 +38,12 @@ pub struct DatabaseSettings {
     pub host: String,
     pub name: String,
     pub require_ssl: bool,
+}
+
+#[derive(serde::Deserialize, Clone)]
+pub struct MetricsSettings {
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    pub port: u16,
 }
 
 #[derive(serde::Deserialize, Clone)]
