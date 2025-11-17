@@ -163,22 +163,3 @@ jobs:
           image: rejdeboer/web-server
           target: web-server
 
-  # modify-manifest:
-  #   needs: docker
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Check out config repo
-  #       uses: actions/checkout@v3
-  #       with:
-  #         repository: 'rejdeboer/mmo-deployment'
-  #         token: ${{ secrets.GH_PAT }}
-  #
-  #     - name: Modify application image
-  #       run: |
-  #         git config user.email rick.deboer@live.nl
-  #         git config user.name rejdeboer
-  #         sed -i "s+rejdeboer/web-server:.*+web-server:${{ github.sha }}+g" deploy/staging/patches/web-server-deployment-patch.yml
-  #         sed -i "s+rejdeboer/mmo-server:.*+mmo-server:${{ github.sha }}+g" deploy/staging/patches/mmo-server-deployment-patch.yml
-  #         git add .
-  #         git commit -m 'automated: update application images'
-  #         git push origin main
