@@ -26,6 +26,7 @@ impl<'a> flatbuffers::Follow<'a> for TokenUserData<'a> {
 
 impl<'a> TokenUserData<'a> {
   pub const VT_CHARACTER_ID: flatbuffers::VOffsetT = 4;
+  pub const VT_TRACEPARENT: flatbuffers::VOffsetT = 6;
 
   #[inline]
   pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
@@ -34,9 +35,10 @@ impl<'a> TokenUserData<'a> {
   #[allow(unused_mut)]
   pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
     _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
-    args: &'args TokenUserDataArgs
+    args: &'args TokenUserDataArgs<'args>
   ) -> flatbuffers::WIPOffset<TokenUserData<'bldr>> {
     let mut builder = TokenUserDataBuilder::new(_fbb);
+    if let Some(x) = args.traceparent { builder.add_traceparent(x); }
     builder.add_character_id(args.character_id);
     builder.finish()
   }
@@ -49,6 +51,13 @@ impl<'a> TokenUserData<'a> {
     // which contains a valid value in this slot
     unsafe { self._tab.get::<i32>(TokenUserData::VT_CHARACTER_ID, Some(0)).unwrap()}
   }
+  #[inline]
+  pub fn traceparent(&self) -> Option<&'a str> {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<&str>>(TokenUserData::VT_TRACEPARENT, None)}
+  }
 }
 
 impl flatbuffers::Verifiable for TokenUserData<'_> {
@@ -59,18 +68,21 @@ impl flatbuffers::Verifiable for TokenUserData<'_> {
     use self::flatbuffers::Verifiable;
     v.visit_table(pos)?
      .visit_field::<i32>("character_id", Self::VT_CHARACTER_ID, false)?
+     .visit_field::<flatbuffers::ForwardsUOffset<&str>>("traceparent", Self::VT_TRACEPARENT, false)?
      .finish();
     Ok(())
   }
 }
-pub struct TokenUserDataArgs {
+pub struct TokenUserDataArgs<'a> {
     pub character_id: i32,
+    pub traceparent: Option<flatbuffers::WIPOffset<&'a str>>,
 }
-impl<'a> Default for TokenUserDataArgs {
+impl<'a> Default for TokenUserDataArgs<'a> {
   #[inline]
   fn default() -> Self {
     TokenUserDataArgs {
       character_id: 0,
+      traceparent: None,
     }
   }
 }
@@ -83,6 +95,10 @@ impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> TokenUserDataBuilder<'a, 'b, A>
   #[inline]
   pub fn add_character_id(&mut self, character_id: i32) {
     self.fbb_.push_slot::<i32>(TokenUserData::VT_CHARACTER_ID, character_id, 0);
+  }
+  #[inline]
+  pub fn add_traceparent(&mut self, traceparent: flatbuffers::WIPOffset<&'b  str>) {
+    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(TokenUserData::VT_TRACEPARENT, traceparent);
   }
   #[inline]
   pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> TokenUserDataBuilder<'a, 'b, A> {
@@ -103,6 +119,7 @@ impl core::fmt::Debug for TokenUserData<'_> {
   fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
     let mut ds = f.debug_struct("TokenUserData");
       ds.field("character_id", &self.character_id());
+      ds.field("traceparent", &self.traceparent());
       ds.finish()
   }
 }

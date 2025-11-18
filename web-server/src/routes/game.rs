@@ -1,14 +1,13 @@
-use std::{
-    net::SocketAddr,
-    time::{SystemTime, UNIX_EPOCH},
-};
-
 use axum::{Extension, Json, extract::State, response::Result};
 use flatbuffers::FlatBufferBuilder;
 use renetcode::{ConnectToken, NETCODE_USER_DATA_BYTES};
 use schemas::protocol::{TokenUserData, TokenUserDataArgs};
 use secrecy::ExposeSecret;
 use serde::{Deserialize, Serialize};
+use std::{
+    net::SocketAddr,
+    time::{SystemTime, UNIX_EPOCH},
+};
 use tracing::instrument;
 
 use crate::{
@@ -16,6 +15,7 @@ use crate::{
     auth::{AccountContext, CharacterContext, encode_jwt},
     configuration::NetcodePrivateKey,
     error::ApiError,
+    telemetry::get_trace_parent,
 };
 
 #[derive(Serialize, Deserialize)]
@@ -65,6 +65,7 @@ pub async fn game_entry(
         payload.character_id,
         state.netcode_private_key,
         server_addr,
+        get_trace_parent(),
     )?;
     connect_token.write(&mut token_buffer).map_err(|error| {
         tracing::error!(?error, "failed to write netcode token to buffer");
@@ -93,11 +94,24 @@ fn generate_connect_token(
     character_id: i32,
     private_key: NetcodePrivateKey,
     server_addr: SocketAddr,
+    traceparent: Option<String>,
 ) -> Result<ConnectToken, ApiError> {
     let public_addresses: Vec<SocketAddr> = vec![server_addr];
 
     let mut builder = FlatBufferBuilder::new();
-    let response_offset = TokenUserData::create(&mut builder, &TokenUserDataArgs { character_id });
+
+    let traceparent = traceparent.map(|v| builder.create_string(&v));
+    if traceparent.is_none() {
+        tracing::warn!("no traceparent present");
+    }
+
+    let response_offset = TokenUserData::create(
+        &mut builder,
+        &TokenUserDataArgs {
+            character_id,
+            traceparent,
+        },
+    );
     builder.finish_minimal(response_offset);
 
     let mut user_data: [u8; NETCODE_USER_DATA_BYTES] = [0; NETCODE_USER_DATA_BYTES];

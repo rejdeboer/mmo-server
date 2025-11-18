@@ -1,6 +1,8 @@
+use std::collections::HashMap;
+
 use crate::configuration::{TelemetrySettings, TracingFormat};
 use once_cell::sync::Lazy;
-use opentelemetry::global;
+use opentelemetry::{Context, global};
 use opentelemetry_otlp::{Protocol, WithExportConfig};
 use prometheus::IntGauge;
 use tracing::{Subscriber, subscriber::set_global_default};
@@ -73,6 +75,15 @@ pub fn get_local_subscriber(env_filter: EnvFilter) -> impl Subscriber + Send + S
     tracing_subscriber::Registry::default()
         .with(env_filter)
         .with(fmt_layer)
+}
+
+pub fn get_trace_parent() -> Option<String> {
+    let context = Context::current();
+    opentelemetry::global::get_text_map_propagator(|propagator| {
+        let mut context_carrier = HashMap::<String, String>::new();
+        propagator.inject_context(&context, &mut context_carrier);
+        context_carrier.get("traceparent").cloned()
+    })
 }
 
 fn register_metrics() {

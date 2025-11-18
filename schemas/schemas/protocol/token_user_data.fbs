@@ -2,6 +2,7 @@ namespace protocol;
 
 table TokenUserData {
 	character_id: int32;
+	traceparent: string;
 }
 
 root_type TokenUserData;
