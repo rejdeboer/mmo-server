@@ -1,4 +1,4 @@
-use mmo_client::{ConnectionEvent, Entity, GameClient, MoveAction};
+use mmo_client::{ConnectToken, ConnectionEvent, Entity, GameClient, MoveAction};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use std::time::Duration;
@@ -31,10 +31,10 @@ impl SimulatedClient {
         }
     }
 
-    pub async fn run(mut self, host: String, port: u16) -> anyhow::Result<()> {
+    pub async fn run(mut self, connect_token: ConnectToken) -> anyhow::Result<()> {
         tracing::info!(character_id = self.character_id, "starting bot");
 
-        self.client.connect_unsecure(host, port, self.character_id);
+        self.client.connect(connect_token);
 
         let mut interval = tokio::time::interval(TICK_DURATION);
         let mut last_tick = Instant::now();

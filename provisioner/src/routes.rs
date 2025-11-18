@@ -8,20 +8,20 @@ use std::str::FromStr;
 use web_server::protocol::{encode_connect_token, generate_connect_token};
 
 #[derive(Clone, Deserialize, Serialize)]
-pub struct SeedParameters {
+pub struct ProvisionParams {
     pub count: usize,
     pub server_addr: String,
 }
 
 #[derive(Clone, Deserialize, Serialize)]
-pub struct SeedResult {
+pub struct ProvisionResult {
     pub tokens: Vec<String>,
 }
 
 pub async fn provision_route(
     State(state): State<ApplicationState>,
-    Json(payload): Json<SeedParameters>,
-) -> Result<Json<SeedResult>, ApiError> {
+    Json(payload): Json<ProvisionParams>,
+) -> Result<Json<ProvisionResult>, ApiError> {
     seed_db(state.pool.clone(), payload.count)
         .await
         .map_err(|err| {
@@ -34,7 +34,7 @@ pub async fn provision_route(
         ApiError::BadRequest
     })?;
 
-    let tokens = Vec::with_capacity(payload.count);
+    let mut tokens = Vec::with_capacity(payload.count);
     for i in 1..=payload.count {
         let connect_token = generate_connect_token(
             i as i32,
@@ -56,5 +56,5 @@ pub async fn provision_route(
         tokens.push(token);
     }
 
-    Ok(Json(SeedResult { tokens }))
+    Ok(Json(ProvisionResult { tokens }))
 }

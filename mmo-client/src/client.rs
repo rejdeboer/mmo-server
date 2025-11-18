@@ -192,7 +192,10 @@ impl GameClient {
         let mut builder = FlatBufferBuilder::new();
         let response_offset = schemas::protocol::TokenUserData::create(
             &mut builder,
-            &schemas::protocol::TokenUserDataArgs { character_id },
+            &schemas::protocol::TokenUserDataArgs {
+                character_id,
+                traceparent: None,
+            },
         );
         builder.finish_minimal(response_offset);
 
