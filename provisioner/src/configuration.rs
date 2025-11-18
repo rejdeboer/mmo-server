@@ -1,6 +1,7 @@
 use secrecy::{ExposeSecret, SecretString};
 use serde_aux::field_attributes::deserialize_number_from_string;
 use sqlx::{ConnectOptions, postgres::PgConnectOptions};
+use web_server::configuration::{NetcodePrivateKey, deserialize_netcode_key};
 
 #[derive(serde::Deserialize, Clone)]
 pub struct Settings {
@@ -13,6 +14,8 @@ pub struct ServerSettings {
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub port: u16,
     pub host: String,
+    #[serde(deserialize_with = "deserialize_netcode_key")]
+    pub netcode_private_key: NetcodePrivateKey,
 }
 
 #[derive(serde::Deserialize, Clone)]
@@ -42,6 +45,6 @@ pub fn get_configuration() -> Result<Settings, config::ConfigError> {
     let base_path = std::env::current_dir().expect("determined current directory");
 
     settings.merge(config::File::from(base_path.join("settings")).required(false))?;
-    settings.merge(config::Environment::with_prefix("SEEDER").separator("_"))?;
+    settings.merge(config::Environment::new().separator("_"))?;
     settings.try_into()
 }

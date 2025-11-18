@@ -1,5 +1,6 @@
 use bevy::ecs::resource::Resource;
 use bevy_renet::netcode::NETCODE_KEY_BYTES;
+use config::ConfigError;
 use secrecy::{ExposeSecret, SecretString};
 use serde::{Deserialize, Deserializer};
 use serde_aux::field_attributes::deserialize_number_from_string;
@@ -25,9 +26,8 @@ pub struct ServerSettings {
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub port: u16,
     pub host: String,
-    pub is_secure: bool,
-    #[serde(deserialize_with = "deserialize_netcode_key")]
-    pub netcode_private_key: [u8; NETCODE_KEY_BYTES],
+    #[serde(default, deserialize_with = "deserialize_netcode_key")]
+    pub netcode_private_key: Option<[u8; NETCODE_KEY_BYTES]>,
     pub metrics_path: String,
 }
 
@@ -40,6 +40,17 @@ pub struct DatabaseSettings {
     pub host: String,
     pub name: String,
     pub require_ssl: bool,
+}
+
+impl Settings {
+    pub fn validate(&self, environment: &Environment) -> Result<(), ConfigError> {
+        if !matches!(environment, Environment::Local) && self.server.netcode_private_key.is_none() {
+            return Err(ConfigError::Message(
+                "private key is required outside of local env".to_string(),
+            ));
+        }
+        Ok(())
+    }
 }
 
 impl Environment {
@@ -112,17 +123,33 @@ pub fn get_configuration() -> Result<Settings, config::ConfigError> {
 
     settings.merge(config::Environment::with_prefix("app").separator("__"))?;
 
-    settings.try_into()
+    let settings: Settings = settings.try_into()?;
+    settings.validate(&environment)?;
+    Ok(settings)
 }
 
-fn deserialize_netcode_key<'de, D>(deserializer: D) -> Result<[u8; NETCODE_KEY_BYTES], D::Error>
+fn deserialize_netcode_key<'de, D>(
+    deserializer: D,
+) -> Result<Option<[u8; NETCODE_KEY_BYTES]>, D::Error>
 where
     D: Deserializer<'de>,
 {
-    let mut netcode_private_key: [u8; 32] = [0; 32];
-    let encoded: String = Deserialize::deserialize(deserializer)?;
-    base64::decode_config_slice(encoded, base64::STANDARD, &mut netcode_private_key)
+    let encoded: Option<String> = Deserialize::deserialize(deserializer)?;
+    let encoded = match encoded {
+        None => return Ok(None),
+        Some(s) if s.trim().is_empty() => return Ok(None),
+        Some(s) => s,
+    };
+
+    let mut buf = [0u8; NETCODE_KEY_BYTES];
+    let n = base64::decode_config_slice(&encoded, base64::STANDARD, &mut buf)
         .map_err(serde::de::Error::custom)?;
 
-    Ok(netcode_private_key)
+    if n != NETCODE_KEY_BYTES {
+        return Err(serde::de::Error::custom(format!(
+            "invalid netcode key length: expected {} bytes, got {}",
+            NETCODE_KEY_BYTES, n
+        )));
+    }
+    Ok(Some(buf))
 }

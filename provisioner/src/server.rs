@@ -1,9 +1,10 @@
-use crate::{ServerSettings, routes::seed_route};
+use crate::{ServerSettings, routes::provision_route};
 use axum::{Router, routing::post};
 use sqlx::PgPool;
 use std::net::SocketAddr;
 use tokio::net::TcpListener;
 use tower_http::trace::{DefaultMakeSpan, TraceLayer};
+use web_server::configuration::NetcodePrivateKey;
 
 pub struct Application {
     listener: TcpListener,
@@ -13,6 +14,7 @@ pub struct Application {
 #[derive(Clone)]
 pub struct ApplicationState {
     pub pool: PgPool,
+    pub netcode_private_key: NetcodePrivateKey,
 }
 
 impl Application {
@@ -20,10 +22,13 @@ impl Application {
         let address = format!("{}:{}", settings.host, settings.port);
         let listener = TcpListener::bind(address).await.unwrap();
 
-        let application_state = ApplicationState { pool };
+        let application_state = ApplicationState {
+            pool,
+            netcode_private_key: settings.netcode_private_key,
+        };
 
         let router = Router::new()
-            .route("/seed", post(seed_route))
+            .route("/provision", post(provision_route))
             .layer(
                 TraceLayer::new_for_http()
                     .make_span_with(DefaultMakeSpan::default().include_headers(true)),

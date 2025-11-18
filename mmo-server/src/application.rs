@@ -49,19 +49,16 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
 
     let port = socket.local_addr()?.port();
 
-    let authentication = match settings.server.is_secure {
-        true => ServerAuthentication::Secure {
-            private_key: settings.server.netcode_private_key,
-        },
-        false => ServerAuthentication::Unsecure,
+    let authentication = match settings.server.netcode_private_key {
+        Some(private_key) => ServerAuthentication::Secure { private_key },
+        None => {
+            warn!("running in unsecure mode");
+            ServerAuthentication::Unsecure
+        }
     };
 
     let netcode_server = RenetServer::new(ConnectionConfig::default());
-    bevy::log::info!(
-        "listening on {}; secure: {}",
-        socket.local_addr()?,
-        settings.server.is_secure
-    );
+    info!("listening on {}", socket.local_addr()?);
     let netcode_transport = NetcodeServerTransport::new(
         ServerConfig {
             current_time: SystemTime::now()

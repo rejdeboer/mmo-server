@@ -2376,27 +2376,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2a2330da5de22e8a3cb63252ce2abb30116bf5265e89c0e01bc17015ce30a476"
 
 [[package]]
-name = "db-seeder"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "axum 0.8.6",
- "clap",
- "config",
- "fake 2.3.0",
- "secrecy",
- "serde 1.0.228",
- "serde-aux 3.1.0",
- "sqlx",
- "tokio",
- "tower-http 0.5.2",
- "tracing",
- "tracing-log",
- "tracing-subscriber",
- "web-server",
-]
-
-[[package]]
 name = "der"
 version = "0.7.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5586,6 +5565,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "provisioner"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum 0.8.6",
+ "clap",
+ "config",
+ "fake 2.3.0",
+ "secrecy",
+ "serde 1.0.228",
+ "serde-aux 3.1.0",
+ "sqlx",
+ "tokio",
+ "tower-http 0.5.2",
+ "tracing",
+ "tracing-log",
+ "tracing-subscriber",
+ "web-server",
+]
+
+[[package]]
 name = "pxfm"
 version = "0.1.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6524,9 +6524,9 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
- "db-seeder",
  "futures",
  "mmo-client",
+ "provisioner",
  "rand 0.9.2",
  "rand_chacha 0.9.0",
  "reqwest",

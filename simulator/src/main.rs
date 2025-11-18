@@ -1,6 +1,7 @@
 use clap::Parser;
-use db_seeder::SeedParameters;
 use futures::future::join_all;
+use mmo_client::decode_token;
+use provisioner::{ProvisionParams, ProvisionResult};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use simulator::SimulatedClient;
@@ -16,9 +17,9 @@ struct Args {
     /// Number of clients to simulate
     #[arg(short, long, default_value_t = 10)]
     clients: usize,
-    /// Endpoint of the DB seeding server
-    #[arg(long, default_value = "http://127.0.0.1:8032/seed")]
-    seeder_endpoint: String,
+    /// Endpoint of the provisioning server
+    #[arg(long, default_value = "http://127.0.0.1:8032/provision")]
+    provisioner_endpoint: String,
     /// Game server host
     #[arg(long, default_value = "127.0.0.1")]
     server_host: String,
@@ -38,7 +39,9 @@ async fn main() -> anyhow::Result<()> {
 
     let args = Args::parse();
 
-    seed_db(&args.seeder_endpoint, args.clients).await?;
+    let game_server_addr = format!("{}:{}", args.server_host, args.server_port);
+    let result =
+        execute_provision(&args.provisioner_endpoint, args.clients, game_server_addr).await?;
 
     let seed = args.seed.unwrap_or_else(|| {
         let random_seed = rand::rng().random();
@@ -49,12 +52,15 @@ async fn main() -> anyhow::Result<()> {
     let mut main_rng = ChaCha8Rng::seed_from_u64(seed);
     let mut tasks = vec![];
 
-    for i in 1..=args.clients {
+    for token in result.tokens {
+        let connect_token = decode_token(token)?;
         let bot_seed = main_rng.random();
-        let client = SimulatedClient::new(i as i32, bot_seed);
-        tasks.push(tokio::spawn(
-            client.run(args.server_host.clone(), args.server_port),
-        ));
+
+        // WARNING: Because we're simulating, the client ID equals the character ID
+        // Need to be careful to maintain this invariant
+        let client = SimulatedClient::new(connect_token.client_id as i32, bot_seed);
+
+        tasks.push(tokio::spawn(client.run(connect_token)));
     }
 
     let timeout_duration = Duration::from_secs(args.duration);
@@ -81,12 +87,21 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn seed_db(endpoint: &str, clients: usize) -> anyhow::Result<()> {
-    reqwest::Client::new()
+async fn execute_provision(
+    endpoint: &str,
+    clients: usize,
+    game_server_addr: String,
+) -> anyhow::Result<ProvisionResult> {
+    let res = reqwest::Client::new()
         .post(endpoint)
-        .json(&SeedParameters { count: clients })
+        .json(&ProvisionParams {
+            count: clients,
+            server_addr: game_server_addr,
+        })
         .send()
         .await?
-        .error_for_status()?;
-    Ok(())
+        .error_for_status()?
+        .json()
+        .await?;
+    Ok(res)
 }

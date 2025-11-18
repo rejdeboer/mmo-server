@@ -3,8 +3,8 @@ name: DB seeder push
 on:
   push:
     paths:
-      - ".github/workflows/db-seeder-push.yml"
-      - "db/seeder/**"
+      - ".github/workflows/provisioner-push.yml"
+      - "provisioner/**"
   workflow_dispatch:
 
 permissions:
@@ -29,5 +29,5 @@ jobs:
         uses: ./.github/actions/push-image
         with:
           file: "db/seeder/Dockerfile"
-          image: rejdeboer/mmo-db-seeder
+          image: rejdeboer/mmo-provisioner
 

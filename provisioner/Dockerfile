@@ -11,9 +11,9 @@ COPY --from=planner /app/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
 COPY . ./
 ENV SQLX_OFFLINE true
-RUN cargo build --release -p db-seeder 
+RUN cargo build --release -p provisioner 
 
-FROM debian:trixie-slim AS db-seeder
+FROM debian:trixie-slim AS provisioner
 WORKDIR /app
 RUN apt-get update -y \
 	&& apt-get install -y --no-install-recommends openssl ca-certificates \
@@ -21,6 +21,6 @@ RUN apt-get update -y \
 	&& apt-get clean -y \
 	&& rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /app/target/release/db-seeder db-seeder
-CMD ["./db-seeder", "serve"]
+COPY --from=builder /app/target/release/provisioner provisioner
+CMD ["./provisioner", "serve"]
 

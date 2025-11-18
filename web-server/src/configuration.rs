@@ -27,7 +27,7 @@ pub struct ApplicationSettings {
     pub port: u16,
     pub host: String,
     pub jwt_signing_key: SecretString,
-    #[serde(deserialize_with = "deserialize_netcode_key")]
+    #[serde(default, deserialize_with = "deserialize_netcode_key")]
     pub netcode_private_key: NetcodePrivateKey,
 }
 
@@ -76,7 +76,7 @@ pub struct LocalResolverSettings {
     pub port: u16,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct NetcodePrivateKey([u8; 32]);
 
 impl AsRef<[u8; 32]> for NetcodePrivateKey {
@@ -154,7 +154,7 @@ pub fn get_configuration() -> Result<Settings, config::ConfigError> {
     settings.try_into()
 }
 
-fn deserialize_netcode_key<'de, D>(deserializer: D) -> Result<NetcodePrivateKey, D::Error>
+pub fn deserialize_netcode_key<'de, D>(deserializer: D) -> Result<NetcodePrivateKey, D::Error>
 where
     D: Deserializer<'de>,
 {
