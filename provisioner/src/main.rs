@@ -1,6 +1,7 @@
 use clap::{Parser, Subcommand, arg};
-use db_seeder::{Application, ServerSettings, get_configuration, init_telemetry, seed_db};
-use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
+use provisioner::{Application, ServerSettings, get_configuration, init_telemetry, seed_db};
+use sqlx::postgres::PgPoolOptions;
+use web_server::configuration::NetcodePrivateKey;
 
 /// A CLI to seed an MMO database
 #[derive(Parser, Debug)]
@@ -39,7 +40,7 @@ async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     let settings = get_configuration()?;
     let pg_connect_options = match cli.db_url {
-        Some(url) => PgConnectOptions::from(url.parse()?),
+        Some(url) => url.parse()?,
         None => settings
             .database
             .expect("No CLI arg provided, so expected DB settings to be set by config file")
@@ -58,6 +59,7 @@ async fn main() -> anyhow::Result<()> {
             let mut server_settings = settings.server.unwrap_or(ServerSettings {
                 host: "127.0.0.1".to_string(),
                 port: 8032,
+                netcode_private_key: NetcodePrivateKey::default(),
             });
 
             if let Some(host) = host {

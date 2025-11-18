@@ -51,7 +51,7 @@ jobs:
           sudo apt-get install libpq-dev -y
           SKIP_DOCKER=true SEED=false ./scripts/init_db.sh
       - name: Check sqlx-data.json is up-to-date
-        run: cargo sqlx prepare --workspace --check -- --package db-seeder --package mmo-server --package web-server
+        run: cargo sqlx prepare --workspace --check -- --package provisioner --package mmo-server --package web-server
       - name: Run tests
         run: cargo test
 
