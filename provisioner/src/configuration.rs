@@ -1,6 +1,7 @@
 use secrecy::{ExposeSecret, SecretString};
 use serde_aux::field_attributes::deserialize_number_from_string;
 use sqlx::{ConnectOptions, postgres::PgConnectOptions};
+use web_server::configuration::{NetcodePrivateKey, deserialize_netcode_key};
 
 #[derive(serde::Deserialize, Clone)]
 pub struct Settings {
@@ -13,6 +14,8 @@ pub struct ServerSettings {
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub port: u16,
     pub host: String,
+    #[serde(deserialize_with = "deserialize_netcode_key")]
+    pub netcode_private_key: NetcodePrivateKey,
 }
 
 #[derive(serde::Deserialize, Clone)]

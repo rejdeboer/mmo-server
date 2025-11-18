@@ -1,6 +1,6 @@
 use clap::Parser;
-use db_seeder::SeedParameters;
 use futures::future::join_all;
+use provisioner::SeedParameters;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use simulator::SimulatedClient;
@@ -16,9 +16,9 @@ struct Args {
     /// Number of clients to simulate
     #[arg(short, long, default_value_t = 10)]
     clients: usize,
-    /// Endpoint of the DB seeding server
-    #[arg(long, default_value = "http://127.0.0.1:8032/seed")]
-    seeder_endpoint: String,
+    /// Endpoint of the provisioning server
+    #[arg(long, default_value = "http://127.0.0.1:8032/provision")]
+    provisioner_endpoint: String,
     /// Game server host
     #[arg(long, default_value = "127.0.0.1")]
     server_host: String,
@@ -38,7 +38,7 @@ async fn main() -> anyhow::Result<()> {
 
     let args = Args::parse();
 
-    seed_db(&args.seeder_endpoint, args.clients).await?;
+    seed_db(&args.provisioner_endpoint, args.clients).await?;
 
     let seed = args.seed.unwrap_or_else(|| {
         let random_seed = rand::rng().random();

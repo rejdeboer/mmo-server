@@ -1,8 +1,8 @@
 [workspace]
 members = [
-	"db/seeder",
 	"mmo-client",
 	"mmo-server",
+	"provisioner",
 	"schemas",
 	"simulator",
 	"web-client",

@@ -1,22 +1,14 @@
-use axum::{Extension, Json, extract::State, response::Result};
-use flatbuffers::FlatBufferBuilder;
-use renetcode::{ConnectToken, NETCODE_USER_DATA_BYTES};
-use schemas::protocol::{TokenUserData, TokenUserDataArgs};
-use secrecy::ExposeSecret;
-use serde::{Deserialize, Serialize};
-use std::{
-    net::SocketAddr,
-    time::{SystemTime, UNIX_EPOCH},
-};
-use tracing::instrument;
-
 use crate::{
     ApplicationState,
     auth::{AccountContext, CharacterContext, encode_jwt},
-    configuration::NetcodePrivateKey,
     error::ApiError,
+    protocol::{encode_connect_token, generate_connect_token},
     telemetry::get_trace_parent,
 };
+use axum::{Extension, Json, extract::State, response::Result};
+use secrecy::ExposeSecret;
+use serde::{Deserialize, Serialize};
+use tracing::instrument;
 
 #[derive(Serialize, Deserialize)]
 pub struct GameEntryRequest {
@@ -58,17 +50,19 @@ pub async fn game_entry(
 
     // TODO: Use more than 1 realm
     let server_addr = state.realm_resolver.resolve("main").await?;
-
-    let mut token_buffer: Vec<u8> = vec![];
     let connect_token = generate_connect_token(
         ctx.account_id,
         payload.character_id,
-        state.netcode_private_key,
+        &state.netcode_private_key,
         server_addr,
         get_trace_parent(),
-    )?;
-    connect_token.write(&mut token_buffer).map_err(|error| {
-        tracing::error!(?error, "failed to write netcode token to buffer");
+    )
+    .map_err(|err| {
+        tracing::error!(?err, "failed to generate connect token");
+        ApiError::UnexpectedError
+    })?;
+    let connect_token = encode_connect_token(connect_token).map_err(|error| {
+        tracing::error!(?error, "failed to encode connect token");
         ApiError::UnexpectedError
     })?;
 
@@ -82,56 +76,5 @@ pub async fn game_entry(
         ApiError::UnexpectedError
     })?;
 
-    Ok(Json(GameEntryResponse {
-        connect_token: base64::encode_config(token_buffer, base64::STANDARD),
-        jwt,
-    }))
-}
-
-// TODO: These parameters are arbitrary for now
-fn generate_connect_token(
-    account_id: i32,
-    character_id: i32,
-    private_key: NetcodePrivateKey,
-    server_addr: SocketAddr,
-    traceparent: Option<String>,
-) -> Result<ConnectToken, ApiError> {
-    let public_addresses: Vec<SocketAddr> = vec![server_addr];
-
-    let mut builder = FlatBufferBuilder::new();
-
-    let traceparent = traceparent.map(|v| builder.create_string(&v));
-    if traceparent.is_none() {
-        tracing::warn!("no traceparent present");
-    }
-
-    let response_offset = TokenUserData::create(
-        &mut builder,
-        &TokenUserDataArgs {
-            character_id,
-            traceparent,
-        },
-    );
-    builder.finish_minimal(response_offset);
-
-    let mut user_data: [u8; NETCODE_USER_DATA_BYTES] = [0; NETCODE_USER_DATA_BYTES];
-    let copy_data = builder.finished_data();
-    user_data[0..copy_data.len()].copy_from_slice(copy_data);
-
-    let token = ConnectToken::generate(
-        SystemTime::now().duration_since(UNIX_EPOCH).unwrap(),
-        0,
-        300,
-        account_id as u64,
-        15,
-        public_addresses,
-        Some(&user_data),
-        private_key.as_ref(),
-    )
-    .map_err(|error| {
-        tracing::error!(?error, "failed to generate netcode token");
-        ApiError::UnexpectedError
-    })?;
-
-    Ok(token)
+    Ok(Json(GameEntryResponse { connect_token, jwt }))
 }

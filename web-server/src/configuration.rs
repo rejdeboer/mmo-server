@@ -154,7 +154,7 @@ pub fn get_configuration() -> Result<Settings, config::ConfigError> {
     settings.try_into()
 }
 
-fn deserialize_netcode_key<'de, D>(deserializer: D) -> Result<NetcodePrivateKey, D::Error>
+pub fn deserialize_netcode_key<'de, D>(deserializer: D) -> Result<NetcodePrivateKey, D::Error>
 where
     D: Deserializer<'de>,
 {
