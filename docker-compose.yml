@@ -8,6 +8,7 @@ services:
     ports:
       - 8000:8000/udp
     environment:
+      - APP_SERVER__HOST=0.0.0.0
       - APP_DATABASE__PORT=5433
       - SQLX_OFFLINE=true
 
