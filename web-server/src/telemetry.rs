@@ -1,10 +1,9 @@
-use std::collections::HashMap;
-
 use crate::configuration::{TelemetrySettings, TracingFormat};
 use once_cell::sync::Lazy;
 use opentelemetry::{Context, global};
 use opentelemetry_otlp::{Protocol, WithExportConfig};
 use prometheus::IntGauge;
+use std::collections::HashMap;
 use tracing::{Subscriber, subscriber::set_global_default};
 use tracing_log::LogTracer;
 use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt};
@@ -67,14 +66,6 @@ pub fn init_subscriber(settings: &TelemetrySettings) {
         .with(otel);
     LogTracer::init().expect("logger init succeeded");
     set_global_default(subscriber).expect("set subscriber succeeded");
-}
-
-pub fn get_local_subscriber(env_filter: EnvFilter) -> impl Subscriber + Send + Sync {
-    let fmt_layer = fmt::layer().compact().with_ansi(true);
-
-    tracing_subscriber::Registry::default()
-        .with(env_filter)
-        .with(fmt_layer)
 }
 
 pub fn get_trace_parent() -> Option<String> {
