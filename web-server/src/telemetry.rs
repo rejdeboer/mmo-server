@@ -4,7 +4,7 @@ use opentelemetry::{Context, global};
 use opentelemetry_otlp::{Protocol, WithExportConfig};
 use prometheus::IntGauge;
 use std::collections::HashMap;
-use tracing::{subscriber::set_global_default};
+use tracing::subscriber::set_global_default;
 use tracing_log::LogTracer;
 use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt};
 
