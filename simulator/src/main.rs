@@ -53,10 +53,10 @@ async fn main() -> anyhow::Result<()> {
     let mut tasks = vec![];
 
     for token in result.tokens {
-        let connect_token = decode_token(token).expect("token decoded");
+        let connect_token = decode_token(token)?;
         let bot_seed = main_rng.random();
 
-        // WARNING: Because we're simulating, the client id equals the character ID
+        // WARNING: Because we're simulating, the client ID equals the character ID
         // Need to be careful to maintain this invariant
         let client = SimulatedClient::new(connect_token.client_id as i32, bot_seed);
 

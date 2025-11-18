@@ -4,7 +4,7 @@ use rand_chacha::ChaCha8Rng;
 use std::time::Duration;
 use tokio::time::Instant;
 
-const TICK_DURATION: Duration = Duration::from_millis(1000 / 30);
+const TICK_DURATION: Duration = Duration::from_millis(1000 / 20);
 
 pub enum SimulatedClientState {
     Disconnected,
