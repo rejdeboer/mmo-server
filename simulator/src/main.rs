@@ -55,11 +55,7 @@ async fn main() -> anyhow::Result<()> {
     for token in result.tokens {
         let connect_token = decode_token(token)?;
         let bot_seed = main_rng.random();
-
-        // WARNING: Because we're simulating, the client ID equals the character ID
-        // Need to be careful to maintain this invariant
-        let client = SimulatedClient::new(connect_token.client_id as i32, bot_seed);
-
+        let client = SimulatedClient::new(connect_token.client_id, bot_seed);
         tasks.push(tokio::spawn(client.run(connect_token)));
     }
 

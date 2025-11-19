@@ -3,6 +3,7 @@ use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use std::time::Duration;
 use tokio::time::Instant;
+use tracing::instrument;
 
 const TICK_DURATION: Duration = Duration::from_millis(1000 / 20);
 
@@ -13,26 +14,27 @@ pub enum SimulatedClientState {
 
 pub struct SimulatedClient {
     client: GameClient,
-    character_id: i32,
+    client_id: u64,
     rng: ChaCha8Rng,
     state: SimulatedClientState,
 }
 
 impl SimulatedClient {
-    pub fn new(character_id: i32, seed: u64) -> Self {
+    pub fn new(client_id: u64, seed: u64) -> Self {
         let client = GameClient::default();
         let rng = ChaCha8Rng::seed_from_u64(seed);
 
         Self {
             client,
-            character_id,
+            client_id,
             rng,
             state: SimulatedClientState::Disconnected,
         }
     }
 
+    #[instrument(skip_all, fields(client_id = self.client_id))]
     pub async fn run(mut self, connect_token: ConnectToken) -> anyhow::Result<()> {
-        tracing::info!(character_id = self.character_id, "starting bot");
+        tracing::info!("starting bot");
 
         self.client.connect(connect_token);
 
@@ -49,17 +51,11 @@ impl SimulatedClient {
                     if let Some(event) = self.client.poll_connection(dt) {
                         match event {
                             ConnectionEvent::EnterGameSuccess { player_entity } => {
-                                tracing::info!(
-                                    character_id = self.character_id,
-                                    "successfully entered game"
-                                );
+                                tracing::info!("successfully entered game");
                                 self.state = SimulatedClientState::Connected(player_entity);
                             }
                             ConnectionEvent::Disconnected => {
-                                tracing::error!(
-                                    character_id = self.character_id,
-                                    "disconnected during connection phase"
-                                );
+                                tracing::error!("disconnected during connection phase");
                                 break;
                             }
                             _ => {}
