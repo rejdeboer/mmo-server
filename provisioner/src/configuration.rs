@@ -14,7 +14,7 @@ pub struct ServerSettings {
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub port: u16,
     pub host: String,
-    #[serde(deserialize_with = "deserialize_netcode_key")]
+    #[serde(default, deserialize_with = "deserialize_netcode_key")]
     pub netcode_private_key: NetcodePrivateKey,
 }
 

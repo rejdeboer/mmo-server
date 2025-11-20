@@ -46,9 +46,7 @@ async fn main() -> anyhow::Result<()> {
             .expect("No CLI arg provided, so expected DB settings to be set by config file")
             .with_db(),
     };
-    let pool = PgPoolOptions::new()
-        .connect_with(pg_connect_options)
-        .await?;
+    let pool = PgPoolOptions::new().connect_lazy_with(pg_connect_options);
 
     match &cli.command {
         Commands::Seed { count } => {
