@@ -3,7 +3,7 @@ use provisioner::{Application, ServerSettings, get_configuration, init_telemetry
 use sqlx::postgres::PgPoolOptions;
 use web_server::configuration::NetcodePrivateKey;
 
-/// A CLI to seed an MMO database
+/// A CLI to seed an MMO world for testing and simulation
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Cli {
@@ -17,7 +17,7 @@ struct Cli {
 
 #[derive(Subcommand, Debug)]
 enum Commands {
-    /// Starts HTTP seeding server
+    /// Starts HTTP provisioning server
     Serve {
         /// The port to listen on
         #[arg(long)]
