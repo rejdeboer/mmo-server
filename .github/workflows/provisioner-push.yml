@@ -1,4 +1,4 @@
-name: DB seeder push
+name: Provisioner push
 
 on:
   push:
@@ -28,6 +28,6 @@ jobs:
       - name: Build and push
         uses: ./.github/actions/push-image
         with:
-          file: "db/seeder/Dockerfile"
+          file: "provisioner/Dockerfile"
           image: rejdeboer/mmo-provisioner
 
