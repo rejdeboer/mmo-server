@@ -7,8 +7,11 @@ services:
     network_mode: host
     ports:
       - 8000:8000/udp
+    volumes:
+      - ./mmo-server/assets:/app/assets
     environment:
       - APP_SERVER__HOST=0.0.0.0
+      - APP_SERVER__METRICS_PATH=/app/game-metrics.prom
       - APP_DATABASE__PORT=5433
       - SQLX_OFFLINE=true
 
