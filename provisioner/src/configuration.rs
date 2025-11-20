@@ -45,6 +45,6 @@ pub fn get_configuration() -> Result<Settings, config::ConfigError> {
     let base_path = std::env::current_dir().expect("determined current directory");
 
     settings.merge(config::File::from(base_path.join("settings")).required(false))?;
-    settings.merge(config::Environment::new().separator("_"))?;
+    settings.merge(config::Environment::with_prefix("PROVISIONER").separator("_"))?;
     settings.try_into()
 }
