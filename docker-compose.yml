@@ -3,7 +3,6 @@ services:
     build: 
       target: mmo-server
     working_dir: /app
-    network_mode: host
     ports:
       - 8000:8000/udp
     volumes:
