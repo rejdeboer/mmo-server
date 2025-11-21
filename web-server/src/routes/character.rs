@@ -1,5 +1,6 @@
 use axum::{Extension, Json, extract::State, response::Result};
 use serde::{Deserialize, Serialize};
+use tracing::instrument;
 
 use crate::{ApplicationState, auth::AccountContext, domain::CharacterName, error::ApiError};
 
@@ -17,6 +18,7 @@ pub struct CharacterCreate {
 }
 
 // TODO: Implement more validation: character limits, etc...
+#[instrument(skip_all, fields(name = payload.name))]
 pub async fn character_create(
     State(state): State<ApplicationState>,
     Extension(ctx): Extension<AccountContext>,

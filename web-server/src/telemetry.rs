@@ -2,6 +2,7 @@ use crate::configuration::{TelemetrySettings, TracingFormat};
 use once_cell::sync::Lazy;
 use opentelemetry::{Context, global};
 use opentelemetry_otlp::{Protocol, WithExportConfig};
+use opentelemetry_sdk::Resource;
 use prometheus::IntGauge;
 use std::collections::HashMap;
 use tracing::subscriber::set_global_default;
@@ -50,6 +51,7 @@ pub fn init_subscriber(settings: &TelemetrySettings) {
 
         let tracer_provider = opentelemetry_sdk::trace::SdkTracerProvider::builder()
             .with_batch_exporter(exporter)
+            .with_resource(Resource::builder().with_service_name("web-server").build())
             .build();
         global::set_tracer_provider(tracer_provider);
 

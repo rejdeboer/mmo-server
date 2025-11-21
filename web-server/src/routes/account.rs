@@ -4,6 +4,7 @@ use argon2::password_hash::PasswordHashString;
 use axum::Json;
 use axum::extract::State;
 use serde::{Deserialize, Serialize};
+use tracing::instrument;
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct AccountCreate {
@@ -44,6 +45,7 @@ impl TryInto<NewAccount> for AccountCreate {
     }
 }
 
+#[instrument(skip_all, fields(email = payload.email, username = payload.username))]
 pub async fn account_create(
     State(state): State<ApplicationState>,
     Json(payload): Json<AccountCreate>,

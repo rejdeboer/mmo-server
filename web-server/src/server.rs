@@ -19,7 +19,8 @@ use tokio::{
     net::TcpListener,
     sync::mpsc::{Receiver, Sender, channel},
 };
-use tower_http::trace::{DefaultMakeSpan, TraceLayer};
+use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
+use tracing::Level;
 
 pub struct Server {
     pub listener: TcpListener,
@@ -91,7 +92,16 @@ impl Application {
             .route("/token", post(login))
             .layer(
                 TraceLayer::new_for_http()
-                    .make_span_with(DefaultMakeSpan::default().include_headers(true)),
+                    .make_span_with(
+                        DefaultMakeSpan::default()
+                            .level(Level::INFO)
+                            .include_headers(true),
+                    )
+                    .on_response(
+                        DefaultOnResponse::new()
+                            .level(Level::INFO)
+                            .latency_unit(tower_http::LatencyUnit::Millis),
+                    ),
             )
             .with_state(application_state);
         let app_server = Server {
