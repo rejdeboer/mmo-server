@@ -4278,6 +4278,7 @@ name = "mmo-server"
 version = "0.1.0"
 dependencies = [
  "agones",
+ "anyhow",
  "avian3d",
  "base64 0.12.3",
  "bevy",

@@ -19,6 +19,7 @@ use schemas::game::{self as schema};
 use schemas::protocol::TokenUserData;
 use sqlx::{Pool, Postgres};
 use std::sync::Arc;
+use tracing::instrument;
 
 // TODO: This should probably be done in another module
 const SPEED_PRECISION_MULTIPLIER: f32 = 100.;
@@ -199,6 +200,7 @@ pub fn handle_connection_events(
     }
 }
 
+#[instrument(skip_all, fields(client_id = client_id))]
 fn process_client_connected(
     client_id: ClientId,
     transport: &NetcodeServerTransport,
@@ -206,7 +208,7 @@ fn process_client_connected(
     pool: &DatabasePool,
     runtime: &TokioTasksRuntime,
 ) {
-    bevy::log::info!("player {} connected", client_id);
+    tracing::info!("client connected");
     let user_data_option = transport.user_data(client_id);
     if user_data_option.is_none() {
         return server.disconnect(client_id);
@@ -217,7 +219,10 @@ fn process_client_connected(
         Ok(data) => {
             let character_id = data.character_id();
             let db_pool = pool.0.clone();
+
+            let span = tracing::Span::current();
             runtime.spawn_background_task(async move |mut ctx| {
+                let _enter = span.enter();
                 let character = load_character_data(db_pool, character_id)
                     .await
                     .expect("player character data retrieved");
@@ -271,22 +276,24 @@ fn process_client_connected(
                     let response = builder.finished_data().to_vec();
 
                     let mut server = ctx.world.get_resource_mut::<RenetServer>().unwrap();
-                    info!("approving enter game request by client {}", client_id);
+                    tracing::info!("approving enter game request by client {}", client_id);
                     server.send_message(client_id, DefaultChannel::ReliableOrdered, response);
                 })
                 .await;
             });
         }
         Err(error) => {
-            error!(
+            tracing::error!(
                 ?error,
-                "failed to deserialize user data from client {}; disconnecting", client_id,
+                "failed to deserialize user data from client {}; disconnecting",
+                client_id,
             );
             server.disconnect(client_id);
         }
     }
 }
 
+#[instrument(skip_all, fields(character_id = character_id))]
 async fn load_character_data(
     pool: Pool<Postgres>,
     character_id: i32,
@@ -306,6 +313,7 @@ async fn load_character_data(
     .await
 }
 
+#[instrument(skip_all, fields(client_id = client_id))]
 fn process_client_disconnected(
     client_id: ClientId,
     reason: &DisconnectReason,
@@ -319,7 +327,7 @@ fn process_client_disconnected(
     pool: &DatabasePool,
     runtime: &TokioTasksRuntime,
 ) {
-    bevy::log::info!("player {} disconnected: {}", client_id, reason);
+    tracing::info!(?reason, "client disconnected");
 
     for (entity, player_client_id, character_id, transform) in players.iter() {
         if player_client_id.0 == client_id {
@@ -347,7 +355,7 @@ fn process_client_disconnected(
                 .execute(&db_pool)
                 .await
                 {
-                    error!(?error, "failed to update character");
+                    tracing::error!(?error, "failed to update character");
                 };
             });
             return;

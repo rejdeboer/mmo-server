@@ -5,4 +5,4 @@ pub mod configuration;
 mod messages;
 mod plugins;
 mod systems;
-mod telemetry;
+pub mod telemetry;
