@@ -18,7 +18,7 @@ debug = [
 	"bevy/wayland",
 	"avian3d/debug-plugin",
 ]
-profiling = ["dep:tracing_tracy"]
+profiling = ["dep:tracing-tracy"]
 
 [dependencies]
 agones = { version = "1.50", optional = true }
@@ -41,7 +41,7 @@ tracing = { workspace = true }
 tracing-opentelemetry = { workspace = true }
 tracing-log = "0.2.0"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
-tracing_tracy = { version = "0.11", optional = true }
+tracing-tracy = { version = "0.11", optional = true }
 
 [dependencies.avian3d]
 version = "0.4.1"

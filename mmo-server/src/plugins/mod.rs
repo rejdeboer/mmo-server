@@ -17,6 +17,3 @@ pub use debug::AppPlugin;
 mod headless;
 #[cfg(not(feature = "debug"))]
 pub use headless::AppPlugin;
-
-mod trace;
-pub use trace::*;

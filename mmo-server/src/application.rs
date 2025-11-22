@@ -16,7 +16,7 @@ use std::time::SystemTime;
 use crate::configuration::Settings;
 use crate::messages::{IncomingChatMessage, MoveActionMessage, OutgoingMessage};
 use crate::plugins::{AgonesPlugin, AppPlugin};
-use crate::telemetry::{Metrics, run_metrics_exporter};
+use crate::telemetry::{Metrics, init_subscriber, run_metrics_exporter};
 
 #[derive(Resource, Clone)]
 pub struct DatabasePool(pub PgPool);
@@ -27,6 +27,7 @@ pub struct SpatialGrid {
 }
 
 pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
+    init_subscriber(&settings.tracing);
     let mut app = App::new();
 
     app.add_plugins(AppPlugin);

@@ -6,7 +6,11 @@ pub struct AppPlugin;
 
 impl Plugin for AppPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((DefaultPlugins, PhysicsDebugPlugin, PanOrbitCameraPlugin));
+        app.add_plugins((
+            DefaultPlugins.build().disable::<LogPlugin>(),
+            PhysicsDebugPlugin,
+            PanOrbitCameraPlugin,
+        ));
         info!("running in debug mode");
 
         app.add_systems(Startup, setup_camera);

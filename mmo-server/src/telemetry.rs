@@ -1,11 +1,17 @@
+use crate::configuration::{TracingFormat, TracingSettings};
 use bevy::prelude::*;
 use bevy_tokio_tasks::TaskContext;
-use prometheus::{Encoder, Gauge, IntCounterVec, IntGauge, Opts, Registry, TextEncoder};
+use opentelemetry::global;
+use opentelemetry_otlp::{Protocol, WithExportConfig};
+use prometheus::IntGauge;
+use prometheus::{Encoder, Gauge, IntCounterVec, Opts, Registry, TextEncoder};
 use std::fs::File;
 use std::io::Write;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::time::{Duration, Instant, interval};
+use tracing_log::LogTracer;
+use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt};
 
 const EXPORT_INTERVAL_SECS: f32 = 5.;
 
@@ -115,4 +121,60 @@ pub async fn run_metrics_exporter(ctx: TaskContext, metrics: Metrics, path: Stri
             Err(err) => error!(?err, "failed to create metrics file"),
         });
     }
+}
+
+pub fn init_subscriber(settings: &TracingSettings) {
+    let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
+
+    let (pretty, json) = match settings.format {
+        TracingFormat::Pretty => (Some(fmt::layer().compact().with_ansi(true)), None),
+        TracingFormat::Json => (
+            None,
+            Some(
+                fmt::layer()
+                    .json()
+                    .with_current_span(true)
+                    .with_span_list(true),
+            ),
+        ),
+    };
+
+    let otel = if let Some(endpoint) = &settings.otel_exporter_endpoint {
+        let exporter = opentelemetry_otlp::SpanExporter::builder()
+            .with_tonic()
+            .with_protocol(Protocol::Grpc)
+            .with_endpoint(endpoint)
+            .build()
+            .expect("tracing exporter built");
+
+        let tracer_provider = opentelemetry_sdk::trace::SdkTracerProvider::builder()
+            .with_batch_exporter(exporter)
+            .with_resource(
+                opentelemetry_sdk::Resource::builder()
+                    .with_service_name("mmo-server")
+                    .build(),
+            )
+            .build();
+        global::set_tracer_provider(tracer_provider);
+
+        let otel_layer = tracing_opentelemetry::layer().with_tracer(global::tracer(""));
+        Some(otel_layer)
+    } else {
+        None
+    };
+
+    #[cfg(feature = "profiling")]
+    let tracy_layer = tracing_tracy::TracyLayer::default();
+
+    let subscriber = tracing_subscriber::Registry::default()
+        .with(env_filter)
+        .with(pretty)
+        .with(json)
+        .with(otel);
+
+    #[cfg(feature = "profiling")]
+    let subscriber = subscriber.with(tracy_layer);
+
+    LogTracer::init().expect("logger init succeeded");
+    tracing::subscriber::set_global_default(subscriber).expect("set subscriber succeeded");
 }
