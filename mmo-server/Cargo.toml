@@ -18,9 +18,7 @@ debug = [
 	"bevy/wayland",
 	"avian3d/debug-plugin",
 ]
-profiling = [
-	"bevy/trace_tracy",
-]
+profiling = ["dep:tracing_tracy"]
 
 [dependencies]
 agones = { version = "1.50", optional = true }
@@ -30,13 +28,20 @@ bevy_panorbit_camera = { version = "0.33", optional = true }
 bevy_renet = { git = "https://github.com/lucaspoffo/renet" }
 config = "0.11"
 flatbuffers = { workspace = true }
+opentelemetry = { workspace = true }
+opentelemetry-otlp = { workspace = true }
+opentelemetry_sdk = { workspace = true }
 prometheus = { workspace = true }
 schemas = { path = "../schemas" }
 secrecy = { version = "0.10.3", features = ["serde"] }
 serde = { version = "1.0.219", features = ["derive"] }
 serde-aux = "4.7.0"
 tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-opentelemetry = { workspace = true }
+tracing-log = "0.2.0"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+tracing_tracy = { version = "0.11", optional = true }
 
 [dependencies.avian3d]
 version = "0.4.1"
@@ -49,7 +54,6 @@ default-features = false
 features = [
 	"bevy_asset",
 	"bevy_gltf",
-	"bevy_log",
 	"bevy_scene",
 	"bevy_state",
 	"multi_threaded",

@@ -4318,6 +4318,9 @@ dependencies = [
  "fake 4.4.0",
  "flatbuffers",
  "once_cell",
+ "opentelemetry",
+ "opentelemetry-otlp",
+ "opentelemetry_sdk",
  "prometheus",
  "rand 0.8.5",
  "schemas",
@@ -4326,6 +4329,9 @@ dependencies = [
  "serde-aux 4.7.0",
  "sqlx",
  "tokio",
+ "tracing",
+ "tracing-log",
+ "tracing-opentelemetry",
  "tracing-subscriber",
 ]
 

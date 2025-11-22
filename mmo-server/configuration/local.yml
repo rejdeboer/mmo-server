@@ -4,3 +4,5 @@ server:
   host: 127.0.0.1
   # netcode_private_key: Z8ocDNthwK2cWI0XMIOVsEsKErlxSjuw7k0YibAucSk=
   metrics_path: ../target/game-metrics.prom
+tracing:
+  format: pretty

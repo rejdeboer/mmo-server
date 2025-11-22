@@ -19,6 +19,7 @@ pub enum Environment {
 pub struct Settings {
     pub server: ServerSettings,
     pub database: DatabaseSettings,
+    pub tracing: TracingSettings,
 }
 
 #[derive(serde::Deserialize, Clone)]
@@ -40,6 +41,19 @@ pub struct DatabaseSettings {
     pub host: String,
     pub name: String,
     pub require_ssl: bool,
+}
+
+#[derive(serde::Deserialize, Clone)]
+#[serde(rename_all = "lowercase")]
+pub enum TracingFormat {
+    Pretty,
+    Json,
+}
+
+#[derive(serde::Deserialize, Clone)]
+pub struct TracingSettings {
+    pub format: TracingFormat,
+    pub otel_exporter_endpoint: Option<String>,
 }
 
 impl Settings {
