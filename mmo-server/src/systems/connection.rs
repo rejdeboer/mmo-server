@@ -19,7 +19,7 @@ use schemas::game::{self as schema};
 use schemas::protocol::TokenUserData;
 use sqlx::{PgPool, Pool, Postgres};
 use std::{collections::HashMap, sync::Arc};
-use tracing::{Instrument, instrument};
+use tracing::{Instrument, Level, instrument};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 // TODO: This should probably be done in another module
@@ -201,7 +201,6 @@ pub fn handle_connection_events(
     }
 }
 
-#[instrument(skip_all, fields(client_id = client_id))]
 fn process_client_connected(
     client_id: ClientId,
     transport: &NetcodeServerTransport,
@@ -209,7 +208,6 @@ fn process_client_connected(
     pool: &DatabasePool,
     runtime: &TokioTasksRuntime,
 ) {
-    tracing::info!("client connected");
     let user_data_option = transport.user_data(client_id);
     if user_data_option.is_none() {
         return server.disconnect(client_id);
@@ -221,13 +219,13 @@ fn process_client_connected(
             let character_id = data.character_id();
             let db_pool = pool.0.clone();
 
-            let span = tracing::Span::current();
+            let span =
+                tracing::span!(Level::INFO, "process_client_connected", client_id = %client_id);
             if let Some(traceparent) = data.traceparent() {
                 let mut headers = HashMap::new();
                 headers.insert("traceparent".to_string(), traceparent.to_string());
                 let parent_ctx =
                     opentelemetry::global::get_text_map_propagator(|p| p.extract(&headers));
-                tracing::info!(?headers, "context");
                 if let Err(err) = span.set_parent(parent_ctx) {
                     tracing::error!(?err, "failed to set otel span parent");
                 };
@@ -242,20 +240,22 @@ fn process_client_connected(
         Err(error) => {
             tracing::error!(
                 ?error,
-                "failed to deserialize user data from client {}; disconnecting",
-                client_id,
+                ?client_id,
+                "failed to deserialize user data, disconnecting",
             );
             server.disconnect(client_id);
         }
     }
 }
 
+#[instrument(skip_all, fields(character_id = %character_id))]
 async fn handle_enter_game_task(
     pool: PgPool,
     client_id: ClientId,
     character_id: i32,
     mut ctx: TaskContext,
 ) {
+    tracing::info!("entering game");
     let character = load_character_data(pool, character_id)
         .await
         .expect("player character data retrieved");
@@ -309,13 +309,14 @@ async fn handle_enter_game_task(
         let response = builder.finished_data().to_vec();
 
         let mut server = ctx.world.get_resource_mut::<RenetServer>().unwrap();
-        tracing::info!("approving enter game request by client {}", client_id);
+        tracing::info!("approving enter game request for client {}", client_id);
         server.send_message(client_id, DefaultChannel::ReliableOrdered, response);
     })
     .await;
+    tracing::info!("successfully sent EnterGameResponse");
 }
 
-#[instrument(skip_all, fields(character_id = character_id))]
+#[instrument(skip_all)]
 async fn load_character_data(
     pool: Pool<Postgres>,
     character_id: i32,
