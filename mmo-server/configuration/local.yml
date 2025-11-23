@@ -6,3 +6,4 @@ server:
   metrics_path: ../target/game-metrics.prom
 tracing:
   format: pretty
+  otel_exporter_endpoint: http://localhost:4317

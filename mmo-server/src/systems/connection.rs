@@ -13,13 +13,13 @@ use bevy_renet::{
     netcode::NetcodeServerTransport,
     renet::{ClientId, DefaultChannel, DisconnectReason, RenetServer, ServerEvent},
 };
-use bevy_tokio_tasks::TokioTasksRuntime;
+use bevy_tokio_tasks::{TaskContext, TokioTasksRuntime};
 use flatbuffers::{FlatBufferBuilder, UnionWIPOffset, WIPOffset, root};
 use schemas::game::{self as schema};
 use schemas::protocol::TokenUserData;
-use sqlx::{Pool, Postgres};
+use sqlx::{PgPool, Pool, Postgres};
 use std::sync::Arc;
-use tracing::instrument;
+use tracing::{Instrument, instrument};
 
 // TODO: This should probably be done in another module
 const SPEED_PRECISION_MULTIPLIER: f32 = 100.;
@@ -221,65 +221,10 @@ fn process_client_connected(
             let db_pool = pool.0.clone();
 
             let span = tracing::Span::current();
-            runtime.spawn_background_task(async move |mut ctx| {
-                let _enter = span.enter();
-                let character = load_character_data(db_pool, character_id)
+            runtime.spawn_background_task(async move |ctx| {
+                handle_enter_game_task(db_pool, client_id, character_id, ctx)
+                    .instrument(span)
                     .await
-                    .expect("player character data retrieved");
-                ctx.run_on_main_thread(move |ctx| {
-                    let mut transform = Transform::from_xyz(
-                        character.position_x,
-                        character.position_y,
-                        character.position_z,
-                    );
-                    transform.rotate_y(character.rotation_yaw);
-                    let vitals = Vitals {
-                        hp: character.hp,
-                        max_hp: character.max_hp,
-                    };
-
-                    let entity = ctx
-                        .world
-                        .spawn(CharacterBundle::new(
-                            character.id,
-                            client_id,
-                            &character.name,
-                            transform,
-                            vitals.clone(),
-                            character.level,
-                        ))
-                        .id();
-
-                    let attributes = EntityAttributes::Player {
-                        character_id: character.id,
-                        guild_id: character.guild_id,
-                    };
-
-                    let mut builder = FlatBufferBuilder::new();
-                    let entity_offset = serialize_entity(
-                        &mut builder,
-                        entity,
-                        &attributes,
-                        &character.name,
-                        &transform,
-                        &vitals,
-                        character.level,
-                        BASE_MOVEMENT_SPEED,
-                    );
-                    let response_offset = schema::EnterGameResponse::create(
-                        &mut builder,
-                        &schema::EnterGameResponseArgs {
-                            player_entity: Some(entity_offset),
-                        },
-                    );
-                    builder.finish_minimal(response_offset);
-                    let response = builder.finished_data().to_vec();
-
-                    let mut server = ctx.world.get_resource_mut::<RenetServer>().unwrap();
-                    tracing::info!("approving enter game request by client {}", client_id);
-                    server.send_message(client_id, DefaultChannel::ReliableOrdered, response);
-                })
-                .await;
             });
         }
         Err(error) => {
@@ -291,6 +236,71 @@ fn process_client_connected(
             server.disconnect(client_id);
         }
     }
+}
+
+async fn handle_enter_game_task(
+    pool: PgPool,
+    client_id: ClientId,
+    character_id: i32,
+    mut ctx: TaskContext,
+) {
+    let character = load_character_data(pool, character_id)
+        .await
+        .expect("player character data retrieved");
+    ctx.run_on_main_thread(move |ctx| {
+        let mut transform = Transform::from_xyz(
+            character.position_x,
+            character.position_y,
+            character.position_z,
+        );
+        transform.rotate_y(character.rotation_yaw);
+        let vitals = Vitals {
+            hp: character.hp,
+            max_hp: character.max_hp,
+        };
+
+        let entity = ctx
+            .world
+            .spawn(CharacterBundle::new(
+                character.id,
+                client_id,
+                &character.name,
+                transform,
+                vitals.clone(),
+                character.level,
+            ))
+            .id();
+
+        let attributes = EntityAttributes::Player {
+            character_id: character.id,
+            guild_id: character.guild_id,
+        };
+
+        let mut builder = FlatBufferBuilder::new();
+        let entity_offset = serialize_entity(
+            &mut builder,
+            entity,
+            &attributes,
+            &character.name,
+            &transform,
+            &vitals,
+            character.level,
+            BASE_MOVEMENT_SPEED,
+        );
+        let response_offset = schema::EnterGameResponse::create(
+            &mut builder,
+            &schema::EnterGameResponseArgs {
+                player_entity: Some(entity_offset),
+            },
+        );
+        builder.finish_minimal(response_offset);
+        let response = builder.finished_data().to_vec();
+
+        let mut server = ctx.world.get_resource_mut::<RenetServer>().unwrap();
+        tracing::info!("approving enter game request by client {}", client_id);
+        server.send_message(client_id, DefaultChannel::ReliableOrdered, response);
+    })
+    .await;
 }
 
 #[instrument(skip_all, fields(character_id = character_id))]

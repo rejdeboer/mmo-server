@@ -1,31 +1,31 @@
 services:
-  mmo-server:
-    build: 
-      target: mmo-server
-    working_dir: /app
-    ports:
-      - 8000:8000/udp
-    volumes:
-      - ./mmo-server/assets:/app/assets
-    environment:
-      - APP_SERVER__HOST=0.0.0.0
-      - APP_SERVER__METRICS_PATH=/app/game-metrics.prom
-      - APP_DATABASE__PORT=5432
-      - APP_TRACING__OTEL_EXPORTER_ENDPOINT=http://tempo:4317
-      - SQLX_OFFLINE=true
-
-  web-server:
-    build: 
-      target: web-server
-    working_dir: /app
-    ports:
-      - 8001:8001
-    environment:
-      - APP_APPLICATION__HOST=0.0.0.0
-      - APP_DATABASE__HOST=postgres
-      - APP_DATABASE__PORT=5432
-      - APP_TELEMETRY__OTEL_EXPORTER_ENDPOINT=http://tempo:4317
-      - SQLX_OFFLINE=true
+  # mmo-server:
+  #   build: 
+  #     target: mmo-server
+  #   working_dir: /app
+  #   ports:
+  #     - 8000:8000/udp
+  #   volumes:
+  #     - ./mmo-server/assets:/app/assets
+  #   environment:
+  #     - APP_SERVER__HOST=0.0.0.0
+  #     - APP_SERVER__METRICS_PATH=/app/game-metrics.prom
+  #     - APP_DATABASE__PORT=5432
+  #     - APP_TRACING__OTEL_EXPORTER_ENDPOINT=http://tempo:4317
+  #     - SQLX_OFFLINE=true
+  #
+  # web-server:
+  #   build: 
+  #     target: web-server
+  #   working_dir: /app
+  #   ports:
+  #     - 8001:8001
+  #   environment:
+  #     - APP_APPLICATION__HOST=0.0.0.0
+  #     - APP_DATABASE__HOST=postgres
+  #     - APP_DATABASE__PORT=5432
+  #     - APP_TELEMETRY__OTEL_EXPORTER_ENDPOINT=http://tempo:4317
+  #     - SQLX_OFFLINE=true
 
   postgres:
     image: postgres:17-alpine
@@ -108,7 +108,7 @@ services:
     ports:
       - "3000:3000"
 
-  agones:
-    image: "us-docker.pkg.dev/agones-images/release/agones-sdk:1.52.0"
-    command: --local 
-    network_mode: service:mmo-server
+  # agones:
+  #   image: "us-docker.pkg.dev/agones-images/release/agones-sdk:1.52.0"
+  #   command: --local 
+  #   network_mode: service:mmo-server
