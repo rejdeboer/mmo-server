@@ -10,3 +10,4 @@ realm_resolver:
   port: 8000
 telemetry:
   tracing_format: pretty
+  otel_exporter_endpoint: http://localhost:4317

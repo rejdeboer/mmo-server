@@ -1,12 +1,13 @@
 use crate::configuration::{TelemetrySettings, TracingFormat};
 use once_cell::sync::Lazy;
-use opentelemetry::{Context, global};
+use opentelemetry::global;
 use opentelemetry_otlp::{Protocol, WithExportConfig};
-use opentelemetry_sdk::Resource;
+use opentelemetry_sdk::{Resource, propagation::TraceContextPropagator};
 use prometheus::IntGauge;
 use std::collections::HashMap;
 use tracing::subscriber::set_global_default;
 use tracing_log::LogTracer;
+use tracing_opentelemetry::OpenTelemetrySpanExt;
 use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt};
 
 pub static REGISTRY: Lazy<prometheus::Registry> =
@@ -54,6 +55,7 @@ pub fn init_subscriber(settings: &TelemetrySettings) {
             .with_resource(Resource::builder().with_service_name("web-server").build())
             .build();
         global::set_tracer_provider(tracer_provider);
+        global::set_text_map_propagator(TraceContextPropagator::new());
 
         let otel_layer = tracing_opentelemetry::layer().with_tracer(global::tracer(""));
         Some(otel_layer)
@@ -71,7 +73,7 @@ pub fn init_subscriber(settings: &TelemetrySettings) {
 }
 
 pub fn get_trace_parent() -> Option<String> {
-    let context = Context::current();
+    let context = tracing::Span::current().context();
     opentelemetry::global::get_text_map_propagator(|propagator| {
         let mut context_carrier = HashMap::<String, String>::new();
         propagator.inject_context(&context, &mut context_carrier);

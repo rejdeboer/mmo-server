@@ -48,6 +48,11 @@ pub async fn game_entry(
         ));
     }
 
+    let traceparent = get_trace_parent();
+    if traceparent.is_none() {
+        tracing::warn!("traceparent is undefined");
+    }
+
     // TODO: Use more than 1 realm
     let server_addr = state.realm_resolver.resolve("main").await?;
     let connect_token = generate_connect_token(
@@ -55,7 +60,7 @@ pub async fn game_entry(
         payload.character_id,
         &state.netcode_private_key,
         server_addr,
-        get_trace_parent(),
+        traceparent,
     )
     .map_err(|err| {
         tracing::error!(?err, "failed to generate connect token");

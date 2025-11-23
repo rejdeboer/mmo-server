@@ -227,6 +227,7 @@ fn process_client_connected(
                 headers.insert("traceparent".to_string(), traceparent.to_string());
                 let parent_ctx =
                     opentelemetry::global::get_text_map_propagator(|p| p.extract(&headers));
+                tracing::info!(?headers, "context");
                 if let Err(err) = span.set_parent(parent_ctx) {
                     tracing::error!(?err, "failed to set otel span parent");
                 };
