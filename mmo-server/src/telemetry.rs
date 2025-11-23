@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use bevy_tokio_tasks::TaskContext;
 use opentelemetry::global;
 use opentelemetry_otlp::{Protocol, WithExportConfig};
+use opentelemetry_sdk::propagation::TraceContextPropagator;
 use prometheus::IntGauge;
 use prometheus::{Encoder, Gauge, IntCounterVec, Opts, Registry, TextEncoder};
 use std::fs::File;
@@ -156,6 +157,7 @@ pub fn init_subscriber(settings: &TracingSettings) {
             )
             .build();
         global::set_tracer_provider(tracer_provider);
+        global::set_text_map_propagator(TraceContextPropagator::new());
 
         let otel_layer = tracing_opentelemetry::layer().with_tracer(global::tracer(""));
         Some(otel_layer)

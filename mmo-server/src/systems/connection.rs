@@ -18,8 +18,9 @@ use flatbuffers::{FlatBufferBuilder, UnionWIPOffset, WIPOffset, root};
 use schemas::game::{self as schema};
 use schemas::protocol::TokenUserData;
 use sqlx::{PgPool, Pool, Postgres};
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 use tracing::{Instrument, instrument};
+use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 // TODO: This should probably be done in another module
 const SPEED_PRECISION_MULTIPLIER: f32 = 100.;
@@ -221,6 +222,16 @@ fn process_client_connected(
             let db_pool = pool.0.clone();
 
             let span = tracing::Span::current();
+            if let Some(traceparent) = data.traceparent() {
+                let mut headers = HashMap::new();
+                headers.insert("traceparent".to_string(), traceparent.to_string());
+                let parent_ctx =
+                    opentelemetry::global::get_text_map_propagator(|p| p.extract(&headers));
+                if let Err(err) = span.set_parent(parent_ctx) {
+                    tracing::error!(?err, "failed to set otel span parent");
+                };
+            }
+
             runtime.spawn_background_task(async move |ctx| {
                 handle_enter_game_task(db_pool, client_id, character_id, ctx)
                     .instrument(span)

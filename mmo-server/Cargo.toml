@@ -39,11 +39,11 @@ serde = { version = "1.0.219", features = ["derive"] }
 serde-aux = "4.7.0"
 tokio = { workspace = true }
 tracing = { workspace = true }
+tracing-futures = "0.2"
 tracing-opentelemetry = { workspace = true }
 tracing-log = "0.2.0"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 tracing-tracy = { version = "0.11", optional = true }
-tracing-futures = "0.2.5"
 
 [dependencies.avian3d]
 version = "0.4.1"
