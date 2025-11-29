@@ -1,6 +1,7 @@
 server:
   host: "127.0.0.1"
   port: 8032
+  netcode_private_key: Z8ocDNthwK2cWI0XMIOVsEsKErlxSjuw7k0YibAucSk=
 database:
   host: "localhost"
   port: 5432

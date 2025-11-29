@@ -34,13 +34,14 @@ services:
     ports:
       - 8032:8032
     environment:
-      - PROVISIONER_SERVER_HOST=0.0.0.0
-      - PROVISIONER_SERVER_PORT=8032
-      - PROVISIONER_DATABASE_HOST=postgres
-      - PROVISIONER_DATABASE_PORT=5432
-      - PROVISIONER_DATABASE_USERNAME=postgres
-      - PROVISIONER_DATABASE_PASSWORD=password
-      - PROVISIONER_DATABASE_NAME=mmo
+      - APP_SERVER__HOST=0.0.0.0
+      - APP_SERVER__PORT=8032
+      - APP_SERVER__NETCODE_PRIVATE_KEY="Z8ocDNthwK2cWI0XMIOVsEsKErlxSjuw7k0YibAucSk="
+      - APP_DATABASE__HOST=postgres
+      - APP_DATABASE__PORT=5432
+      - APP_DATABASE__USERNAME=postgres
+      - APP_DATABASE__PASSWORD=password
+      - APP_DATABASE__NAME=mmo
 
   # Tempo runs as user 10001, and docker compose creates the volume as root.
   # As such, we need to chown the volume in order for Tempo to start correctly.

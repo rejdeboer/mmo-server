@@ -3,7 +3,7 @@ database:
 application:
   host: 127.0.0.1
   jwt_signing_key: secret
-  # netcode_private_key: Z8ocDNthwK2cWI0XMIOVsEsKErlxSjuw7k0YibAucSk=
+  netcode_private_key: Z8ocDNthwK2cWI0XMIOVsEsKErlxSjuw7k0YibAucSk=
 realm_resolver:
   type: local
   host: 127.0.0.1

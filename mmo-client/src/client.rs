@@ -172,7 +172,7 @@ impl GameClient {
     }
 
     fn setup_transport(&mut self, authentication: ClientAuthentication) {
-        let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+        let socket = UdpSocket::bind("0.0.0.0:0").unwrap();
         let current_time = SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)
             .unwrap();
