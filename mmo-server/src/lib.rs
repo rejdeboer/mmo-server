@@ -1,3 +1,4 @@
+pub mod agones;
 pub mod application;
 mod collision;
 mod components;

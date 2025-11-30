@@ -3,7 +3,9 @@ use bevy_renet::netcode::NETCODE_KEY_BYTES;
 use config::ConfigError;
 use secrecy::{ExposeSecret, SecretString};
 use serde::{Deserialize, Deserializer};
-use serde_aux::field_attributes::deserialize_number_from_string;
+use serde_aux::field_attributes::{
+    deserialize_number_from_string, deserialize_option_number_from_string,
+};
 use sqlx::{
     ConnectOptions,
     postgres::{PgConnectOptions, PgSslMode},
@@ -27,9 +29,15 @@ pub struct ServerSettings {
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub port: u16,
     pub host: String,
+    /// Required if Agones is disabled
+    pub public_host: Option<String>,
+    /// Required if Agones is disabled
+    #[serde(default, deserialize_with = "deserialize_option_number_from_string")]
+    pub public_port: Option<u16>,
     #[serde(default, deserialize_with = "deserialize_netcode_key")]
     pub netcode_private_key: Option<[u8; NETCODE_KEY_BYTES]>,
     pub metrics_path: String,
+    pub enable_agones: bool,
 }
 
 #[derive(serde::Deserialize, Clone)]
@@ -61,6 +69,13 @@ impl Settings {
         if !matches!(environment, Environment::Local) && self.server.netcode_private_key.is_none() {
             return Err(ConfigError::Message(
                 "private key is required outside of local env".to_string(),
+            ));
+        }
+        if !self.server.enable_agones
+            && (self.server.public_host.is_none() || self.server.public_port.is_none())
+        {
+            return Err(ConfigError::Message(
+                "Agones is disabled, so public host and IP config is required".to_string(),
             ));
         }
         Ok(())

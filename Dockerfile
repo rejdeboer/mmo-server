@@ -11,7 +11,7 @@ COPY --from=planner /app/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
 COPY . ./
 ENV SQLX_OFFLINE true
-RUN cargo build --release -p web-server -p mmo-server --features agones
+RUN cargo build --release -p web-server -p mmo-server
 
 FROM debian:trixie-slim AS runtime-base
 WORKDIR /app

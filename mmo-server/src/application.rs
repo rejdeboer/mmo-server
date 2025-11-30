@@ -15,7 +15,7 @@ use std::time::SystemTime;
 
 use crate::configuration::Settings;
 use crate::messages::{IncomingChatMessage, MoveActionMessage, OutgoingMessage};
-use crate::plugins::{AgonesPlugin, AppPlugin};
+use crate::plugins::AppPlugin;
 use crate::telemetry::{Metrics, run_metrics_exporter};
 
 #[derive(Resource, Clone)]
@@ -33,7 +33,6 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     app.add_plugins(RenetServerPlugin);
     app.add_plugins(NetcodeServerPlugin);
     app.add_plugins(TokioTasksPlugin::default());
-    app.add_plugins(AgonesPlugin);
     app.add_plugins(PhysicsPlugins::new(PostUpdate));
 
     let ip_addr = IpAddr::V4(
