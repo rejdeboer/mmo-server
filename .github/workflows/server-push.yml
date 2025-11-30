@@ -40,6 +40,8 @@ jobs:
           - 6379:6379
     steps:
       - uses: actions/checkout@v3
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
@@ -77,6 +79,8 @@ jobs:
       SQLX_OFFLINE: true
     steps:
       - uses: actions/checkout@v4
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
       - name: Install the Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
@@ -102,6 +106,8 @@ jobs:
           - 6379:6379
     steps:
       - uses: actions/checkout@v4
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
       - name: Install the Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:

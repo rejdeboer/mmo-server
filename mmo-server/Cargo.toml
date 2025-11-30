@@ -20,7 +20,7 @@ debug = [
 profiling = ["dep:tracing-tracy"]
 
 [dependencies]
-agones = { version = "1.50" }
+agones = { version = "1.53" }
 anyhow = "1.0"
 base64 = "0.12.0"
 bevy-tokio-tasks = { version = "0.17", default-features = false }
