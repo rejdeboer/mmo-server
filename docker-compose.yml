@@ -81,6 +81,12 @@ services:
     ports:
       - "3000:3000"
 
+  agones:
+    image: "us-docker.pkg.dev/agones-images/release/agones-sdk:1.52.0"
+    ports:
+      - "9357:9357"
+    command: ["--local", "--address", "0.0.0.0"]
+
   # NOTE: We use the direct application binary to save recompilation time for local dev
   # mmo-server:
   #   build: 
@@ -110,7 +116,3 @@ services:
   #     - APP_TELEMETRY__OTEL_EXPORTER_ENDPOINT=http://tempo:4317
   #     - SQLX_OFFLINE=true
   #
-  # agones:
-  #   image: "us-docker.pkg.dev/agones-images/release/agones-sdk:1.52.0"
-  #   command: --local 
-  #   network_mode: service:mmo-server

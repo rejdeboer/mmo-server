@@ -6,6 +6,7 @@ server:
   public_port: 8000
   netcode_private_key: Z8ocDNthwK2cWI0XMIOVsEsKErlxSjuw7k0YibAucSk=
   metrics_path: ../target/game-metrics.prom
+  enable_agones: true
 tracing:
   format: pretty
   otel_exporter_endpoint: http://localhost:4317

@@ -13,7 +13,8 @@ fn main() -> anyhow::Result<()> {
 
     if settings.server.enable_agones {
         let (public_host, public_port) = rt.block_on(async {
-            let sdk = Sdk::new(None, None)
+            tracing::info!("connecting to Agones server");
+            let mut sdk = Sdk::new(None, None)
                 .await
                 .expect("failed to connect to Agones server");
 
@@ -29,17 +30,19 @@ fn main() -> anyhow::Result<()> {
                 .status
                 .expect("game server status retrieved");
 
-            settings.server.public_host = Some(server_status.address);
-            settings.server.public_port = Some(server_status.ports[0].port as u16);
-
             tokio::spawn(async move {
-                send_health_pings(sdk);
-            })
+                send_health_pings(sdk).await;
+            });
+
+            (server_status.address, server_status.ports[0].port as u16)
         });
+
+        settings.server.public_host = Some(public_host);
+        settings.server.public_port = Some(public_port);
     }
 
     let (mut app, _) = application::build(settings)?;
-    bevy::log::info!("starting application");
+    tracing::info!("starting application");
     app.run();
     Ok(())
 }
