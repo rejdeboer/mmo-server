@@ -24,7 +24,7 @@ struct Args {
     #[arg(long, default_value = "127.0.0.1")]
     server_host: String,
     /// Game server port
-    #[arg(long, default_value_t = 8000)]
+    #[arg(long, default_value_t = 7777)]
     server_port: u16,
     /// Duration of the simulation in seconds
     #[arg(short, long, default_value_t = 60)]

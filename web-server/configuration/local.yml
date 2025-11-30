@@ -7,7 +7,7 @@ application:
 realm_resolver:
   type: local
   host: 127.0.0.1
-  port: 8000
+  port: 7777
 telemetry:
   tracing_format: pretty
   otel_exporter_endpoint: http://localhost:4317

@@ -30,6 +30,8 @@ fn main() -> anyhow::Result<()> {
                 .status
                 .expect("game server status retrieved");
 
+            tracing::info!(?server_status, "STATUS");
+
             tokio::spawn(async move {
                 send_health_pings(sdk).await;
             });

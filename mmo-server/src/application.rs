@@ -35,16 +35,33 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     app.add_plugins(TokioTasksPlugin::default());
     app.add_plugins(PhysicsPlugins::new(PostUpdate));
 
-    let ip_addr = IpAddr::V4(
+    let host_ip_addr = IpAddr::V4(
         settings
             .server
             .host
             .parse()
             .expect("host should be IPV4 addr"),
     );
-    let server_addr: SocketAddr = SocketAddr::new(ip_addr, settings.server.port);
-    let socket = UdpSocket::bind(server_addr)?;
-    let public_addresses: Vec<SocketAddr> = vec![server_addr];
+    let host_addr: SocketAddr = SocketAddr::new(host_ip_addr, settings.server.port);
+    let socket = UdpSocket::bind(host_addr)?;
+
+    let public_ip_addr = IpAddr::V4(
+        settings
+            .server
+            .public_host
+            .as_ref()
+            .expect("public host should be set")
+            .parse()
+            .expect("host should be IPV4 addr"),
+    );
+    let public_addr: SocketAddr = SocketAddr::new(
+        public_ip_addr,
+        settings
+            .server
+            .public_port
+            .expect("public port should be set"),
+    );
+    let public_addresses: Vec<SocketAddr> = vec![public_addr];
 
     let port = socket.local_addr()?.port();
 
