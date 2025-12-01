@@ -43,7 +43,9 @@ async fn main() -> anyhow::Result<()> {
         Some(url) => url.parse()?,
         None => settings
             .database
-            .expect("No CLI arg provided, so expected DB settings to be set by config file")
+            .expect(
+                "No CLI arg provided, so expected DB settings to be set by config file or env vars",
+            )
             .with_db(),
     };
     let pool = PgPoolOptions::new().connect_lazy_with(pg_connect_options);
