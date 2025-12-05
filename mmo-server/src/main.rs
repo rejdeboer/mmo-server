@@ -18,11 +18,6 @@ fn main() -> anyhow::Result<()> {
                 .await
                 .expect("failed to connect to Agones server");
 
-            match sdk.ready().await {
-                Ok(()) => tracing::info!("server connected to Agones and marked as Ready"),
-                Err(err) => panic!("failed to mark server as ready: {}", err),
-            }
-
             let server_status = sdk
                 .get_gameserver()
                 .await
@@ -33,6 +28,11 @@ fn main() -> anyhow::Result<()> {
             tokio::spawn(async move {
                 send_health_pings(sdk).await;
             });
+
+            match sdk.ready().await {
+                Ok(()) => tracing::info!("server connected to Agones and marked as Ready"),
+                Err(err) => panic!("failed to mark server as ready: {}", err),
+            }
 
             (server_status.address, server_status.ports[0].port as u16)
         });
