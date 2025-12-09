@@ -14,7 +14,7 @@ use std::net::{IpAddr, SocketAddr, UdpSocket};
 use std::time::SystemTime;
 
 use crate::configuration::Settings;
-use crate::messages::{IncomingChatMessage, MoveActionMessage, OutgoingMessage};
+use crate::messages::{IncomingChatMessage, JumpActionMessage, MoveActionMessage, OutgoingMessage};
 use crate::plugins::AppPlugin;
 use crate::telemetry::{Metrics, run_metrics_exporter};
 
@@ -98,6 +98,7 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     app.add_message::<IncomingChatMessage>();
     app.add_message::<OutgoingMessage>();
     app.add_message::<MoveActionMessage>();
+    app.add_message::<JumpActionMessage>();
 
     app.add_systems(PreStartup, setup_world);
     app.add_systems(Startup, (setup_database_pool, setup_metrics_exporter));
@@ -105,9 +106,11 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
         FixedPreUpdate,
         (
             crate::systems::process_client_actions,
+            crate::systems::check_ground_status,
             (
                 crate::systems::process_incoming_chat,
                 crate::systems::process_move_action_messages,
+                crate::systems::process_jump_action_messages,
             ),
         )
             .chain(),

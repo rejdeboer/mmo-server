@@ -1,6 +1,6 @@
 use crate::{
     components::ClientIdComponent,
-    messages::{IncomingChatMessage, MoveActionMessage},
+    messages::{IncomingChatMessage, JumpActionMessage, MoveActionMessage},
     telemetry::Metrics,
 };
 use bevy::prelude::*;
@@ -61,6 +61,9 @@ fn process_message(entity: Entity, message: bevy_renet::renet::Bytes, commands: 
                             commands,
                         );
                     }
+                    schema::ActionData::PlayerJumpAction => {
+                        process_player_jump_action(entity, commands);
+                    }
                     _ => {
                         warn!("unhandled event data type");
                     }
@@ -84,4 +87,8 @@ fn process_player_move_action(
         forward: action.forward(),
         sideways: action.sideways(),
     });
+}
+
+fn process_player_jump_action(entity: Entity, commands: &mut Commands) {
+    commands.write_message(JumpActionMessage { entity });
 }

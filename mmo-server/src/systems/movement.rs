@@ -1,13 +1,14 @@
 use crate::{
-    components::{ClientIdComponent, InterestedClients, MovementSpeedComponent},
-    messages::{MoveActionMessage, OutgoingMessage, OutgoingMessageData},
+    components::{ClientIdComponent, GroundedComponent, InterestedClients, MovementSpeedComponent},
+    messages::{JumpActionMessage, MoveActionMessage, OutgoingMessage, OutgoingMessageData},
 };
-use avian3d::prelude::LinearVelocity;
+use avian3d::prelude::{LinearVelocity, ShapeHits};
 use bevy::prelude::*;
 use std::f32::consts::TAU;
 
 const YAW_QUANTIZATION_FACTOR: f32 = 65535.0;
 const MOVEMENT_QUANTIZATION_FACTOR: f32 = 127.0;
+const JUMP_VELOCITY: f32 = 12.;
 
 // TODO: Validate movement
 // TODO: Parallelism?
@@ -67,4 +68,40 @@ pub fn send_transform_updates(
                 ));
             }
         })
+}
+
+pub fn process_jump_action_messages(
+    mut reader: MessageReader<JumpActionMessage>,
+    mut q_velocity: Query<&mut LinearVelocity, With<GroundedComponent>>,
+) {
+    reader.read().for_each(|msg| {
+        if let Ok(mut velocity) = q_velocity.get_mut(msg.entity) {
+            velocity.y = JUMP_VELOCITY;
+        }
+    })
+}
+
+pub fn check_ground_status(
+    mut commands: Commands,
+    query: Query<(Entity, &ShapeHits), With<ClientIdComponent>>,
+) {
+    for (entity, hits) in query.iter() {
+        let mut is_grounded = false;
+
+        for hit in hits.iter() {
+            // NOTE: Check the slope angle.
+            // If the normal is pointing up (Y > 0.7), it's a floor.
+            // If Y is close to 0, it's a wall.
+            if hit.normal1.y > 0.7 {
+                is_grounded = true;
+                break;
+            }
+        }
+
+        if is_grounded {
+            commands.entity(entity).insert(GroundedComponent);
+        } else {
+            commands.entity(entity).remove::<GroundedComponent>();
+        }
+    }
 }

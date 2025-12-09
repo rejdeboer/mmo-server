@@ -18,6 +18,11 @@ pub struct MoveActionMessage {
 }
 
 #[derive(Message, Debug)]
+pub struct JumpActionMessage {
+    pub entity: Entity,
+}
+
+#[derive(Message, Debug)]
 pub struct IncomingChatMessage {
     pub author: Entity,
     pub channel: ChannelType,
