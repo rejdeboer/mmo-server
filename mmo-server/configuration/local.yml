@@ -4,7 +4,7 @@ server:
   host: 127.0.0.1
   public_host: 127.0.0.1
   public_port: 7777
-  netcode_private_key: Z8ocDNthwK2cWI0XMIOVsEsKErlxSjuw7k0YibAucSk=
+  # netcode_private_key: Z8ocDNthwK2cWI0XMIOVsEsKErlxSjuw7k0YibAucSk=
   metrics_path: ../target/game-metrics.prom
   enable_agones: true
 tracing:
