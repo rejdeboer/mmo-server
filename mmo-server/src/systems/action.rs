@@ -65,13 +65,13 @@ fn process_message(entity: Entity, message: bevy_renet::renet::Bytes, commands: 
                         process_player_jump_action(entity, commands);
                     }
                     _ => {
-                        warn!("unhandled event data type");
+                        tracing::warn!("unhandled event data type");
                     }
                 }
             }
         }
         Err(error) => {
-            error!(?error, "message does not follow event schema");
+            tracing::error!(?error, "message does not follow event schema");
         }
     }
 }

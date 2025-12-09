@@ -8,7 +8,7 @@ use std::f32::consts::TAU;
 
 const YAW_QUANTIZATION_FACTOR: f32 = 65535.0;
 const MOVEMENT_QUANTIZATION_FACTOR: f32 = 127.0;
-const JUMP_VELOCITY: f32 = 12.;
+const JUMP_VELOCITY: f32 = 5.;
 
 // TODO: Validate movement
 // TODO: Parallelism?
