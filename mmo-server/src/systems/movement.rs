@@ -8,7 +8,7 @@ use std::f32::consts::TAU;
 
 const YAW_QUANTIZATION_FACTOR: f32 = 65535.0;
 const MOVEMENT_QUANTIZATION_FACTOR: f32 = 127.0;
-const JUMP_VELOCITY: f32 = 5.;
+const JUMP_VELOCITY: f32 = 3.;
 
 // TODO: Validate movement
 // TODO: Parallelism?
@@ -19,7 +19,7 @@ pub fn process_move_action_messages(
     reader.read().for_each(|msg| {
         let Ok((mut transform, mut velocity, movement_speed)) = q_transform.get_mut(msg.entity)
         else {
-            error!(entity = ?msg.entity, "could not find entity");
+            tracing::error!(entity = ?msg.entity, "could not find entity");
             return;
         };
 
