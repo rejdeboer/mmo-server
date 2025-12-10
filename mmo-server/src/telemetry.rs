@@ -4,8 +4,8 @@ use bevy_tokio_tasks::TaskContext;
 use opentelemetry::global;
 use opentelemetry_otlp::{Protocol, WithExportConfig};
 use opentelemetry_sdk::propagation::TraceContextPropagator;
-use prometheus::IntGauge;
 use prometheus::{Encoder, Gauge, IntCounterVec, Opts, Registry, TextEncoder};
+use prometheus::{Histogram, HistogramOpts, IntGauge};
 use std::fs::File;
 use std::io::Write;
 use std::sync::Arc;
@@ -23,6 +23,7 @@ pub struct Metrics {
     pub tick_rate: Gauge,
     pub network_packets_total: IntCounterVec,
     pub network_bytes_total: IntCounterVec,
+    pub server_rtt: Histogram,
 }
 
 impl Default for Metrics {
@@ -69,6 +70,11 @@ impl Default for Metrics {
             .register(Box::new(network_bytes_total.clone()))
             .unwrap();
 
+        let server_rtt =
+            Histogram::with_opts(HistogramOpts::new("server_rtt", "Packet round trip time"))
+                .unwrap();
+        registry.register(Box::new(server_rtt.clone())).unwrap();
+
         #[cfg(target_os = "linux")]
         {
             use prometheus::process_collector::ProcessCollector;
@@ -83,6 +89,7 @@ impl Default for Metrics {
             tick_rate,
             network_packets_total,
             network_bytes_total,
+            server_rtt,
         }
     }
 }
