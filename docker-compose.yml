@@ -36,7 +36,7 @@ services:
     environment:
       - APP_SERVER__HOST=0.0.0.0
       - APP_SERVER__PORT=8032
-      - APP_SERVER__NETCODE_PRIVATE_KEY=Z8ocDNthwK2cWI0XMIOVsEsKErlxSjuw7k0YibAucSk=
+      # - APP_SERVER__NETCODE_PRIVATE_KEY=Z8ocDNthwK2cWI0XMIOVsEsKErlxSjuw7k0YibAucSk=
       - APP_DATABASE__HOST=postgres
       - APP_DATABASE__PORT=5432
       - APP_DATABASE__USERNAME=postgres

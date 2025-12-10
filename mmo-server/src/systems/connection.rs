@@ -5,7 +5,6 @@ use crate::{
         CharacterIdComponent, ClientIdComponent, InterestedClients, LevelComponent,
         MovementSpeedComponent, NameComponent, VisibleEntities, Vitals,
     },
-    telemetry::Metrics,
 };
 use avian3d::prelude::*;
 use bevy::prelude::*;
@@ -186,16 +185,13 @@ pub fn handle_connection_events(
     )>,
     runtime: Res<TokioTasksRuntime>,
     pool: Res<DatabasePool>,
-    metrics: Res<Metrics>,
 ) {
     for event in events.read() {
         match event {
             ServerEvent::ClientConnected { client_id } => {
-                metrics.connected_players.inc();
                 process_client_connected(*client_id, &transport, &mut server, &pool, &runtime)
             }
             ServerEvent::ClientDisconnected { client_id, reason } => {
-                metrics.connected_players.dec();
                 process_client_disconnected(
                     *client_id,
                     reason,

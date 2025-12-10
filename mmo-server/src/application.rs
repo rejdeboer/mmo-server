@@ -3,6 +3,7 @@ use bevy::asset::RenderAssetUsages;
 use bevy::gltf::GltfLoaderSettings;
 use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
+use bevy::time::common_conditions::on_timer;
 use bevy_renet::RenetServerPlugin;
 use bevy_renet::netcode::{
     NetcodeServerPlugin, NetcodeServerTransport, ServerAuthentication, ServerConfig,
@@ -11,11 +12,12 @@ use bevy_renet::renet::{ConnectionConfig, RenetServer};
 use bevy_tokio_tasks::{TokioTasksPlugin, TokioTasksRuntime};
 use sqlx::{PgPool, postgres::PgPoolOptions};
 use std::net::{IpAddr, SocketAddr, UdpSocket};
-use std::time::SystemTime;
+use std::time::{Duration, SystemTime};
 
 use crate::configuration::Settings;
 use crate::messages::{IncomingChatMessage, JumpActionMessage, MoveActionMessage, OutgoingMessage};
 use crate::plugins::AppPlugin;
+use crate::systems::update_server_metrics;
 use crate::telemetry::{Metrics, run_metrics_exporter};
 
 #[derive(Resource, Clone)]
@@ -116,6 +118,10 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
             .chain(),
     );
     app.add_systems(Update, crate::systems::handle_connection_events);
+    app.add_systems(
+        PostUpdate,
+        update_server_metrics.run_if(on_timer(Duration::from_secs(5))),
+    );
     app.add_systems(FixedUpdate, crate::systems::update_spatial_grid);
     app.add_systems(
         FixedPostUpdate,
