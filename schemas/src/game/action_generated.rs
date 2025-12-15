@@ -20,7 +20,7 @@ impl<'a> flatbuffers::Follow<'a> for Action<'a> {
   type Inner = Action<'a>;
   #[inline]
   unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
-    Self { _tab: flatbuffers::Table::new(buf, loc) }
+    Self { _tab: unsafe { flatbuffers::Table::new(buf, loc) } }
   }
 }
 
@@ -102,6 +102,20 @@ impl<'a> Action<'a> {
 
   #[inline]
   #[allow(non_snake_case)]
+  pub fn data_as_targetting_action(&self) -> Option<TargettingAction<'a>> {
+    if self.data_type() == ActionData::TargettingAction {
+      let u = self.data();
+      // Safety:
+      // Created from a valid Table for this object
+      // Which contains a valid union in this slot
+      Some(unsafe { TargettingAction::init_from_table(u) })
+    } else {
+      None
+    }
+  }
+
+  #[inline]
+  #[allow(non_snake_case)]
   pub fn data_as_ping_action(&self) -> Option<PingAction<'a>> {
     if self.data_type() == ActionData::PingAction {
       let u = self.data();
@@ -142,6 +156,7 @@ impl flatbuffers::Verifiable for Action<'_> {
           ActionData::game_ClientChatMessage => v.verify_union_variant::<flatbuffers::ForwardsUOffset<ClientChatMessage>>("ActionData::game_ClientChatMessage", pos),
           ActionData::PlayerMoveAction => v.verify_union_variant::<flatbuffers::ForwardsUOffset<PlayerMoveAction>>("ActionData::PlayerMoveAction", pos),
           ActionData::PlayerJumpAction => v.verify_union_variant::<flatbuffers::ForwardsUOffset<PlayerJumpAction>>("ActionData::PlayerJumpAction", pos),
+          ActionData::TargettingAction => v.verify_union_variant::<flatbuffers::ForwardsUOffset<TargettingAction>>("ActionData::TargettingAction", pos),
           ActionData::PingAction => v.verify_union_variant::<flatbuffers::ForwardsUOffset<PingAction>>("ActionData::PingAction", pos),
           ActionData::RttReportAction => v.verify_union_variant::<flatbuffers::ForwardsUOffset<RttReportAction>>("ActionData::RttReportAction", pos),
           _ => Ok(()),
@@ -215,6 +230,13 @@ impl core::fmt::Debug for Action<'_> {
         },
         ActionData::PlayerJumpAction => {
           if let Some(x) = self.data_as_player_jump_action() {
+            ds.field("data", &x)
+          } else {
+            ds.field("data", &"InvalidFlatbuffer: Union discriminant does not match value.")
+          }
+        },
+        ActionData::TargettingAction => {
+          if let Some(x) = self.data_as_targetting_action() {
             ds.field("data", &x)
           } else {
             ds.field("data", &"InvalidFlatbuffer: Union discriminant does not match value.")

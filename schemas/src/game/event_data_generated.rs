@@ -12,14 +12,15 @@ use super::*;
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
 pub const ENUM_MIN_EVENT_DATA: u8 = 0;
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
-pub const ENUM_MAX_EVENT_DATA: u8 = 5;
+pub const ENUM_MAX_EVENT_DATA: u8 = 6;
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
 #[allow(non_camel_case_types)]
-pub const ENUM_VALUES_EVENT_DATA: [EventData; 6] = [
+pub const ENUM_VALUES_EVENT_DATA: [EventData; 7] = [
   EventData::NONE,
   EventData::EntityMoveEvent,
   EventData::EntitySpawnEvent,
   EventData::EntityDespawnEvent,
+  EventData::TargettingEvent,
   EventData::PongEvent,
   EventData::game_ServerChatMessage,
 ];
@@ -33,16 +34,18 @@ impl EventData {
   pub const EntityMoveEvent: Self = Self(1);
   pub const EntitySpawnEvent: Self = Self(2);
   pub const EntityDespawnEvent: Self = Self(3);
-  pub const PongEvent: Self = Self(4);
-  pub const game_ServerChatMessage: Self = Self(5);
+  pub const TargettingEvent: Self = Self(4);
+  pub const PongEvent: Self = Self(5);
+  pub const game_ServerChatMessage: Self = Self(6);
 
   pub const ENUM_MIN: u8 = 0;
-  pub const ENUM_MAX: u8 = 5;
+  pub const ENUM_MAX: u8 = 6;
   pub const ENUM_VALUES: &'static [Self] = &[
     Self::NONE,
     Self::EntityMoveEvent,
     Self::EntitySpawnEvent,
     Self::EntityDespawnEvent,
+    Self::TargettingEvent,
     Self::PongEvent,
     Self::game_ServerChatMessage,
   ];
@@ -53,6 +56,7 @@ impl EventData {
       Self::EntityMoveEvent => Some("EntityMoveEvent"),
       Self::EntitySpawnEvent => Some("EntitySpawnEvent"),
       Self::EntityDespawnEvent => Some("EntityDespawnEvent"),
+      Self::TargettingEvent => Some("TargettingEvent"),
       Self::PongEvent => Some("PongEvent"),
       Self::game_ServerChatMessage => Some("game_ServerChatMessage"),
       _ => None,
@@ -72,7 +76,7 @@ impl<'a> flatbuffers::Follow<'a> for EventData {
   type Inner = Self;
   #[inline]
   unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
-    let b = flatbuffers::read_scalar_at::<u8>(buf, loc);
+    let b = unsafe { flatbuffers::read_scalar_at::<u8>(buf, loc) };
     Self(b)
   }
 }
@@ -81,7 +85,7 @@ impl flatbuffers::Push for EventData {
     type Output = EventData;
     #[inline]
     unsafe fn push(&self, dst: &mut [u8], _written_len: usize) {
-        flatbuffers::emplace_scalar::<u8>(dst, self.0);
+        unsafe { flatbuffers::emplace_scalar::<u8>(dst, self.0); }
     }
 }
 
