@@ -116,20 +116,6 @@ impl<'a> Event<'a> {
 
   #[inline]
   #[allow(non_snake_case)]
-  pub fn data_as_pong_event(&self) -> Option<PongEvent<'a>> {
-    if self.data_type() == EventData::PongEvent {
-      let u = self.data();
-      // Safety:
-      // Created from a valid Table for this object
-      // Which contains a valid union in this slot
-      Some(unsafe { PongEvent::init_from_table(u) })
-    } else {
-      None
-    }
-  }
-
-  #[inline]
-  #[allow(non_snake_case)]
   pub fn data_as_game_server_chat_message(&self) -> Option<ServerChatMessage<'a>> {
     if self.data_type() == EventData::game_ServerChatMessage {
       let u = self.data();
@@ -157,7 +143,6 @@ impl flatbuffers::Verifiable for Event<'_> {
           EventData::EntitySpawnEvent => v.verify_union_variant::<flatbuffers::ForwardsUOffset<EntitySpawnEvent>>("EventData::EntitySpawnEvent", pos),
           EventData::EntityDespawnEvent => v.verify_union_variant::<flatbuffers::ForwardsUOffset<EntityDespawnEvent>>("EventData::EntityDespawnEvent", pos),
           EventData::TargettingEvent => v.verify_union_variant::<flatbuffers::ForwardsUOffset<TargettingEvent>>("EventData::TargettingEvent", pos),
-          EventData::PongEvent => v.verify_union_variant::<flatbuffers::ForwardsUOffset<PongEvent>>("EventData::PongEvent", pos),
           EventData::game_ServerChatMessage => v.verify_union_variant::<flatbuffers::ForwardsUOffset<ServerChatMessage>>("EventData::game_ServerChatMessage", pos),
           _ => Ok(()),
         }
@@ -237,13 +222,6 @@ impl core::fmt::Debug for Event<'_> {
         },
         EventData::TargettingEvent => {
           if let Some(x) = self.data_as_targetting_event() {
-            ds.field("data", &x)
-          } else {
-            ds.field("data", &"InvalidFlatbuffer: Union discriminant does not match value.")
-          }
-        },
-        EventData::PongEvent => {
-          if let Some(x) = self.data_as_pong_event() {
             ds.field("data", &x)
           } else {
             ds.field("data", &"InvalidFlatbuffer: Union discriminant does not match value.")

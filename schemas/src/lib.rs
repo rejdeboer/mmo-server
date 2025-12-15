@@ -27,8 +27,6 @@ pub mod game {
     pub use entity_despawn_event_generated::*;
     mod targetting_event_generated;
     pub use targetting_event_generated::*;
-    mod pong_event_generated;
-    pub use pong_event_generated::*;
     mod event_data_generated;
     pub use event_data_generated::*;
     mod event_generated;
@@ -42,10 +40,6 @@ pub mod game {
     pub use player_jump_action_generated::*;
     mod targetting_action_generated;
     pub use targetting_action_generated::*;
-    mod ping_action_generated;
-    pub use ping_action_generated::*;
-    mod rtt_report_action_generated;
-    pub use rtt_report_action_generated::*;
     mod action_data_generated;
     pub use action_data_generated::*;
     mod action_generated;

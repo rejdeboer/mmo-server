@@ -22,16 +22,11 @@ table TargettingEvent {
 	target_entity_id: uint64;
 }
 
-table PongEvent {
-	sequence: uint32;
-}
-
 union EventData {
 	EntityMoveEvent,
 	EntitySpawnEvent,
 	EntityDespawnEvent,
 	TargettingEvent,
-	PongEvent,
 	game.ServerChatMessage,
 }
 

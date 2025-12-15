@@ -14,22 +14,11 @@ table TargettingAction {
 	entity_id: uint64;
 }
 
-table PingAction {
-	sequence: uint32;
-}
-
-table RttReportAction {
-	ping_sequence: uint32;
-	rtt_ms: float32;
-}
-
 union ActionData {
 	game.ClientChatMessage,
 	PlayerMoveAction,
 	PlayerJumpAction,
 	TargettingAction,
-	PingAction,
-	RttReportAction,
 }
 
 table Action {
