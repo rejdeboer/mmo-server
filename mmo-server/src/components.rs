@@ -39,3 +39,15 @@ pub struct MovementSpeedComponent(pub f32);
 
 #[derive(Component)]
 pub struct GroundedComponent;
+
+#[derive(Component)]
+pub struct MobSpawner {
+    pub timer: Timer,
+    pub max_mobs: usize,
+    pub spawn_radius: f32,
+}
+
+#[derive(Component)]
+pub struct SpawnedMob {
+    pub spawner: Entity,
+}
