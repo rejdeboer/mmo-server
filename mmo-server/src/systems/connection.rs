@@ -40,15 +40,13 @@ pub struct CharacterRow {
 }
 
 #[derive(Bundle)]
-pub struct CharacterBundle {
-    id: CharacterIdComponent,
-    client_id: ClientIdComponent,
+/// Base components used by entities that interact with the world, like players, monsters, NPCs
+pub struct ActorBundle {
     name: NameComponent,
     transform: Transform,
     vitals: Vitals,
     movement_speed: MovementSpeedComponent,
     level: LevelComponent,
-    visible_entities: VisibleEntities,
     interested_clients: InterestedClients,
     body: RigidBody,
     collider: Collider,
@@ -57,24 +55,14 @@ pub struct CharacterBundle {
     locked_axes: LockedAxes,
 }
 
-impl CharacterBundle {
-    pub fn new(
-        id: i32,
-        client_id: u64,
-        name: &str,
-        transform: Transform,
-        vitals: Vitals,
-        level: i32,
-    ) -> Self {
+impl ActorBundle {
+    pub fn new(name: &str, transform: Transform, vitals: Vitals, level: i32) -> Self {
         Self {
-            id: CharacterIdComponent(id),
-            client_id: ClientIdComponent(client_id),
             name: NameComponent(Arc::from(name)),
             transform,
             vitals: vitals.clone(),
             movement_speed: MovementSpeedComponent(BASE_MOVEMENT_SPEED),
             level: LevelComponent(level),
-            visible_entities: VisibleEntities::default(),
             interested_clients: InterestedClients::default(),
             body: RigidBody::Dynamic,
             locked_axes: LockedAxes::ROTATION_LOCKED,
@@ -90,6 +78,25 @@ impl CharacterBundle {
                 Dir3::NEG_Y,
             )
             .with_query_filter(SpatialQueryFilter::from_mask(LayerMask::ALL)),
+        }
+    }
+}
+
+#[derive(Bundle)]
+pub struct CharacterBundle {
+    base: ActorBundle,
+    id: CharacterIdComponent,
+    client_id: ClientIdComponent,
+    visible_entities: VisibleEntities,
+}
+
+impl CharacterBundle {
+    pub fn new(base: ActorBundle, id: i32, client_id: u64) -> Self {
+        Self {
+            base,
+            id: CharacterIdComponent(id),
+            client_id: ClientIdComponent(client_id),
+            visible_entities: VisibleEntities::default(),
         }
     }
 }
@@ -278,12 +285,9 @@ async fn handle_enter_game_task(
         let entity = ctx
             .world
             .spawn(CharacterBundle::new(
+                ActorBundle::new(&character.name, transform, vitals.clone(), character.level),
                 character.id,
                 client_id,
-                &character.name,
-                transform,
-                vitals.clone(),
-                character.level,
             ))
             .id();
 
