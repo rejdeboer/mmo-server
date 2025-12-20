@@ -3,6 +3,7 @@ pub mod application;
 mod collision;
 mod components;
 pub mod configuration;
+pub mod database;
 mod messages;
 mod plugins;
 mod systems;
