@@ -1,5 +1,6 @@
 pub mod agones;
 pub mod application;
+pub mod assets;
 mod collision;
 mod components;
 pub mod configuration;

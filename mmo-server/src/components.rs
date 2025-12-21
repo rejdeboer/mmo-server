@@ -42,9 +42,11 @@ pub struct GroundedComponent;
 
 #[derive(Component)]
 pub struct MobSpawner {
-    pub timer: Timer,
+    pub mob_id: String,
     pub max_mobs: usize,
+    pub timer: Timer,
     pub spawn_radius: f32,
+    pub level_range: std::ops::Range<i32>,
 }
 
 #[derive(Component)]

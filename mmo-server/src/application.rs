@@ -14,6 +14,7 @@ use sqlx::{PgPool, postgres::PgPoolOptions};
 use std::net::{IpAddr, SocketAddr, UdpSocket};
 use std::time::{Duration, SystemTime};
 
+use crate::assets::{MonsterLibrary, MonsterLibraryHandle, MonsterLoader};
 use crate::configuration::Settings;
 use crate::messages::{IncomingChatMessage, JumpActionMessage, MoveActionMessage, OutgoingMessage};
 use crate::plugins::AppPlugin;
@@ -97,12 +98,15 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     app.insert_resource(SpatialGrid::default());
     app.insert_resource(Metrics::default());
 
+    app.init_asset::<MonsterLibrary>();
+    app.init_asset_loader::<MonsterLoader>();
+
     app.add_message::<IncomingChatMessage>();
     app.add_message::<OutgoingMessage>();
     app.add_message::<MoveActionMessage>();
     app.add_message::<JumpActionMessage>();
 
-    app.add_systems(PreStartup, setup_world);
+    app.add_systems(PreStartup, setup_assets);
     app.add_systems(Startup, (setup_database_pool, setup_metrics_exporter));
     app.add_systems(
         FixedPreUpdate,
@@ -154,7 +158,7 @@ fn setup_database_pool(
     commands.insert_resource(DatabasePool(pool));
 }
 
-fn setup_world(mut commands: Commands, assets: Res<AssetServer>) {
+fn setup_assets(mut commands: Commands, assets: Res<AssetServer>) {
     commands.spawn((
         SceneRoot(
             assets.load_with_settings("world.gltf#Scene0", |s: &mut GltfLoaderSettings| {
@@ -169,6 +173,9 @@ fn setup_world(mut commands: Commands, assets: Res<AssetServer>) {
         RigidBody::Static,
         ColliderConstructorHierarchy::new(ColliderConstructor::ConvexHullFromMesh),
     ));
+
+    let monsters_handle = assets.load("monsters.ron");
+    commands.insert_resource(MonsterLibraryHandle(monsters_handle));
 }
 
 fn setup_metrics_exporter(
