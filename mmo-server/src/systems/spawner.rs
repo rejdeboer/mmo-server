@@ -61,9 +61,9 @@ pub fn spawn_mobs(
                     level,
                 );
                 tracing::info!(
-                    ?blueprint,
+                    id = %blueprint.name,
                     postition = %spawn_transform.translation,
-                    ?level,
+                    %level,
                     "spawning mob"
                 );
             }
