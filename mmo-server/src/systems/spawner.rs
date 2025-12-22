@@ -3,9 +3,22 @@ use crate::{
     components::{MobSpawner, SpawnedMob, Vitals},
     systems::ActorBundle,
 };
-use avian3d::prelude::*;
 use bevy::prelude::*;
 use rand::Rng;
+use std::time::Duration;
+
+pub fn setup_spawners(mut commands: Commands) {
+    commands.spawn((
+        Transform::from_xyz(0., 0., 0.),
+        MobSpawner {
+            mob_id: "goblin".to_string(),
+            max_mobs: 10,
+            spawn_radius: 25.,
+            level_range: std::ops::Range { start: 1, end: 4 },
+            timer: Timer::new(Duration::from_secs(5), TimerMode::Repeating),
+        },
+    ));
+}
 
 pub fn spawn_mobs(
     mut commands: Commands,
@@ -47,6 +60,12 @@ pub fn spawn_mobs(
                     spawn_transform,
                     level,
                 );
+                tracing::info!(
+                    ?blueprint,
+                    postition = %spawn_transform.translation,
+                    ?level,
+                    "spawning mob"
+                );
             }
         }
     }
@@ -64,10 +83,5 @@ fn spawn_monster_entity(
         max_hp: blueprint.hp,
     };
     let actor_bundle = ActorBundle::new(&blueprint.name, transform, vitals, level);
-    commands.spawn((
-        SpawnedMob { spawner },
-        RigidBody::Dynamic,
-        Collider::capsule(0.5, 1.0),
-        LockedAxes::ROTATION_LOCKED,
-    ));
+    commands.spawn((SpawnedMob { spawner }, actor_bundle));
 }

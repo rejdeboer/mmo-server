@@ -18,7 +18,7 @@ use crate::assets::{MonsterLibrary, MonsterLibraryHandle, MonsterLoader};
 use crate::configuration::Settings;
 use crate::messages::{IncomingChatMessage, JumpActionMessage, MoveActionMessage, OutgoingMessage};
 use crate::plugins::AppPlugin;
-use crate::systems::update_server_metrics;
+use crate::systems::{setup_spawners, update_server_metrics};
 use crate::telemetry::{Metrics, run_metrics_exporter};
 
 #[derive(Resource, Clone)]
@@ -107,7 +107,10 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     app.add_message::<JumpActionMessage>();
 
     app.add_systems(PreStartup, setup_assets);
-    app.add_systems(Startup, (setup_database_pool, setup_metrics_exporter));
+    app.add_systems(
+        Startup,
+        (setup_database_pool, setup_metrics_exporter, setup_spawners),
+    );
     app.add_systems(
         FixedPreUpdate,
         (
@@ -126,7 +129,13 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
         PostUpdate,
         update_server_metrics.run_if(on_timer(Duration::from_secs(5))),
     );
-    app.add_systems(FixedUpdate, crate::systems::update_spatial_grid);
+    app.add_systems(
+        FixedUpdate,
+        (
+            crate::systems::update_spatial_grid,
+            crate::systems::spawn_mobs,
+        ),
+    );
     app.add_systems(
         FixedPostUpdate,
         (
