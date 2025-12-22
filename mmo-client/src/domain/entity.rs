@@ -33,16 +33,29 @@ impl TryInto<Entity> for schema::Entity<'_> {
     type Error = &'static str;
 
     fn try_into(self) -> Result<Entity, Self::Error> {
-        let Some(attributes) = self.attributes_as_player_attributes() else {
-            return Err("player entity should have player attributes");
+        let attributes = match self.attributes_type() {
+            schema::EntityAttributes::PlayerAttributes => {
+                let fb_attributes = self
+                    .attributes_as_player_attributes()
+                    .ok_or("failed to read player attributes")?;
+                EntityAttributes::Player {
+                    character_id: fb_attributes.character_id(),
+                    guild_name: fb_attributes.guild_name().map(&str::to_string),
+                }
+            }
+            schema::EntityAttributes::NpcAttributes => {
+                // TODO: NPC attributes will have properties in the future, like npc_id
+                let _fb_attributes = self
+                    .attributes_as_npc_attributes()
+                    .ok_or("failed to read npc attributes")?;
+                EntityAttributes::Npc
+            }
+            _ => return Err("unexpected attributes type"),
         };
 
         Ok(Entity {
             id: self.id(),
-            attributes: EntityAttributes::Player {
-                character_id: attributes.character_id(),
-                guild_name: attributes.guild_name().map(&str::to_string),
-            },
+            attributes,
             name: self.name().to_string(),
             vitals: self.vitals().into(),
             level: self.level(),
