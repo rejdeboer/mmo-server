@@ -12,7 +12,9 @@ table PlayerAttributes {
 	guild_name: string;
 }
 
-table NpcAttributes {}
+table NpcAttributes {
+	asset_id: uint32;
+}
 
 union EntityAttributes {
 	PlayerAttributes,

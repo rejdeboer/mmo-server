@@ -4,6 +4,7 @@
 			name: "Goblin",
 			hp: 50,
 			speed: 1.0,
+			asset_id: 0,
 		),
 	}
 )

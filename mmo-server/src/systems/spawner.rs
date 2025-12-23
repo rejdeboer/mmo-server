@@ -1,6 +1,6 @@
 use crate::{
     assets::{MonsterBlueprint, MonsterLibrary, MonsterLibraryHandle},
-    components::{MobSpawner, SpawnedMob, Vitals},
+    components::{AssetIdComponent, MobSpawner, SpawnedMob, Vitals},
     systems::ActorBundle,
 };
 use bevy::prelude::*;
@@ -83,5 +83,9 @@ fn spawn_monster_entity(
         max_hp: blueprint.hp,
     };
     let actor_bundle = ActorBundle::new(&blueprint.name, transform, vitals, level);
-    commands.spawn((SpawnedMob { spawner }, actor_bundle));
+    commands.spawn((
+        SpawnedMob { spawner },
+        actor_bundle,
+        AssetIdComponent(blueprint.asset_id),
+    ));
 }

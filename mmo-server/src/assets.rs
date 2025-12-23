@@ -10,6 +10,7 @@ pub struct MonsterBlueprint {
     pub name: String,
     pub hp: i32,
     pub speed: f32,
+    pub asset_id: u32,
 }
 
 #[derive(Asset, TypePath, Deserialize, Debug)]

@@ -1,8 +1,8 @@
 use crate::{
     application::SpatialGrid,
     components::{
-        CharacterIdComponent, ClientIdComponent, GridCell, InterestedClients, LevelComponent,
-        MovementSpeedComponent, NameComponent, VisibleEntities, Vitals,
+        AssetIdComponent, CharacterIdComponent, ClientIdComponent, GridCell, InterestedClients,
+        LevelComponent, MovementSpeedComponent, NameComponent, VisibleEntities, Vitals,
     },
     messages::OutgoingMessage,
     systems::EntityAttributes,
@@ -16,6 +16,7 @@ type SpawnableComponents<'a> = (
     &'a LevelComponent,
     &'a MovementSpeedComponent,
     Option<&'a CharacterIdComponent>,
+    Option<&'a AssetIdComponent>,
 );
 
 const VIEW_RADIUS: f32 = 256.0;
@@ -65,16 +66,20 @@ pub fn update_player_visibility(
             if let Ok(mut interested) = q_interest.get_mut(entity_to_spawn) {
                 interested.clients.insert(client_id.0);
             }
-            if let Ok((name, transform, vitals, level, movement_speed, character_id)) =
+            if let Ok((name, transform, vitals, level, movement_speed, character_id, asset_id)) =
                 q_spawnables.get(entity_to_spawn)
             {
-                let attributes = match character_id {
-                    Some(cid) => EntityAttributes::Player {
+                let attributes = if let Some(cid) = character_id {
+                    EntityAttributes::Player {
                         character_id: cid.0,
                         // TODO: Correctly handle guild
                         guild_id: None,
-                    },
-                    None => EntityAttributes::Npc,
+                    }
+                } else if let Some(aid) = asset_id {
+                    EntityAttributes::Npc { asset_id: aid.0 }
+                } else {
+                    tracing::warn!(name = %name.0, "failed to create entity attributes");
+                    continue;
                 };
 
                 writer.write(OutgoingMessage {

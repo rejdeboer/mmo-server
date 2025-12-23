@@ -20,7 +20,9 @@ pub enum EntityAttributes {
         character_id: i32,
         guild_name: Option<String>,
     },
-    Npc,
+    Npc {
+        asset_id: u32,
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -44,11 +46,12 @@ impl TryInto<Entity> for schema::Entity<'_> {
                 }
             }
             schema::EntityAttributes::NpcAttributes => {
-                // TODO: NPC attributes will have properties in the future, like npc_id
-                let _fb_attributes = self
+                let fb_attributes = self
                     .attributes_as_npc_attributes()
                     .ok_or("failed to read npc attributes")?;
-                EntityAttributes::Npc
+                EntityAttributes::Npc {
+                    asset_id: fb_attributes.asset_id(),
+                }
             }
             _ => return Err("unexpected attributes type"),
         };

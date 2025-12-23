@@ -10,6 +10,9 @@ pub struct ClientIdComponent(pub ClientId);
 pub struct CharacterIdComponent(pub i32);
 
 #[derive(Debug, Component)]
+pub struct AssetIdComponent(pub u32);
+
+#[derive(Debug, Component)]
 pub struct GridCell(pub IVec2);
 
 #[derive(Debug, Component, Default)]

@@ -20,11 +20,12 @@ impl<'a> flatbuffers::Follow<'a> for NpcAttributes<'a> {
   type Inner = NpcAttributes<'a>;
   #[inline]
   unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
-    Self { _tab: unsafe { flatbuffers::Table::new(buf, loc) } }
+    Self { _tab: flatbuffers::Table::new(buf, loc) }
   }
 }
 
 impl<'a> NpcAttributes<'a> {
+  pub const VT_ASSET_ID: flatbuffers::VOffsetT = 4;
 
   #[inline]
   pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
@@ -33,12 +34,21 @@ impl<'a> NpcAttributes<'a> {
   #[allow(unused_mut)]
   pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
     _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
-    _args: &'args NpcAttributesArgs
+    args: &'args NpcAttributesArgs
   ) -> flatbuffers::WIPOffset<NpcAttributes<'bldr>> {
     let mut builder = NpcAttributesBuilder::new(_fbb);
+    builder.add_asset_id(args.asset_id);
     builder.finish()
   }
 
+
+  #[inline]
+  pub fn asset_id(&self) -> u32 {
+    // Safety:
+    // Created from valid Table for this object
+    // which contains a valid value in this slot
+    unsafe { self._tab.get::<u32>(NpcAttributes::VT_ASSET_ID, Some(0)).unwrap()}
+  }
 }
 
 impl flatbuffers::Verifiable for NpcAttributes<'_> {
@@ -48,16 +58,19 @@ impl flatbuffers::Verifiable for NpcAttributes<'_> {
   ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
     use self::flatbuffers::Verifiable;
     v.visit_table(pos)?
+     .visit_field::<u32>("asset_id", Self::VT_ASSET_ID, false)?
      .finish();
     Ok(())
   }
 }
 pub struct NpcAttributesArgs {
+    pub asset_id: u32,
 }
 impl<'a> Default for NpcAttributesArgs {
   #[inline]
   fn default() -> Self {
     NpcAttributesArgs {
+      asset_id: 0,
     }
   }
 }
@@ -67,6 +80,10 @@ pub struct NpcAttributesBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> {
   start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
 }
 impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> NpcAttributesBuilder<'a, 'b, A> {
+  #[inline]
+  pub fn add_asset_id(&mut self, asset_id: u32) {
+    self.fbb_.push_slot::<u32>(NpcAttributes::VT_ASSET_ID, asset_id, 0);
+  }
   #[inline]
   pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> NpcAttributesBuilder<'a, 'b, A> {
     let start = _fbb.start_table();
@@ -85,6 +102,7 @@ impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> NpcAttributesBuilder<'a, 'b, A>
 impl core::fmt::Debug for NpcAttributes<'_> {
   fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
     let mut ds = f.debug_struct("NpcAttributes");
+      ds.field("asset_id", &self.asset_id());
       ds.finish()
   }
 }

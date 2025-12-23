@@ -95,7 +95,9 @@ pub enum EntityAttributes {
         #[allow(dead_code)]
         guild_id: Option<i32>,
     },
-    Npc,
+    Npc {
+        asset_id: u32,
+    },
 }
 
 impl EntityAttributes {
@@ -118,9 +120,14 @@ impl EntityAttributes {
                 .as_union_value();
                 (fb_attr, schema::EntityAttributes::PlayerAttributes)
             }
-            EntityAttributes::Npc => {
-                let fb_attr = schema::NpcAttributes::create(builder, &schema::NpcAttributesArgs {})
-                    .as_union_value();
+            EntityAttributes::Npc { asset_id } => {
+                let fb_attr = schema::NpcAttributes::create(
+                    builder,
+                    &schema::NpcAttributesArgs {
+                        asset_id: *asset_id,
+                    },
+                )
+                .as_union_value();
                 (fb_attr, schema::EntityAttributes::NpcAttributes)
             }
         }
