@@ -12,9 +12,6 @@ impl Plugin for AssetsPlugin {
             RonAssetPlugin::<SpellLibrary>::new(&["spells.ron"]),
         ));
 
-        app.init_asset::<MonsterLibrary>();
-        app.init_asset::<SpellLibrary>();
-
         app.add_systems(PreStartup, setup_assets);
     }
 }
