@@ -1,0 +1,11 @@
+(
+    spells: {
+        1: (
+            name: "Smite",
+            damage: 10.0,
+            range: 30.0,
+            cooldown: 1.5,
+            visual_id: 0,
+        )
+    }
+)
