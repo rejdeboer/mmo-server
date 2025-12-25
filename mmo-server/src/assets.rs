@@ -4,7 +4,7 @@ use serde::Deserialize;
 use std::collections::HashMap;
 
 #[derive(Deserialize, Debug, Clone)]
-pub struct MonsterBlueprint {
+pub struct MonsterDef {
     pub name: String,
     pub hp: i32,
     pub speed: f32,
@@ -13,8 +13,25 @@ pub struct MonsterBlueprint {
 
 #[derive(Asset, TypePath, Deserialize, Debug)]
 pub struct MonsterLibrary {
-    pub types: HashMap<String, MonsterBlueprint>,
+    pub types: HashMap<String, MonsterDef>,
 }
 
 #[derive(Resource)]
 pub struct MonsterLibraryHandle(pub Handle<MonsterLibrary>);
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct SpellDef {
+    pub name: String,
+    pub damage: f32,
+    pub range: f32,
+    pub cooldown: f32,
+    pub visual_id: u32,
+}
+
+#[derive(Asset, TypePath, Deserialize, Debug)]
+pub struct SpellLibrary {
+    pub spells: HashMap<String, SpellDef>,
+}
+
+#[derive(Resource)]
+pub struct SpellLibraryHandle(pub Handle<SpellLibrary>);

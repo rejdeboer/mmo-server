@@ -1,5 +1,5 @@
 use crate::{
-    assets::{MonsterBlueprint, MonsterLibrary, MonsterLibraryHandle},
+    assets::{MonsterDef, MonsterLibrary, MonsterLibraryHandle},
     components::{AssetIdComponent, MobSpawner, SpawnedMob, Vitals},
     systems::ActorBundle,
 };
@@ -73,7 +73,7 @@ pub fn spawn_mobs(
 
 fn spawn_monster_entity(
     commands: &mut Commands,
-    blueprint: &MonsterBlueprint,
+    blueprint: &MonsterDef,
     spawner: Entity,
     transform: Transform,
     level: i32,
