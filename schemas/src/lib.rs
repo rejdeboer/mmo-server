@@ -38,6 +38,8 @@ pub mod game {
     pub use player_move_action_generated::*;
     mod player_jump_action_generated;
     pub use player_jump_action_generated::*;
+    mod cast_spell_action_generated;
+    pub use cast_spell_action_generated::*;
     mod targetting_action_generated;
     pub use targetting_action_generated::*;
     mod action_data_generated;

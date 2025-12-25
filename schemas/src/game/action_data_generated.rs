@@ -12,14 +12,15 @@ use super::*;
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
 pub const ENUM_MIN_ACTION_DATA: u8 = 0;
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
-pub const ENUM_MAX_ACTION_DATA: u8 = 4;
+pub const ENUM_MAX_ACTION_DATA: u8 = 5;
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
 #[allow(non_camel_case_types)]
-pub const ENUM_VALUES_ACTION_DATA: [ActionData; 5] = [
+pub const ENUM_VALUES_ACTION_DATA: [ActionData; 6] = [
   ActionData::NONE,
   ActionData::game_ClientChatMessage,
   ActionData::PlayerMoveAction,
   ActionData::PlayerJumpAction,
+  ActionData::CastSpellAction,
   ActionData::TargettingAction,
 ];
 
@@ -32,15 +33,17 @@ impl ActionData {
   pub const game_ClientChatMessage: Self = Self(1);
   pub const PlayerMoveAction: Self = Self(2);
   pub const PlayerJumpAction: Self = Self(3);
-  pub const TargettingAction: Self = Self(4);
+  pub const CastSpellAction: Self = Self(4);
+  pub const TargettingAction: Self = Self(5);
 
   pub const ENUM_MIN: u8 = 0;
-  pub const ENUM_MAX: u8 = 4;
+  pub const ENUM_MAX: u8 = 5;
   pub const ENUM_VALUES: &'static [Self] = &[
     Self::NONE,
     Self::game_ClientChatMessage,
     Self::PlayerMoveAction,
     Self::PlayerJumpAction,
+    Self::CastSpellAction,
     Self::TargettingAction,
   ];
   /// Returns the variant's name or "" if unknown.
@@ -50,6 +53,7 @@ impl ActionData {
       Self::game_ClientChatMessage => Some("game_ClientChatMessage"),
       Self::PlayerMoveAction => Some("PlayerMoveAction"),
       Self::PlayerJumpAction => Some("PlayerJumpAction"),
+      Self::CastSpellAction => Some("CastSpellAction"),
       Self::TargettingAction => Some("TargettingAction"),
       _ => None,
     }
@@ -68,7 +72,7 @@ impl<'a> flatbuffers::Follow<'a> for ActionData {
   type Inner = Self;
   #[inline]
   unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
-    let b = flatbuffers::read_scalar_at::<u8>(buf, loc);
+    let b = unsafe { flatbuffers::read_scalar_at::<u8>(buf, loc) };
     Self(b)
   }
 }
@@ -77,7 +81,7 @@ impl flatbuffers::Push for ActionData {
     type Output = ActionData;
     #[inline]
     unsafe fn push(&self, dst: &mut [u8], _written_len: usize) {
-        flatbuffers::emplace_scalar::<u8>(dst, self.0);
+        unsafe { flatbuffers::emplace_scalar::<u8>(dst, self.0); }
     }
 }
 

@@ -9,116 +9,116 @@ use core::mem;
 use core::cmp::Ordering;
 use self::flatbuffers::{EndianScalar, Follow};
 use super::*;
-pub enum TargettingEventOffset {}
+pub enum CastSpellActionOffset {}
 #[derive(Copy, Clone, PartialEq)]
 
-pub struct TargettingEvent<'a> {
+pub struct CastSpellAction<'a> {
   pub _tab: flatbuffers::Table<'a>,
 }
 
-impl<'a> flatbuffers::Follow<'a> for TargettingEvent<'a> {
-  type Inner = TargettingEvent<'a>;
+impl<'a> flatbuffers::Follow<'a> for CastSpellAction<'a> {
+  type Inner = CastSpellAction<'a>;
   #[inline]
   unsafe fn follow(buf: &'a [u8], loc: usize) -> Self::Inner {
     Self { _tab: unsafe { flatbuffers::Table::new(buf, loc) } }
   }
 }
 
-impl<'a> TargettingEvent<'a> {
-  pub const VT_PLAYER_ENTITY_ID: flatbuffers::VOffsetT = 4;
+impl<'a> CastSpellAction<'a> {
+  pub const VT_SPELL_ID: flatbuffers::VOffsetT = 4;
   pub const VT_TARGET_ENTITY_ID: flatbuffers::VOffsetT = 6;
 
   #[inline]
   pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
-    TargettingEvent { _tab: table }
+    CastSpellAction { _tab: table }
   }
   #[allow(unused_mut)]
   pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
     _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
-    args: &'args TargettingEventArgs
-  ) -> flatbuffers::WIPOffset<TargettingEvent<'bldr>> {
-    let mut builder = TargettingEventBuilder::new(_fbb);
+    args: &'args CastSpellActionArgs
+  ) -> flatbuffers::WIPOffset<CastSpellAction<'bldr>> {
+    let mut builder = CastSpellActionBuilder::new(_fbb);
     builder.add_target_entity_id(args.target_entity_id);
-    builder.add_player_entity_id(args.player_entity_id);
+    builder.add_spell_id(args.spell_id);
     builder.finish()
   }
 
 
   #[inline]
-  pub fn player_entity_id(&self) -> u64 {
+  pub fn spell_id(&self) -> u32 {
     // Safety:
     // Created from valid Table for this object
     // which contains a valid value in this slot
-    unsafe { self._tab.get::<u64>(TargettingEvent::VT_PLAYER_ENTITY_ID, Some(0)).unwrap()}
+    unsafe { self._tab.get::<u32>(CastSpellAction::VT_SPELL_ID, Some(0)).unwrap()}
   }
   #[inline]
   pub fn target_entity_id(&self) -> u64 {
     // Safety:
     // Created from valid Table for this object
     // which contains a valid value in this slot
-    unsafe { self._tab.get::<u64>(TargettingEvent::VT_TARGET_ENTITY_ID, Some(0)).unwrap()}
+    unsafe { self._tab.get::<u64>(CastSpellAction::VT_TARGET_ENTITY_ID, Some(0)).unwrap()}
   }
 }
 
-impl flatbuffers::Verifiable for TargettingEvent<'_> {
+impl flatbuffers::Verifiable for CastSpellAction<'_> {
   #[inline]
   fn run_verifier(
     v: &mut flatbuffers::Verifier, pos: usize
   ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
     use self::flatbuffers::Verifiable;
     v.visit_table(pos)?
-     .visit_field::<u64>("player_entity_id", Self::VT_PLAYER_ENTITY_ID, false)?
+     .visit_field::<u32>("spell_id", Self::VT_SPELL_ID, false)?
      .visit_field::<u64>("target_entity_id", Self::VT_TARGET_ENTITY_ID, false)?
      .finish();
     Ok(())
   }
 }
-pub struct TargettingEventArgs {
-    pub player_entity_id: u64,
+pub struct CastSpellActionArgs {
+    pub spell_id: u32,
     pub target_entity_id: u64,
 }
-impl<'a> Default for TargettingEventArgs {
+impl<'a> Default for CastSpellActionArgs {
   #[inline]
   fn default() -> Self {
-    TargettingEventArgs {
-      player_entity_id: 0,
+    CastSpellActionArgs {
+      spell_id: 0,
       target_entity_id: 0,
     }
   }
 }
 
-pub struct TargettingEventBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> {
+pub struct CastSpellActionBuilder<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> {
   fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a, A>,
   start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
 }
-impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> TargettingEventBuilder<'a, 'b, A> {
+impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> CastSpellActionBuilder<'a, 'b, A> {
   #[inline]
-  pub fn add_player_entity_id(&mut self, player_entity_id: u64) {
-    self.fbb_.push_slot::<u64>(TargettingEvent::VT_PLAYER_ENTITY_ID, player_entity_id, 0);
+  pub fn add_spell_id(&mut self, spell_id: u32) {
+    self.fbb_.push_slot::<u32>(CastSpellAction::VT_SPELL_ID, spell_id, 0);
   }
   #[inline]
   pub fn add_target_entity_id(&mut self, target_entity_id: u64) {
-    self.fbb_.push_slot::<u64>(TargettingEvent::VT_TARGET_ENTITY_ID, target_entity_id, 0);
+    self.fbb_.push_slot::<u64>(CastSpellAction::VT_TARGET_ENTITY_ID, target_entity_id, 0);
   }
   #[inline]
-  pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> TargettingEventBuilder<'a, 'b, A> {
+  pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> CastSpellActionBuilder<'a, 'b, A> {
     let start = _fbb.start_table();
-    TargettingEventBuilder {
+    CastSpellActionBuilder {
       fbb_: _fbb,
       start_: start,
     }
   }
   #[inline]
-  pub fn finish(self) -> flatbuffers::WIPOffset<TargettingEvent<'a>> {
+  pub fn finish(self) -> flatbuffers::WIPOffset<CastSpellAction<'a>> {
     let o = self.fbb_.end_table(self.start_);
     flatbuffers::WIPOffset::new(o.value())
   }
 }
 
-impl core::fmt::Debug for TargettingEvent<'_> {
+impl core::fmt::Debug for CastSpellAction<'_> {
   fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-    let mut ds = f.debug_struct("TargettingEvent");
-      ds.field("player_entity_id", &self.player_entity_id());
+    let mut ds = f.debug_struct("CastSpellAction");
+      ds.field("spell_id", &self.spell_id());
       ds.field("target_entity_id", &self.target_entity_id());
       ds.finish()
   }

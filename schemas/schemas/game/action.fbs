@@ -10,6 +10,11 @@ table PlayerMoveAction {
 
 table PlayerJumpAction {}
 
+table CastSpellAction {
+	spell_id: uint32;
+	target_entity_id: uint64;
+}
+
 table TargettingAction {
 	entity_id: uint64;
 }
@@ -18,6 +23,7 @@ union ActionData {
 	game.ClientChatMessage,
 	PlayerMoveAction,
 	PlayerJumpAction,
+	CastSpellAction,
 	TargettingAction,
 }
 
