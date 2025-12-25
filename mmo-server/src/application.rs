@@ -1,6 +1,9 @@
+use crate::configuration::Settings;
+use crate::messages::{IncomingChatMessage, JumpActionMessage, MoveActionMessage, OutgoingMessage};
+use crate::plugins::{AppPlugin, AssetsPlugin};
+use crate::systems::{setup_spawners, update_server_metrics};
+use crate::telemetry::{Metrics, run_metrics_exporter};
 use avian3d::prelude::*;
-use bevy::asset::RenderAssetUsages;
-use bevy::gltf::GltfLoaderSettings;
 use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 use bevy::time::common_conditions::on_timer;
@@ -14,13 +17,6 @@ use sqlx::{PgPool, postgres::PgPoolOptions};
 use std::net::{IpAddr, SocketAddr, UdpSocket};
 use std::time::{Duration, SystemTime};
 
-use crate::assets::{MonsterLibrary, MonsterLibraryHandle, MonsterLoader};
-use crate::configuration::Settings;
-use crate::messages::{IncomingChatMessage, JumpActionMessage, MoveActionMessage, OutgoingMessage};
-use crate::plugins::AppPlugin;
-use crate::systems::{setup_spawners, update_server_metrics};
-use crate::telemetry::{Metrics, run_metrics_exporter};
-
 #[derive(Resource, Clone)]
 pub struct DatabasePool(pub PgPool);
 
@@ -33,6 +29,7 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     let mut app = App::new();
 
     app.add_plugins(AppPlugin);
+    app.add_plugins(AssetsPlugin);
     app.add_plugins(RenetServerPlugin);
     app.add_plugins(NetcodeServerPlugin);
     app.add_plugins(TokioTasksPlugin::default());
@@ -98,15 +95,11 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     app.insert_resource(SpatialGrid::default());
     app.insert_resource(Metrics::default());
 
-    app.init_asset::<MonsterLibrary>();
-    app.init_asset_loader::<MonsterLoader>();
-
     app.add_message::<IncomingChatMessage>();
     app.add_message::<OutgoingMessage>();
     app.add_message::<MoveActionMessage>();
     app.add_message::<JumpActionMessage>();
 
-    app.add_systems(PreStartup, setup_assets);
     app.add_systems(
         Startup,
         (setup_database_pool, setup_metrics_exporter, setup_spawners),
@@ -165,26 +158,6 @@ fn setup_database_pool(
         .runtime()
         .block_on(async move { get_connection_pool(&settings) });
     commands.insert_resource(DatabasePool(pool));
-}
-
-fn setup_assets(mut commands: Commands, assets: Res<AssetServer>) {
-    commands.spawn((
-        SceneRoot(
-            assets.load_with_settings("world.gltf#Scene0", |s: &mut GltfLoaderSettings| {
-                s.load_materials = RenderAssetUsages::empty();
-                s.load_cameras = false;
-                s.load_lights = false;
-                s.load_animations = false;
-            }),
-        ),
-        // TODO: We are trying to match Godot here to make it work, but this is hacky
-        Transform::from_xyz(0., -2., 0.),
-        RigidBody::Static,
-        ColliderConstructorHierarchy::new(ColliderConstructor::ConvexHullFromMesh),
-    ));
-
-    let monsters_handle = assets.load("monsters.ron");
-    commands.insert_resource(MonsterLibraryHandle(monsters_handle));
 }
 
 fn setup_metrics_exporter(
