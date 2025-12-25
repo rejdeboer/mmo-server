@@ -1,6 +1,6 @@
 (
     spells: {
-       "smite" : (
+       0 : (
             name: "Smite",
             damage: 10.0,
             range: 30.0,

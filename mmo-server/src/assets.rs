@@ -30,7 +30,7 @@ pub struct SpellDef {
 
 #[derive(Asset, TypePath, Deserialize, Debug)]
 pub struct SpellLibrary {
-    pub spells: HashMap<String, SpellDef>,
+    pub spells: HashMap<u32, SpellDef>,
 }
 
 #[derive(Resource)]
