@@ -23,6 +23,13 @@ pub struct JumpActionMessage {
 }
 
 #[derive(Message, Debug)]
+pub struct CastSpellActionMessage {
+    pub player_entity: Entity,
+    pub target_entity: Entity,
+    pub spell_id: u32,
+}
+
+#[derive(Message, Debug)]
 pub struct IncomingChatMessage {
     pub author: Entity,
     pub channel: ChannelType,
