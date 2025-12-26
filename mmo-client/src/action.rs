@@ -46,6 +46,10 @@ impl MoveAction {
 pub enum PlayerAction {
     Chat(ChannelType, String),
     Jump,
+    CastSpell {
+        target_entity_id: u64,
+        spell_id: u32,
+    },
 }
 
 impl PlayerAction {
@@ -68,6 +72,20 @@ impl PlayerAction {
                 data_type = schema::ActionData::PlayerJumpAction;
                 schema::PlayerJumpAction::create(builder, &schema::PlayerJumpActionArgs {})
                     .as_union_value()
+            }
+            Self::CastSpell {
+                target_entity_id,
+                spell_id,
+            } => {
+                data_type = schema::ActionData::CastSpellAction;
+                schema::CastSpellAction::create(
+                    builder,
+                    &schema::CastSpellActionArgs {
+                        target_entity_id: *target_entity_id,
+                        spell_id: *spell_id,
+                    },
+                )
+                .as_union_value()
             }
         };
 
