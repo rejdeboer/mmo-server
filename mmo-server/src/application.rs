@@ -1,7 +1,7 @@
 use crate::configuration::Settings;
 use crate::messages::{
-    CastSpellActionMessage, IncomingChatMessage, JumpActionMessage, MoveActionMessage,
-    OutgoingMessage,
+    ApplySpellEffectMessage, CastSpellActionMessage, IncomingChatMessage, JumpActionMessage,
+    MoveActionMessage, OutgoingMessage,
 };
 use crate::plugins::{AppPlugin, AssetsPlugin};
 use crate::systems::{setup_spawners, update_server_metrics};
@@ -98,6 +98,7 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     app.insert_resource(SpatialGrid::default());
     app.insert_resource(Metrics::default());
 
+    app.add_message::<ApplySpellEffectMessage>();
     app.add_message::<CastSpellActionMessage>();
     app.add_message::<IncomingChatMessage>();
     app.add_message::<JumpActionMessage>();

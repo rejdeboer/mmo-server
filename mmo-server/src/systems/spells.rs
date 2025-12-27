@@ -1,7 +1,9 @@
 use crate::{
     assets::{SpellLibrary, SpellLibraryHandle},
     components::{Casting, ClientIdComponent, InterestedClients},
-    messages::{CastSpellActionMessage, OutgoingMessage, OutgoingMessageData},
+    messages::{
+        ApplySpellEffectMessage, CastSpellActionMessage, OutgoingMessage, OutgoingMessageData,
+    },
 };
 use avian3d::prelude::LinearVelocity;
 use bevy::prelude::*;
@@ -87,16 +89,22 @@ pub fn tick_casting(
     mut commands: Commands,
     time: Res<Time>,
     mut q_casting: Query<(Entity, &mut Casting, &LinearVelocity)>,
+    mut w_apply_spell: MessageWriter<ApplySpellEffectMessage>,
 ) {
     for (entity, mut cast, velocity) in q_casting.iter_mut() {
-        if velocity.length_squared() > 0.1 {
+        if velocity.length_squared() > 0.1 && !cast.castable_while_moving {
             commands.entity(entity).remove::<Casting>();
+            tracing::debug!(?entity, "caster moved while casting stationary spell");
             continue;
         }
 
         cast.timer.tick(time.delta());
         if cast.timer.is_finished() {
-            // TODO: Apply spell effects
+            w_apply_spell.write(ApplySpellEffectMessage {
+                caster_entity: entity,
+                target_entity: cast.target,
+                spell_id: cast.spell_id,
+            });
             commands.entity(entity).remove::<Casting>();
         }
     }
