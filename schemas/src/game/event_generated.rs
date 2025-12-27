@@ -102,6 +102,20 @@ impl<'a> Event<'a> {
 
   #[inline]
   #[allow(non_snake_case)]
+  pub fn data_as_start_casting_event(&self) -> Option<StartCastingEvent<'a>> {
+    if self.data_type() == EventData::StartCastingEvent {
+      let u = self.data();
+      // Safety:
+      // Created from a valid Table for this object
+      // Which contains a valid union in this slot
+      Some(unsafe { StartCastingEvent::init_from_table(u) })
+    } else {
+      None
+    }
+  }
+
+  #[inline]
+  #[allow(non_snake_case)]
   pub fn data_as_targetting_event(&self) -> Option<TargettingEvent<'a>> {
     if self.data_type() == EventData::TargettingEvent {
       let u = self.data();
@@ -142,6 +156,7 @@ impl flatbuffers::Verifiable for Event<'_> {
           EventData::EntityMoveEvent => v.verify_union_variant::<flatbuffers::ForwardsUOffset<EntityMoveEvent>>("EventData::EntityMoveEvent", pos),
           EventData::EntitySpawnEvent => v.verify_union_variant::<flatbuffers::ForwardsUOffset<EntitySpawnEvent>>("EventData::EntitySpawnEvent", pos),
           EventData::EntityDespawnEvent => v.verify_union_variant::<flatbuffers::ForwardsUOffset<EntityDespawnEvent>>("EventData::EntityDespawnEvent", pos),
+          EventData::StartCastingEvent => v.verify_union_variant::<flatbuffers::ForwardsUOffset<StartCastingEvent>>("EventData::StartCastingEvent", pos),
           EventData::TargettingEvent => v.verify_union_variant::<flatbuffers::ForwardsUOffset<TargettingEvent>>("EventData::TargettingEvent", pos),
           EventData::game_ServerChatMessage => v.verify_union_variant::<flatbuffers::ForwardsUOffset<ServerChatMessage>>("EventData::game_ServerChatMessage", pos),
           _ => Ok(()),
@@ -215,6 +230,13 @@ impl core::fmt::Debug for Event<'_> {
         },
         EventData::EntityDespawnEvent => {
           if let Some(x) = self.data_as_entity_despawn_event() {
+            ds.field("data", &x)
+          } else {
+            ds.field("data", &"InvalidFlatbuffer: Union discriminant does not match value.")
+          }
+        },
+        EventData::StartCastingEvent => {
+          if let Some(x) = self.data_as_start_casting_event() {
             ds.field("data", &x)
           } else {
             ds.field("data", &"InvalidFlatbuffer: Union discriminant does not match value.")

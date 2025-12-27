@@ -25,6 +25,8 @@ pub mod game {
     pub use entity_spawn_event_generated::*;
     mod entity_despawn_event_generated;
     pub use entity_despawn_event_generated::*;
+    mod start_casting_event_generated;
+    pub use start_casting_event_generated::*;
     mod targetting_event_generated;
     pub use targetting_event_generated::*;
     mod event_data_generated;

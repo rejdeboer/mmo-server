@@ -17,6 +17,11 @@ table EntityDespawnEvent {
 	entity_id: uint64;
 }
 
+table StartCastingEvent {
+	entity_id: uint64;
+	spell_id: uint32;
+}
+
 table TargettingEvent {
 	player_entity_id: uint64;
 	target_entity_id: uint64;
@@ -26,6 +31,7 @@ union EventData {
 	EntityMoveEvent,
 	EntitySpawnEvent,
 	EntityDespawnEvent,
+	StartCastingEvent,
 	TargettingEvent,
 	game.ServerChatMessage,
 }
