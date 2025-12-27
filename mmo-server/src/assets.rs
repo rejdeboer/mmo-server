@@ -25,6 +25,9 @@ pub struct SpellDef {
     pub damage: f32,
     pub range: f32,
     pub cooldown: f32,
+    pub casting_duration: f32,
+    #[serde(default)]
+    pub castable_while_moving: bool,
     pub visual_id: u32,
 }
 
