@@ -129,8 +129,9 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     app.add_systems(
         FixedUpdate,
         (
-            crate::systems::update_spatial_grid,
+            crate::systems::process_spell_casts,
             crate::systems::spawn_mobs,
+            crate::systems::update_spatial_grid,
         ),
     );
     app.add_systems(

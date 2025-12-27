@@ -5,6 +5,7 @@ mod metrics;
 mod movement;
 mod spatial_grid;
 mod spawner;
+mod spells;
 mod sync;
 mod visibility;
 
@@ -15,5 +16,6 @@ pub use metrics::*;
 pub use movement::*;
 pub use spatial_grid::*;
 pub use spawner::*;
+pub use spells::*;
 pub use sync::*;
 pub use visibility::*;
