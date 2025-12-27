@@ -48,7 +48,7 @@ impl OutgoingMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum OutgoingMessageData {
     ChatMessage(ChannelType, NameComponent, String),
     Despawn(Entity),

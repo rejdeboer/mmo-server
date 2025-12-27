@@ -1,7 +1,7 @@
 use crate::{
     assets::{SpellLibrary, SpellLibraryHandle},
-    components::Casting,
-    messages::{CastSpellActionMessage, OutgoingMessage},
+    components::{Casting, InterestedClients},
+    messages::{CastSpellActionMessage, OutgoingMessage, OutgoingMessageData},
 };
 use bevy::prelude::*;
 
@@ -9,7 +9,7 @@ pub fn process_spell_casts(
     mut commands: Commands,
     mut reader: MessageReader<CastSpellActionMessage>,
     mut writer: MessageWriter<OutgoingMessage>,
-    mut q_caster: Query<(&Transform, Option<&Casting>)>,
+    mut q_caster: Query<(&Transform, &InterestedClients, Option<&Casting>)>,
     q_target: Query<(&Transform)>,
     library_handle: Res<SpellLibraryHandle>,
     assets: Res<Assets<SpellLibrary>>,
@@ -20,7 +20,7 @@ pub fn process_spell_casts(
     };
 
     for msg in reader.read() {
-        let Ok((caster_transform, casting)) = q_caster.get(msg.caster_entity) else {
+        let Ok((caster_transform, interested, casting)) = q_caster.get(msg.caster_entity) else {
             tracing::warn!(
                 caster = ?msg.caster_entity,
                 "unable to find spell caster entity"
@@ -59,5 +59,14 @@ pub fn process_spell_casts(
             timer: Timer::from_seconds(spell.casting_duration, TimerMode::Once),
             castable_while_moving: spell.castable_while_moving,
         });
+
+        let outgoing_msg = OutgoingMessageData::StartCasting {
+            entity: msg.caster_entity,
+            spell_id: msg.spell_id,
+        };
+        writer.write_batch(interested.clients.iter().map(|client_id| OutgoingMessage {
+            client_id: *client_id,
+            data: outgoing_msg.clone(),
+        }));
     }
 }

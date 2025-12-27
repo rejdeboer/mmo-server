@@ -88,7 +88,7 @@ impl CharacterBundle {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum EntityAttributes {
     Player {
         character_id: i32,
