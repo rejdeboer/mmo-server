@@ -52,8 +52,8 @@ pub fn process_spell_casts(
 
         if caster_transform
             .translation
-            .distance(target_transform.translation)
-            > spell.range
+            .distance_squared(target_transform.translation)
+            > spell.range * spell.range
         {
             tracing::debug!(caster = ?msg.caster_entity, ?spell, "target is out of range");
             continue;
