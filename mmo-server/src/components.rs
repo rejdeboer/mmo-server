@@ -56,3 +56,12 @@ pub struct MobSpawner {
 pub struct SpawnedMob {
     pub spawner: Entity,
 }
+
+#[derive(Component)]
+// TODO: Implement different types of castable actions
+pub struct Casting {
+    pub spell_id: u32,
+    pub target: Entity,
+    pub timer: Timer,
+    pub castable_while_moving: bool,
+}

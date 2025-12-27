@@ -24,7 +24,7 @@ pub struct JumpActionMessage {
 
 #[derive(Message, Debug)]
 pub struct CastSpellActionMessage {
-    pub player_entity: Entity,
+    pub caster_entity: Entity,
     pub target_entity: Entity,
     pub spell_id: u32,
 }
