@@ -62,6 +62,10 @@ pub enum OutgoingMessageData {
         vitals: Vitals,
         movement_speed: f32,
     },
+    StartCasting {
+        entity: Entity,
+        spell_id: u32,
+    },
 }
 
 impl OutgoingMessageData {
@@ -93,6 +97,17 @@ impl OutgoingMessageData {
                     &schema::EntityMoveEventArgs {
                         entity_id: id.to_bits(),
                         transform: Some(&fb_transform),
+                    },
+                )
+                .as_union_value()
+            }
+            Self::StartCasting { entity, spell_id } => {
+                data_type = schema::EventData::StartCastingEvent;
+                schema::StartCastingEvent::create(
+                    builder,
+                    &schema::StartCastingEventArgs {
+                        entity_id: entity.to_bits(),
+                        spell_id: *spell_id,
                     },
                 )
                 .as_union_value()
