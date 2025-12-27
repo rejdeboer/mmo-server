@@ -115,8 +115,9 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
             crate::systems::check_ground_status,
             (
                 crate::systems::process_incoming_chat,
-                crate::systems::process_move_action_messages,
                 crate::systems::process_jump_action_messages,
+                crate::systems::process_move_action_messages,
+                crate::systems::process_spell_casts,
             ),
         )
             .chain(),
@@ -129,8 +130,8 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     app.add_systems(
         FixedUpdate,
         (
-            crate::systems::process_spell_casts,
             crate::systems::spawn_mobs,
+            crate::systems::tick_casting,
             crate::systems::update_spatial_grid,
         ),
     );

@@ -3,6 +3,7 @@ use crate::{
     components::{Casting, ClientIdComponent, InterestedClients},
     messages::{CastSpellActionMessage, OutgoingMessage, OutgoingMessageData},
 };
+use avian3d::prelude::LinearVelocity;
 use bevy::prelude::*;
 
 pub fn process_spell_casts(
@@ -15,7 +16,7 @@ pub fn process_spell_casts(
         &InterestedClients,
         Option<&Casting>,
     )>,
-    q_target: Query<(&Transform)>,
+    q_target: Query<&Transform>,
     library_handle: Res<SpellLibraryHandle>,
     assets: Res<Assets<SpellLibrary>>,
 ) {
@@ -79,5 +80,24 @@ pub fn process_spell_casts(
             client_id: caster_client_id.0,
             data: outgoing_msg,
         });
+    }
+}
+
+pub fn tick_casting(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut q_casting: Query<(Entity, &mut Casting, &LinearVelocity)>,
+) {
+    for (entity, mut cast, velocity) in q_casting.iter_mut() {
+        if velocity.length_squared() > 0.1 {
+            commands.entity(entity).remove::<Casting>();
+            continue;
+        }
+
+        cast.timer.tick(time.delta());
+        if cast.timer.is_finished() {
+            // TODO: Apply spell effects
+            commands.entity(entity).remove::<Casting>();
+        }
     }
 }
