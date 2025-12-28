@@ -22,6 +22,14 @@ table StartCastingEvent {
 	spell_id: uint32;
 }
 
+table SpellImpactEvent {
+	// TODO: How will we do spells that do not have a target, or do not deal damage?
+	// We probably want to implement impact type, like damage, heal, etc...
+	target_id: uint64;
+	spell_id: uint32;
+	impact_amount: int32;
+}
+
 table TargettingEvent {
 	player_entity_id: uint64;
 	target_entity_id: uint64;
@@ -32,6 +40,7 @@ union EventData {
 	EntitySpawnEvent,
 	EntityDespawnEvent,
 	StartCastingEvent,
+	SpellImpactEvent,
 	TargettingEvent,
 	game.ServerChatMessage,
 }
