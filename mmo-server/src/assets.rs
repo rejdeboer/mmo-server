@@ -22,7 +22,7 @@ pub struct MonsterLibraryHandle(pub Handle<MonsterLibrary>);
 #[derive(Deserialize, Debug, Clone)]
 pub struct SpellDef {
     pub name: String,
-    pub damage: f32,
+    pub damage: i32,
     pub range: f32,
     pub cooldown: f32,
     pub casting_duration: f32,

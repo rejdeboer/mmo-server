@@ -2,7 +2,7 @@
     spells: {
        0 : (
          name: "Smite",
-         damage: 10.0,
+         damage: 10,
          range: 30.0,
          cooldown: 1.5,
          casting_duration: 0.0,

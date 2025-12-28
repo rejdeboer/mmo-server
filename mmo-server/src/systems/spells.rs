@@ -1,6 +1,6 @@
 use crate::{
     assets::{SpellLibrary, SpellLibraryHandle},
-    components::{Casting, ClientIdComponent, InterestedClients},
+    components::{Casting, ClientIdComponent, InterestedClients, Vitals},
     messages::{
         ApplySpellEffectMessage, CastSpellActionMessage, OutgoingMessage, OutgoingMessageData,
     },
@@ -114,10 +114,27 @@ pub fn apply_spell_effect(
     library_handle: Res<SpellLibraryHandle>,
     assets: Res<Assets<SpellLibrary>>,
     mut reader: MessageReader<ApplySpellEffectMessage>,
+    mut q_target: Query<(&mut Vitals, &InterestedClients)>,
 ) {
     let Some(library) = assets.get(&library_handle.0) else {
         return;
     };
 
-    for msg in reader.read() {}
+    for msg in reader.read() {
+        let Some(spell) = library.spells.get(&msg.spell_id) else {
+            tracing::warn!(spell_id = %msg.spell_id, "tried to apply invalid spell");
+            continue;
+        };
+
+        let Ok((mut target_vitals, interested)) = q_target.get_mut(msg.target_entity) else {
+            tracing::debug!(entity_id = ?msg.target_entity, "tried to apply spell to invalid entity");
+            continue;
+        };
+
+        if target_vitals.hp <= spell.damage {
+            // TODO: Implement death
+        } else {
+            target_vitals.hp -= spell.damage;
+        }
+    }
 }
