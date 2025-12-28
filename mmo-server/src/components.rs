@@ -65,3 +65,8 @@ pub struct Casting {
     pub timer: Timer,
     pub castable_while_moving: bool,
 }
+
+#[derive(Component)]
+pub struct Dead {
+    pub despawn_timer: Timer,
+}

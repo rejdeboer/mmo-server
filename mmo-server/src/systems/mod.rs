@@ -8,6 +8,7 @@ mod spawner;
 mod spells;
 mod sync;
 mod visibility;
+mod vitals;
 
 pub use action::*;
 pub use chat::*;
@@ -19,3 +20,5 @@ pub use spawner::*;
 pub use spells::*;
 pub use sync::*;
 pub use visibility::*;
+pub use vitals::*;
+

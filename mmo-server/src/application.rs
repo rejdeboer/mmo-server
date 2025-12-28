@@ -131,6 +131,7 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     app.add_systems(
         FixedUpdate,
         (
+            crate::systems::on_vitals_changed,
             crate::systems::spawn_mobs,
             crate::systems::tick_casting,
             crate::systems::update_spatial_grid,

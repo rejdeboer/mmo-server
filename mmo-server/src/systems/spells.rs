@@ -142,10 +142,7 @@ pub fn apply_spell_effect(
             data: outgoing_msg.clone(),
         }));
 
-        if target_vitals.hp <= spell.damage {
-            // TODO: Implement death
-        } else {
-            target_vitals.hp -= spell.damage;
-        }
+        // TODO: Implement death
+        target_vitals.hp -= spell.damage;
     }
 }
