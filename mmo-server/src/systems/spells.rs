@@ -89,7 +89,7 @@ pub fn tick_casting(
     mut commands: Commands,
     time: Res<Time>,
     mut q_casting: Query<(Entity, &mut Casting, &LinearVelocity)>,
-    mut w_apply_spell: MessageWriter<ApplySpellEffectMessage>,
+    mut writer: MessageWriter<ApplySpellEffectMessage>,
 ) {
     for (entity, mut cast, velocity) in q_casting.iter_mut() {
         if velocity.length_squared() > 0.1 && !cast.castable_while_moving {
@@ -100,7 +100,7 @@ pub fn tick_casting(
 
         cast.timer.tick(time.delta());
         if cast.timer.is_finished() {
-            w_apply_spell.write(ApplySpellEffectMessage {
+            writer.write(ApplySpellEffectMessage {
                 caster_entity: entity,
                 target_entity: cast.target,
                 spell_id: cast.spell_id,
@@ -108,4 +108,16 @@ pub fn tick_casting(
             commands.entity(entity).remove::<Casting>();
         }
     }
+}
+
+pub fn apply_spell_effect(
+    library_handle: Res<SpellLibraryHandle>,
+    assets: Res<Assets<SpellLibrary>>,
+    mut reader: MessageReader<ApplySpellEffectMessage>,
+) {
+    let Some(library) = assets.get(&library_handle.0) else {
+        return;
+    };
+
+    for msg in reader.read() {}
 }

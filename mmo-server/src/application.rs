@@ -139,6 +139,7 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     app.add_systems(
         FixedPostUpdate,
         (
+            crate::systems::apply_spell_effect,
             crate::systems::update_player_visibility,
             (
                 crate::systems::send_transform_updates,
