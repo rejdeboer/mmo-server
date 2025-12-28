@@ -73,6 +73,11 @@ pub enum OutgoingMessageData {
         entity: Entity,
         spell_id: u32,
     },
+    SpellImpact {
+        target_entity: Entity,
+        spell_id: u32,
+        impact_amount: i32,
+    },
 }
 
 impl OutgoingMessageData {
@@ -115,6 +120,22 @@ impl OutgoingMessageData {
                     &schema::StartCastingEventArgs {
                         entity_id: entity.to_bits(),
                         spell_id: *spell_id,
+                    },
+                )
+                .as_union_value()
+            }
+            Self::SpellImpact {
+                target_entity,
+                spell_id,
+                impact_amount,
+            } => {
+                data_type = schema::EventData::SpellImpactEvent;
+                schema::SpellImpactEvent::create(
+                    builder,
+                    &schema::SpellImpactEventArgs {
+                        target_id: target_entity.to_bits(),
+                        spell_id: *spell_id,
+                        impact_amount: *impact_amount,
                     },
                 )
                 .as_union_value()
