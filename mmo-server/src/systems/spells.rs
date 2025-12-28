@@ -115,6 +115,7 @@ pub fn apply_spell_effect(
     assets: Res<Assets<SpellLibrary>>,
     mut reader: MessageReader<ApplySpellEffectMessage>,
     mut q_target: Query<(&mut Vitals, &InterestedClients)>,
+    mut writer: MessageWriter<OutgoingMessage>,
 ) {
     let Some(library) = assets.get(&library_handle.0) else {
         return;
@@ -130,6 +131,16 @@ pub fn apply_spell_effect(
             tracing::debug!(entity_id = ?msg.target_entity, "tried to apply spell to invalid entity");
             continue;
         };
+
+        let outgoing_msg = OutgoingMessageData::SpellImpact {
+            target_entity: msg.target_entity,
+            spell_id: msg.spell_id,
+            impact_amount: spell.damage,
+        };
+        writer.write_batch(interested.clients.iter().map(|client_id| OutgoingMessage {
+            client_id: *client_id,
+            data: outgoing_msg.clone(),
+        }));
 
         if target_vitals.hp <= spell.damage {
             // TODO: Implement death
