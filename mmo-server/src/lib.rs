@@ -6,6 +6,7 @@ mod components;
 pub mod configuration;
 pub mod database;
 mod messages;
+mod observers;
 mod plugins;
 mod systems;
 pub mod telemetry;

@@ -3,6 +3,7 @@ use crate::messages::{
     ApplySpellEffectMessage, CastSpellActionMessage, IncomingChatMessage, JumpActionMessage,
     MoveActionMessage, OutgoingMessage,
 };
+use crate::observers::on_entity_death;
 use crate::plugins::{AppPlugin, AssetsPlugin};
 use crate::systems::{setup_spawners, update_server_metrics};
 use crate::telemetry::{Metrics, run_metrics_exporter};
@@ -150,6 +151,8 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
         )
             .after(PhysicsSystems::Last),
     );
+
+    app.add_observer(on_entity_death);
 
     Ok((app, port))
 }

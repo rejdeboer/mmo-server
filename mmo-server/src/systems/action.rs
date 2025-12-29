@@ -67,7 +67,7 @@ fn process_message(entity: Entity, message: bevy_renet::renet::Bytes, commands: 
                     schema::ActionData::CastSpellAction => {
                         let spell_action = action.data_as_cast_spell_action().unwrap();
                         commands.write_message(CastSpellActionMessage {
-                            player_entity: entity,
+                            caster_entity: entity,
                             target_entity: Entity::from_bits(spell_action.target_entity_id()),
                             spell_id: spell_action.spell_id(),
                         });

@@ -70,6 +70,9 @@ pub enum OutgoingMessageData {
         vitals: Vitals,
         movement_speed: f32,
     },
+    Death {
+        entity: Entity,
+    },
     StartCasting {
         entity: Entity,
         spell_id: u32,
@@ -175,6 +178,17 @@ impl OutgoingMessageData {
                     builder,
                     &schema::EntityDespawnEventArgs {
                         entity_id: id.to_bits(),
+                    },
+                )
+                .as_union_value()
+            }
+            Self::Death { entity } => {
+                data_type = schema::EventData::EntityDeathEvent;
+                schema::EntityDeathEvent::create(
+                    builder,
+                    &schema::EntityDeathEventArgs {
+                        entity_id: entity.to_bits(),
+                        loot: None,
                     },
                 )
                 .as_union_value()
