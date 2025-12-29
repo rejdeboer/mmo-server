@@ -49,6 +49,7 @@ union EventData {
 	EntityMoveEvent,
 	EntitySpawnEvent,
 	EntityDespawnEvent,
+	EntityDeathEvent,
 	StartCastingEvent,
 	SpellImpactEvent,
 	TargettingEvent,

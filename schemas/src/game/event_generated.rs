@@ -102,6 +102,20 @@ impl<'a> Event<'a> {
 
   #[inline]
   #[allow(non_snake_case)]
+  pub fn data_as_entity_death_event(&self) -> Option<EntityDeathEvent<'a>> {
+    if self.data_type() == EventData::EntityDeathEvent {
+      let u = self.data();
+      // Safety:
+      // Created from a valid Table for this object
+      // Which contains a valid union in this slot
+      Some(unsafe { EntityDeathEvent::init_from_table(u) })
+    } else {
+      None
+    }
+  }
+
+  #[inline]
+  #[allow(non_snake_case)]
   pub fn data_as_start_casting_event(&self) -> Option<StartCastingEvent<'a>> {
     if self.data_type() == EventData::StartCastingEvent {
       let u = self.data();
@@ -170,6 +184,7 @@ impl flatbuffers::Verifiable for Event<'_> {
           EventData::EntityMoveEvent => v.verify_union_variant::<flatbuffers::ForwardsUOffset<EntityMoveEvent>>("EventData::EntityMoveEvent", pos),
           EventData::EntitySpawnEvent => v.verify_union_variant::<flatbuffers::ForwardsUOffset<EntitySpawnEvent>>("EventData::EntitySpawnEvent", pos),
           EventData::EntityDespawnEvent => v.verify_union_variant::<flatbuffers::ForwardsUOffset<EntityDespawnEvent>>("EventData::EntityDespawnEvent", pos),
+          EventData::EntityDeathEvent => v.verify_union_variant::<flatbuffers::ForwardsUOffset<EntityDeathEvent>>("EventData::EntityDeathEvent", pos),
           EventData::StartCastingEvent => v.verify_union_variant::<flatbuffers::ForwardsUOffset<StartCastingEvent>>("EventData::StartCastingEvent", pos),
           EventData::SpellImpactEvent => v.verify_union_variant::<flatbuffers::ForwardsUOffset<SpellImpactEvent>>("EventData::SpellImpactEvent", pos),
           EventData::TargettingEvent => v.verify_union_variant::<flatbuffers::ForwardsUOffset<TargettingEvent>>("EventData::TargettingEvent", pos),
@@ -245,6 +260,13 @@ impl core::fmt::Debug for Event<'_> {
         },
         EventData::EntityDespawnEvent => {
           if let Some(x) = self.data_as_entity_despawn_event() {
+            ds.field("data", &x)
+          } else {
+            ds.field("data", &"InvalidFlatbuffer: Union discriminant does not match value.")
+          }
+        },
+        EventData::EntityDeathEvent => {
+          if let Some(x) = self.data_as_entity_death_event() {
             ds.field("data", &x)
           } else {
             ds.field("data", &"InvalidFlatbuffer: Union discriminant does not match value.")
