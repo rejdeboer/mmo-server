@@ -17,6 +17,8 @@ pub mod game {
     pub use self::player_attributes_generated::*;
     mod npc_attributes_generated;
     pub use self::npc_attributes_generated::*;
+    mod item_drop_generated;
+    pub use self::item_drop_generated::*;
     mod enter_game_response_generated;
     pub use self::enter_game_response_generated::*;
     mod entity_move_event_generated;
