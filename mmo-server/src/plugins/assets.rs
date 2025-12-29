@@ -33,7 +33,7 @@ fn setup_assets(mut commands: Commands, assets: Res<AssetServer>) {
         // TODO: We are trying to match Godot here to make it work, but this is hacky
         Transform::from_xyz(0., -2., 0.),
         RigidBody::Static,
-        ColliderConstructorHierarchy::new(ColliderConstructor::ConvexHullFromMesh),
+        ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
     ));
 
     let items_handle = assets.load::<ItemLibrary>("items.ron");
