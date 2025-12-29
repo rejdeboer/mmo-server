@@ -4,6 +4,11 @@ include "entity.fbs";
 
 namespace game;
 
+struct ItemDrop {
+	item_id: uint32;
+	quantity: uint32;
+}
+
 table EntityMoveEvent {
 	entity_id: uint64;
 	transform: game.Transform;
@@ -15,6 +20,11 @@ table EntitySpawnEvent {
 
 table EntityDespawnEvent {
 	entity_id: uint64;
+}
+
+table EntityDeathEvent {
+	entity_id: uint64;
+	loot: [ItemDrop];
 }
 
 table StartCastingEvent {
