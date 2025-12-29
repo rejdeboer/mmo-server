@@ -1,4 +1,7 @@
-use crate::assets::{MonsterLibrary, MonsterLibraryHandle, SpellLibrary, SpellLibraryHandle};
+use crate::assets::{
+    ItemLibrary, ItemLibraryHandle, MonsterLibrary, MonsterLibraryHandle, SpellLibrary,
+    SpellLibraryHandle,
+};
 use avian3d::prelude::*;
 use bevy::{asset::RenderAssetUsages, gltf::GltfLoaderSettings, prelude::*};
 use bevy_common_assets::ron::RonAssetPlugin;
@@ -8,6 +11,7 @@ pub struct AssetsPlugin;
 impl Plugin for AssetsPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
+            RonAssetPlugin::<ItemLibrary>::new(&["items.ron"]),
             RonAssetPlugin::<MonsterLibrary>::new(&["monsters.ron"]),
             RonAssetPlugin::<SpellLibrary>::new(&["spells.ron"]),
         ));
@@ -32,6 +36,8 @@ fn setup_assets(mut commands: Commands, assets: Res<AssetServer>) {
         ColliderConstructorHierarchy::new(ColliderConstructor::ConvexHullFromMesh),
     ));
 
+    let items_handle = assets.load::<ItemLibrary>("items.ron");
+    commands.insert_resource(ItemLibraryHandle(items_handle));
     let monsters_handle = assets.load::<MonsterLibrary>("monsters.ron");
     commands.insert_resource(MonsterLibraryHandle(monsters_handle));
     let spells_handle = assets.load::<SpellLibrary>("spells.ron");
