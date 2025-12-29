@@ -1,5 +1,5 @@
 use crate::{
-    assets::{MonsterDef, MonsterLibrary, MonsterLibraryHandle},
+    assets::{ContentId, MonsterDef, MonsterLibrary, MonsterLibraryHandle},
     components::{AssetIdComponent, MobSpawner, SpawnedMob, Vitals},
     systems::ActorBundle,
 };
@@ -11,7 +11,7 @@ pub fn setup_spawners(mut commands: Commands) {
     commands.spawn((
         Transform::from_xyz(0., 0., 0.),
         MobSpawner {
-            mob_id: "skeleton-warrior".to_string(),
+            mob_id: ContentId::from("skeleton-warrior"),
             max_mobs: 10,
             spawn_radius: 25.,
             level_range: std::ops::Range { start: 1, end: 4 },

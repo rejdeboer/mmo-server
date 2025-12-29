@@ -3,6 +3,8 @@ use std::sync::Arc;
 use bevy::{platform::collections::HashSet, prelude::*};
 use bevy_renet::renet::ClientId;
 
+use crate::assets::ContentId;
+
 #[derive(Debug, Component)]
 pub struct ClientIdComponent(pub ClientId);
 
@@ -45,7 +47,7 @@ pub struct GroundedComponent;
 
 #[derive(Component)]
 pub struct MobSpawner {
-    pub mob_id: String,
+    pub mob_id: ContentId,
     pub max_mobs: usize,
     pub timer: Timer,
     pub spawn_radius: f32,

@@ -5,12 +5,14 @@
 			hp: 50,
 			speed: 1.0,
 			asset_id: 1,
+			loot_tables: ["humanoid-t0"],
 		),
 		"goblin": (
 			name: "Goblin",
 			hp: 50,
 			speed: 1.0,
 			asset_id: 2,
+			loot_tables: ["humanoid-t0"],
 		),
 	}
 )
