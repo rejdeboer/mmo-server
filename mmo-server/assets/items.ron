@@ -1,0 +1,14 @@
+(
+	items: {
+		0 : (
+			name: "Gold",
+			stack_size: 200,
+			asset_id: 0,
+		),
+		1 : (
+			name: "Cloth",
+			stack_size: 20,
+			asset_id: 1,
+		)
+	}
+)
