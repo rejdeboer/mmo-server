@@ -1,6 +1,6 @@
 use crate::assets::{
-    ItemLibrary, ItemLibraryHandle, MonsterLibrary, MonsterLibraryHandle, SpellLibrary,
-    SpellLibraryHandle,
+    ItemLibrary, ItemLibraryHandle, LootTableLibrary, LootTableLibraryHandle, MonsterLibrary,
+    MonsterLibraryHandle, SpellLibrary, SpellLibraryHandle,
 };
 use avian3d::prelude::*;
 use bevy::{asset::RenderAssetUsages, gltf::GltfLoaderSettings, prelude::*};
@@ -12,6 +12,7 @@ impl Plugin for AssetsPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
             RonAssetPlugin::<ItemLibrary>::new(&["items.ron"]),
+            RonAssetPlugin::<LootTableLibrary>::new(&["loot_tables.ron"]),
             RonAssetPlugin::<MonsterLibrary>::new(&["monsters.ron"]),
             RonAssetPlugin::<SpellLibrary>::new(&["spells.ron"]),
         ));
@@ -38,6 +39,8 @@ fn setup_assets(mut commands: Commands, assets: Res<AssetServer>) {
 
     let items_handle = assets.load::<ItemLibrary>("items.ron");
     commands.insert_resource(ItemLibraryHandle(items_handle));
+    let loot_tables_handle = assets.load::<LootTableLibrary>("loot_tables.ron");
+    commands.insert_resource(LootTableLibraryHandle(loot_tables_handle));
     let monsters_handle = assets.load::<MonsterLibrary>("monsters.ron");
     commands.insert_resource(MonsterLibraryHandle(monsters_handle));
     let spells_handle = assets.load::<SpellLibrary>("spells.ron");

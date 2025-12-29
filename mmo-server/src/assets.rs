@@ -99,3 +99,19 @@ pub struct ItemLibrary {
 
 #[derive(Resource)]
 pub struct ItemLibraryHandle(pub Handle<ItemLibrary>);
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct LootTableItem {
+    pub item_id: u32,
+    pub chance: f32,
+    pub min: u16,
+    pub max: u16,
+}
+
+#[derive(Asset, TypePath, Deserialize, Debug)]
+pub struct LootTableLibrary {
+    pub tables: HashMap<ContentId, Vec<LootTableItem>>,
+}
+
+#[derive(Resource)]
+pub struct LootTableLibraryHandle(pub Handle<LootTableLibrary>);
