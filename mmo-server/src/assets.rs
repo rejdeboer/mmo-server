@@ -54,6 +54,7 @@ pub struct MonsterDef {
     pub hp: i32,
     pub speed: f32,
     pub asset_id: u32,
+    #[serde(default)]
     pub loot_tables: Vec<ContentId>,
 }
 
@@ -101,7 +102,7 @@ pub struct ItemLibrary {
 pub struct ItemLibraryHandle(pub Handle<ItemLibrary>);
 
 #[derive(Deserialize, Debug, Clone)]
-pub struct LootTableItem {
+pub struct LootTableEntry {
     pub item_id: u32,
     pub chance: f32,
     pub min: u16,
@@ -110,7 +111,7 @@ pub struct LootTableItem {
 
 #[derive(Asset, TypePath, Deserialize, Debug)]
 pub struct LootTableLibrary {
-    pub tables: HashMap<ContentId, Vec<LootTableItem>>,
+    pub tables: HashMap<ContentId, Vec<LootTableEntry>>,
 }
 
 #[derive(Resource)]
