@@ -1,0 +1,8 @@
+(
+	tables: { 
+		"humanoid-t0": [
+			( item_id: 0, chance: 1.0, min: 1, max: 5), // Gold
+			( item_id: 1, chance: 0.5, min: 1, max: 2), // Cloth
+		],
+	}
+)
