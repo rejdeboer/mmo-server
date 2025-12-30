@@ -60,8 +60,12 @@ pub fn reward_kill(
     loot_db: LootDb,
 ) {
     let entity = event.0;
-    let Ok((monster_id, killer_client_id)) = q_victim.get(entity) else {
+    let Ok((monster_id, tapped)) = q_victim.get(entity) else {
         return tracing::error!(?entity, "could not retrieve victim components");
+    };
+
+    let Some(killer_client_id) = tapped.map(|t| t.owner_id) else {
+        return tracing::debug!("entity was not killed by a player");
     };
 
     let Some(monster_id) = monster_id else {
@@ -73,7 +77,10 @@ pub fn reward_kill(
     };
 
     let loot_entries = generate_loot(loot_tables);
-    commands.entity(entity).insert(Loot(loot_entries));
+    commands.entity(entity).insert(Loot {
+        entries: loot_entries,
+        owner_id: killer_client_id,
+    });
 }
 
 fn generate_loot<'a>(tables: impl Iterator<Item = &'a LootTable>) -> Vec<LootEntry> {

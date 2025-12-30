@@ -87,4 +87,7 @@ pub struct LootEntry {
 }
 
 #[derive(Component)]
-pub struct Loot(pub Vec<LootEntry>);
+pub struct Loot {
+    pub entries: Vec<LootEntry>,
+    pub owner_id: ClientId,
+}
