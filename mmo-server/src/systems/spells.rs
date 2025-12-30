@@ -157,7 +157,7 @@ pub fn apply_spell_effect(
         }));
 
         if let Some(caster_client_id) = msg.caster_client_id {
-            // caster's own ID is not within the interested set
+            // NOTE: caster's own ID is not within the interested set
             if msg.caster_entity == msg.target_entity {
                 writer.write(OutgoingMessage {
                     client_id: caster_client_id.clone(),
@@ -165,7 +165,8 @@ pub fn apply_spell_effect(
                 });
             }
 
-            // TODO: Healing something shouldn't tap it
+            // TODO: Healing something should not tap it
+            // TODO: Notify interested clients of tap
             if target_client_id.is_none() && tapped.is_none() {
                 commands.entity(msg.target_entity).insert(Tapped {
                     owner_id: caster_client_id,

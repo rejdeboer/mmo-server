@@ -1,6 +1,7 @@
 use crate::{
     assets::{ContentId, LootTableLibrary},
-    components::{Dead, MovementSpeedComponent, Vitals},
+    components::{ClientIdComponent, Dead, InterestedClients, MovementSpeedComponent, Vitals},
+    messages::{OutgoingMessage, OutgoingMessageData},
 };
 use bevy::prelude::*;
 use rand::{Rng, thread_rng};
@@ -18,7 +19,12 @@ struct LivingBundle {
     movement_speed: MovementSpeedComponent,
 }
 
-pub fn on_entity_death(event: On<EntityDeath>, mut commands: Commands) {
+pub fn on_entity_death(
+    event: On<EntityDeath>,
+    mut commands: Commands,
+    q_victim: Query<(&InterestedClients, Option<&ClientIdComponent>)>,
+    mut writer: MessageWriter<OutgoingMessage>,
+) {
     let entity = event.0;
     commands
         .entity(entity)
@@ -26,6 +32,22 @@ pub fn on_entity_death(event: On<EntityDeath>, mut commands: Commands) {
         .insert(Dead {
             despawn_timer: Timer::new(CORPSE_DESPAWN_DURATION, TimerMode::Once),
         });
+
+    let Ok((interested, victim_client_id)) = q_victim.get(entity) else {
+        return tracing::error!(?entity, "could not retrieve victim components");
+    };
+
+    let outgoing_msg = OutgoingMessageData::Death { entity };
+    writer.write_batch(interested.clients.iter().map(|client_id| OutgoingMessage {
+        client_id: *client_id,
+        data: outgoing_msg.clone(),
+    }));
+    if let Some(victim_client_id) = victim_client_id {
+        writer.write(OutgoingMessage {
+            client_id: victim_client_id.0,
+            data: outgoing_msg,
+        });
+    }
 }
 
 // TODO: Return loot
