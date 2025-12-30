@@ -2,6 +2,7 @@
 members = [
 	"mmo-client",
 	"mmo-server",
+	"protocol",
 	"provisioner",
 	"schemas",
 	"simulator",
@@ -13,6 +14,7 @@ default-members = ["mmo-server", "web-server"]
 resolver = "3"
 
 [workspace.dependencies]
+bitcode = "0.6.9"
 flatbuffers = "25.2.10"
 opentelemetry = { version = "0.31" }
 opentelemetry_sdk = { version = "0.31", default-features = false, features = [
