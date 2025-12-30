@@ -74,10 +74,7 @@ pub fn process_spell_casts(
             entity: msg.caster_entity,
             spell_id: msg.spell_id,
         };
-        writer.write_batch(interested.clients.iter().map(|client_id| OutgoingMessage {
-            client_id: *client_id,
-            data: outgoing_msg.clone(),
-        }));
+        outgoing_msg.broadcast(&interested.clients, &mut writer);
         writer.write(OutgoingMessage {
             client_id: caster_client_id.0,
             data: outgoing_msg,
@@ -151,10 +148,7 @@ pub fn apply_spell_effect(
             spell_id: msg.spell_id,
             impact_amount: spell.damage,
         };
-        writer.write_batch(interested.clients.iter().map(|client_id| OutgoingMessage {
-            client_id: *client_id,
-            data: outgoing_msg.clone(),
-        }));
+        outgoing_msg.broadcast(&interested.clients, &mut writer);
 
         if let Some(caster_client_id) = msg.caster_client_id {
             // NOTE: caster's own ID is not within the interested set

@@ -38,10 +38,7 @@ pub fn on_entity_death(
     };
 
     let outgoing_msg = OutgoingMessageData::Death { entity };
-    writer.write_batch(interested.clients.iter().map(|client_id| OutgoingMessage {
-        client_id: *client_id,
-        data: outgoing_msg.clone(),
-    }));
+    outgoing_msg.broadcast(&interested.clients, &mut writer);
     if let Some(victim_client_id) = victim_client_id {
         writer.write(OutgoingMessage {
             client_id: victim_client_id.0,

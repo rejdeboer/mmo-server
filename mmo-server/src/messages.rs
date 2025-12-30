@@ -2,7 +2,7 @@ use crate::{
     components::{NameComponent, Vitals},
     systems::{EntityAttributes, serialize_entity},
 };
-use bevy::prelude::*;
+use bevy::{platform::collections::HashSet, prelude::*};
 use bevy_renet::renet::ClientId;
 use flatbuffers::{FlatBufferBuilder, WIPOffset};
 use schema::ChannelType;
@@ -86,6 +86,17 @@ pub enum OutgoingMessageData {
 }
 
 impl OutgoingMessageData {
+    pub fn broadcast(
+        &self,
+        recipients: &HashSet<ClientId>,
+        writer: &mut MessageWriter<OutgoingMessage>,
+    ) {
+        writer.write_batch(recipients.iter().map(|client_id| OutgoingMessage {
+            client_id: *client_id,
+            data: self.clone(),
+        }));
+    }
+
     pub fn encode<'a>(&self, builder: &mut FlatBufferBuilder<'a>) -> WIPOffset<schema::Event<'a>> {
         let data_type;
         let data = match self {

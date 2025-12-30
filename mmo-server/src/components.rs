@@ -1,7 +1,6 @@
-use std::sync::Arc;
-
 use bevy::{platform::collections::HashSet, prelude::*};
 use bevy_renet::renet::ClientId;
+use std::sync::Arc;
 
 use crate::assets::ContentId;
 
