@@ -1,9 +1,12 @@
+use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use bevy::reflect::TypePath;
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
 use std::fmt;
 use std::hash::{DefaultHasher, Hash, Hasher};
+
+use crate::components::MonsterId;
 
 #[derive(Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ContentId(pub u64);
@@ -109,10 +112,45 @@ pub struct LootTableEntry {
     pub max: u16,
 }
 
+pub type LootTable = Vec<LootTableEntry>;
+
 #[derive(Asset, TypePath, Deserialize, Debug)]
 pub struct LootTableLibrary {
-    pub tables: HashMap<ContentId, Vec<LootTableEntry>>,
+    pub tables: HashMap<ContentId, LootTable>,
 }
 
 #[derive(Resource)]
 pub struct LootTableLibraryHandle(pub Handle<LootTableLibrary>);
+
+#[derive(SystemParam)]
+pub struct LootDb<'w> {
+    monster_handle: Res<'w, MonsterLibraryHandle>,
+    monsters: Res<'w, Assets<MonsterLibrary>>,
+    loot_handle: Res<'w, LootTableLibraryHandle>,
+    loot_tables: Res<'w, Assets<LootTableLibrary>>,
+}
+
+impl<'w> LootDb<'w> {
+    pub fn get_monster_loot_tables<'a>(
+        &'a self,
+        monster_id: &MonsterId,
+    ) -> Option<impl Iterator<Item = &'a LootTable>> {
+        let monster_lib = self.monsters.get(&self.monster_handle.0)?;
+        let monster_def = monster_lib.types.get(&monster_id.0)?;
+        let loot_lib = self.loot_tables.get(&self.loot_handle.0)?;
+
+        Some(monster_def.loot_tables.iter().filter_map(|table_id| {
+            let table = loot_lib.tables.get(table_id);
+
+            if table.is_none() {
+                tracing::warn!(
+                    monster_id = ?monster_id.0,
+                    ?table_id,
+                    "monster references missing loot table ID",
+                );
+            }
+
+            table
+        }))
+    }
+}

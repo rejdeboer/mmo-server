@@ -1,6 +1,6 @@
 use crate::{
     assets::{ContentId, MonsterDef, MonsterLibrary, MonsterLibraryHandle},
-    components::{AssetIdComponent, MobSpawner, SpawnedMob, Vitals},
+    components::{AssetIdComponent, MobSpawner, MonsterId, Spawned, Vitals},
     systems::ActorBundle,
 };
 use bevy::prelude::*;
@@ -24,7 +24,7 @@ pub fn spawn_mobs(
     mut commands: Commands,
     time: Res<Time>,
     mut q_spawners: Query<(Entity, &mut MobSpawner, &Transform)>,
-    q_mobs: Query<&SpawnedMob>,
+    q_mobs: Query<&Spawned>,
     library_handle: Res<MonsterLibraryHandle>,
     assets: Res<Assets<MonsterLibrary>>,
 ) {
@@ -55,6 +55,7 @@ pub fn spawn_mobs(
 
                 spawn_monster_entity(
                     &mut commands,
+                    &spawner.mob_id,
                     blueprint,
                     spawner_entity,
                     spawn_transform,
@@ -73,6 +74,7 @@ pub fn spawn_mobs(
 
 fn spawn_monster_entity(
     commands: &mut Commands,
+    monster_id: &ContentId,
     blueprint: &MonsterDef,
     spawner: Entity,
     transform: Transform,
@@ -84,7 +86,8 @@ fn spawn_monster_entity(
     };
     let actor_bundle = ActorBundle::new(&blueprint.name, transform, vitals, level);
     commands.spawn((
-        SpawnedMob { spawner },
+        MonsterId(*monster_id),
+        Spawned { spawner },
         actor_bundle,
         AssetIdComponent(blueprint.asset_id),
     ));

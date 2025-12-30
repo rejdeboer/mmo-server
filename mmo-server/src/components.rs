@@ -54,9 +54,12 @@ pub struct MobSpawner {
 }
 
 #[derive(Component)]
-pub struct SpawnedMob {
+pub struct Spawned {
     pub spawner: Entity,
 }
+
+#[derive(Component, Clone, Copy, Debug)]
+pub struct MonsterId(pub ContentId);
 
 #[derive(Component)]
 // TODO: Implement different types of castable actions
@@ -77,3 +80,11 @@ pub struct Dead {
 pub struct Tapped {
     pub owner_id: ClientId,
 }
+
+pub struct LootEntry {
+    pub item_id: u32,
+    pub quantity: u16,
+}
+
+#[derive(Component)]
+pub struct Loot(pub Vec<LootEntry>);

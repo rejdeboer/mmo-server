@@ -1,6 +1,12 @@
 use crate::{
-    assets::{ContentId, LootTableLibrary},
-    components::{ClientIdComponent, Dead, InterestedClients, MovementSpeedComponent, Vitals},
+    assets::{
+        ContentId, LootDb, LootTable, LootTableLibrary, LootTableLibraryHandle, MonsterLibrary,
+        MonsterLibraryHandle,
+    },
+    components::{
+        ClientIdComponent, Dead, InterestedClients, Loot, LootEntry, MonsterId,
+        MovementSpeedComponent, Tapped, Vitals,
+    },
     messages::{OutgoingMessage, OutgoingMessageData},
 };
 use bevy::prelude::*;
@@ -47,17 +53,34 @@ pub fn on_entity_death(
     }
 }
 
-// TODO: Return loot
-fn generate_loot(table_ids: &[ContentId], library: &LootTableLibrary) {
+pub fn reward_kill(
+    event: On<EntityDeath>,
+    mut commands: Commands,
+    q_victim: Query<(Option<&MonsterId>, Option<&Tapped>)>,
+    loot_db: LootDb,
+) {
+    let entity = event.0;
+    let Ok((monster_id, killer_client_id)) = q_victim.get(entity) else {
+        return tracing::error!(?entity, "could not retrieve victim components");
+    };
+
+    let Some(monster_id) = monster_id else {
+        return tracing::debug!("killed entity is not a monster");
+    };
+
+    let Some(loot_tables) = loot_db.get_monster_loot_tables(monster_id) else {
+        return tracing::error!(?monster_id, "failed to get monster loot tables");
+    };
+
+    let loot_entries = generate_loot(loot_tables);
+    commands.entity(entity).insert(Loot(loot_entries));
+}
+
+fn generate_loot<'a>(tables: impl Iterator<Item = &'a LootTable>) -> Vec<LootEntry> {
     let mut rng = thread_rng();
     let mut loot: HashMap<u32, u16> = HashMap::new();
 
-    for table_id in table_ids {
-        let Some(table) = library.tables.get(table_id) else {
-            tracing::debug!(?table_id, "failed to get loot table");
-            continue;
-        };
-
+    for table in tables {
         for entry in table {
             if rng.gen_bool(entry.chance as f64) {
                 let count = rng.gen_range(entry.min..=entry.max);
@@ -67,4 +90,8 @@ fn generate_loot(table_ids: &[ContentId], library: &LootTableLibrary) {
             }
         }
     }
+
+    loot.into_iter()
+        .map(|(item_id, quantity)| LootEntry { item_id, quantity })
+        .collect()
 }

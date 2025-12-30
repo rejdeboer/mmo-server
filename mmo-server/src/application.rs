@@ -3,7 +3,7 @@ use crate::messages::{
     ApplySpellEffectMessage, CastSpellActionMessage, IncomingChatMessage, JumpActionMessage,
     MoveActionMessage, OutgoingMessage,
 };
-use crate::observers::on_entity_death;
+use crate::observers::{on_entity_death, reward_kill};
 use crate::plugins::{AppPlugin, AssetsPlugin};
 use crate::systems::{setup_spawners, update_server_metrics};
 use crate::telemetry::{Metrics, run_metrics_exporter};
@@ -153,6 +153,7 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     );
 
     app.add_observer(on_entity_death);
+    app.add_observer(reward_kill);
 
     Ok((app, port))
 }
