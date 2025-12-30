@@ -39,6 +39,7 @@ pub struct IncomingChatMessage {
 #[derive(Message, Debug)]
 pub struct ApplySpellEffectMessage {
     pub caster_entity: Entity,
+    pub caster_client_id: Option<ClientId>,
     pub target_entity: Entity,
     pub spell_id: u32,
 }

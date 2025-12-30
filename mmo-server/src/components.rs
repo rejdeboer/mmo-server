@@ -72,3 +72,9 @@ pub struct Casting {
 pub struct Dead {
     pub despawn_timer: Timer,
 }
+
+#[derive(Component)]
+// TODO: Taps can also be owned by groups
+pub struct Tapped {
+    pub owner_id: ClientId,
+}

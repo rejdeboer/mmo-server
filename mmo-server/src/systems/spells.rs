@@ -1,6 +1,6 @@
 use crate::{
     assets::{SpellLibrary, SpellLibraryHandle},
-    components::{Casting, ClientIdComponent, InterestedClients, Vitals},
+    components::{Casting, ClientIdComponent, InterestedClients, Tapped, Vitals},
     messages::{
         ApplySpellEffectMessage, CastSpellActionMessage, OutgoingMessage, OutgoingMessageData,
     },
@@ -88,10 +88,15 @@ pub fn process_spell_casts(
 pub fn tick_casting(
     mut commands: Commands,
     time: Res<Time>,
-    mut q_casting: Query<(Entity, &mut Casting, &LinearVelocity)>,
+    mut q_casting: Query<(
+        Entity,
+        &mut Casting,
+        &LinearVelocity,
+        Option<&ClientIdComponent>,
+    )>,
     mut writer: MessageWriter<ApplySpellEffectMessage>,
 ) {
-    for (entity, mut cast, velocity) in q_casting.iter_mut() {
+    for (entity, mut cast, velocity, client_id) in q_casting.iter_mut() {
         if velocity.length_squared() > 0.1 && !cast.castable_while_moving {
             commands.entity(entity).remove::<Casting>();
             tracing::debug!(?entity, "caster moved while casting stationary spell");
@@ -102,6 +107,7 @@ pub fn tick_casting(
         if cast.timer.is_finished() {
             writer.write(ApplySpellEffectMessage {
                 caster_entity: entity,
+                caster_client_id: client_id.map(|c| c.0),
                 target_entity: cast.target,
                 spell_id: cast.spell_id,
             });
@@ -111,10 +117,16 @@ pub fn tick_casting(
 }
 
 pub fn apply_spell_effect(
+    mut commands: Commands,
     library_handle: Res<SpellLibraryHandle>,
     assets: Res<Assets<SpellLibrary>>,
     mut reader: MessageReader<ApplySpellEffectMessage>,
-    mut q_target: Query<(&mut Vitals, &InterestedClients)>,
+    mut q_target: Query<(
+        &mut Vitals,
+        &InterestedClients,
+        Option<&ClientIdComponent>,
+        Option<&Tapped>,
+    )>,
     mut writer: MessageWriter<OutgoingMessage>,
 ) {
     let Some(library) = assets.get(&library_handle.0) else {
@@ -127,7 +139,9 @@ pub fn apply_spell_effect(
             continue;
         };
 
-        let Ok((mut target_vitals, interested)) = q_target.get_mut(msg.target_entity) else {
+        let Ok((mut target_vitals, interested, target_client_id, tapped)) =
+            q_target.get_mut(msg.target_entity)
+        else {
             tracing::debug!(entity_id = ?msg.target_entity, "tried to apply spell to invalid entity");
             continue;
         };
@@ -142,7 +156,23 @@ pub fn apply_spell_effect(
             data: outgoing_msg.clone(),
         }));
 
-        // TODO: Implement death
+        if let Some(caster_client_id) = msg.caster_client_id {
+            // caster's own ID is not within the interested set
+            if msg.caster_entity == msg.target_entity {
+                writer.write(OutgoingMessage {
+                    client_id: caster_client_id.clone(),
+                    data: outgoing_msg,
+                });
+            }
+
+            // TODO: Healing something shouldn't tap it
+            if target_client_id.is_none() && tapped.is_none() {
+                commands.entity(msg.target_entity).insert(Tapped {
+                    owner_id: caster_client_id,
+                });
+            }
+        }
+
         target_vitals.hp -= spell.damage;
     }
 }
