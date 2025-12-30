@@ -24,6 +24,10 @@ table EntityDespawnEvent {
 
 table EntityDeathEvent {
 	entity_id: uint64;
+}
+
+table KillRewardEvent {
+	victim_id: uint64;
 	loot: [ItemDrop];
 }
 
@@ -50,6 +54,7 @@ union EventData {
 	EntitySpawnEvent,
 	EntityDespawnEvent,
 	EntityDeathEvent,
+	KillRewardEvent,
 	StartCastingEvent,
 	SpellImpactEvent,
 	TargettingEvent,

@@ -12,15 +12,16 @@ use super::*;
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
 pub const ENUM_MIN_EVENT_DATA: u8 = 0;
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
-pub const ENUM_MAX_EVENT_DATA: u8 = 8;
+pub const ENUM_MAX_EVENT_DATA: u8 = 9;
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
 #[allow(non_camel_case_types)]
-pub const ENUM_VALUES_EVENT_DATA: [EventData; 9] = [
+pub const ENUM_VALUES_EVENT_DATA: [EventData; 10] = [
   EventData::NONE,
   EventData::EntityMoveEvent,
   EventData::EntitySpawnEvent,
   EventData::EntityDespawnEvent,
   EventData::EntityDeathEvent,
+  EventData::KillRewardEvent,
   EventData::StartCastingEvent,
   EventData::SpellImpactEvent,
   EventData::TargettingEvent,
@@ -37,19 +38,21 @@ impl EventData {
   pub const EntitySpawnEvent: Self = Self(2);
   pub const EntityDespawnEvent: Self = Self(3);
   pub const EntityDeathEvent: Self = Self(4);
-  pub const StartCastingEvent: Self = Self(5);
-  pub const SpellImpactEvent: Self = Self(6);
-  pub const TargettingEvent: Self = Self(7);
-  pub const game_ServerChatMessage: Self = Self(8);
+  pub const KillRewardEvent: Self = Self(5);
+  pub const StartCastingEvent: Self = Self(6);
+  pub const SpellImpactEvent: Self = Self(7);
+  pub const TargettingEvent: Self = Self(8);
+  pub const game_ServerChatMessage: Self = Self(9);
 
   pub const ENUM_MIN: u8 = 0;
-  pub const ENUM_MAX: u8 = 8;
+  pub const ENUM_MAX: u8 = 9;
   pub const ENUM_VALUES: &'static [Self] = &[
     Self::NONE,
     Self::EntityMoveEvent,
     Self::EntitySpawnEvent,
     Self::EntityDespawnEvent,
     Self::EntityDeathEvent,
+    Self::KillRewardEvent,
     Self::StartCastingEvent,
     Self::SpellImpactEvent,
     Self::TargettingEvent,
@@ -63,6 +66,7 @@ impl EventData {
       Self::EntitySpawnEvent => Some("EntitySpawnEvent"),
       Self::EntityDespawnEvent => Some("EntityDespawnEvent"),
       Self::EntityDeathEvent => Some("EntityDeathEvent"),
+      Self::KillRewardEvent => Some("KillRewardEvent"),
       Self::StartCastingEvent => Some("StartCastingEvent"),
       Self::SpellImpactEvent => Some("SpellImpactEvent"),
       Self::TargettingEvent => Some("TargettingEvent"),

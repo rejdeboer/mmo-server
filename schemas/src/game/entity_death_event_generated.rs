@@ -26,7 +26,6 @@ impl<'a> flatbuffers::Follow<'a> for EntityDeathEvent<'a> {
 
 impl<'a> EntityDeathEvent<'a> {
   pub const VT_ENTITY_ID: flatbuffers::VOffsetT = 4;
-  pub const VT_LOOT: flatbuffers::VOffsetT = 6;
 
   #[inline]
   pub unsafe fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
@@ -35,11 +34,10 @@ impl<'a> EntityDeathEvent<'a> {
   #[allow(unused_mut)]
   pub fn create<'bldr: 'args, 'args: 'mut_bldr, 'mut_bldr, A: flatbuffers::Allocator + 'bldr>(
     _fbb: &'mut_bldr mut flatbuffers::FlatBufferBuilder<'bldr, A>,
-    args: &'args EntityDeathEventArgs<'args>
+    args: &'args EntityDeathEventArgs
   ) -> flatbuffers::WIPOffset<EntityDeathEvent<'bldr>> {
     let mut builder = EntityDeathEventBuilder::new(_fbb);
     builder.add_entity_id(args.entity_id);
-    if let Some(x) = args.loot { builder.add_loot(x); }
     builder.finish()
   }
 
@@ -51,13 +49,6 @@ impl<'a> EntityDeathEvent<'a> {
     // which contains a valid value in this slot
     unsafe { self._tab.get::<u64>(EntityDeathEvent::VT_ENTITY_ID, Some(0)).unwrap()}
   }
-  #[inline]
-  pub fn loot(&self) -> Option<flatbuffers::Vector<'a, ItemDrop>> {
-    // Safety:
-    // Created from valid Table for this object
-    // which contains a valid value in this slot
-    unsafe { self._tab.get::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'a, ItemDrop>>>(EntityDeathEvent::VT_LOOT, None)}
-  }
 }
 
 impl flatbuffers::Verifiable for EntityDeathEvent<'_> {
@@ -68,21 +59,18 @@ impl flatbuffers::Verifiable for EntityDeathEvent<'_> {
     use self::flatbuffers::Verifiable;
     v.visit_table(pos)?
      .visit_field::<u64>("entity_id", Self::VT_ENTITY_ID, false)?
-     .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, ItemDrop>>>("loot", Self::VT_LOOT, false)?
      .finish();
     Ok(())
   }
 }
-pub struct EntityDeathEventArgs<'a> {
+pub struct EntityDeathEventArgs {
     pub entity_id: u64,
-    pub loot: Option<flatbuffers::WIPOffset<flatbuffers::Vector<'a, ItemDrop>>>,
 }
-impl<'a> Default for EntityDeathEventArgs<'a> {
+impl<'a> Default for EntityDeathEventArgs {
   #[inline]
   fn default() -> Self {
     EntityDeathEventArgs {
       entity_id: 0,
-      loot: None,
     }
   }
 }
@@ -95,10 +83,6 @@ impl<'a: 'b, 'b, A: flatbuffers::Allocator + 'a> EntityDeathEventBuilder<'a, 'b,
   #[inline]
   pub fn add_entity_id(&mut self, entity_id: u64) {
     self.fbb_.push_slot::<u64>(EntityDeathEvent::VT_ENTITY_ID, entity_id, 0);
-  }
-  #[inline]
-  pub fn add_loot(&mut self, loot: flatbuffers::WIPOffset<flatbuffers::Vector<'b , ItemDrop>>) {
-    self.fbb_.push_slot_always::<flatbuffers::WIPOffset<_>>(EntityDeathEvent::VT_LOOT, loot);
   }
   #[inline]
   pub fn new(_fbb: &'b mut flatbuffers::FlatBufferBuilder<'a, A>) -> EntityDeathEventBuilder<'a, 'b, A> {
@@ -119,7 +103,6 @@ impl core::fmt::Debug for EntityDeathEvent<'_> {
   fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
     let mut ds = f.debug_struct("EntityDeathEvent");
       ds.field("entity_id", &self.entity_id());
-      ds.field("loot", &self.loot());
       ds.finish()
   }
 }
