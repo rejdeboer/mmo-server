@@ -8,4 +8,5 @@ path = "src/lib.rs"
 
 [dependencies]
 bitcode = { workspace = true }
+glam = { version = "0.30.9", features = ["serde"] }
 serde = { version = "1.0", features = ["derive"] }
