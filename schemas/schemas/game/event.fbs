@@ -6,7 +6,7 @@ namespace game;
 
 struct ItemDrop {
 	item_id: uint32;
-	quantity: uint32;
+	quantity: uint16;
 }
 
 table EntityMoveEvent {

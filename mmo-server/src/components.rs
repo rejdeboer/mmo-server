@@ -81,6 +81,7 @@ pub struct Tapped {
     pub owner_id: ClientId,
 }
 
+#[derive(Clone, Debug)]
 pub struct LootEntry {
     pub item_id: u32,
     pub quantity: u16,

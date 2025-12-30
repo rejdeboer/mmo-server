@@ -69,7 +69,7 @@ impl<'a> ItemDrop {
   #[allow(clippy::too_many_arguments)]
   pub fn new(
     item_id: u32,
-    quantity: u32,
+    quantity: u16,
   ) -> Self {
     let mut s = Self([0; 8]);
     s.set_item_id(item_id);
@@ -106,8 +106,8 @@ impl<'a> ItemDrop {
     }
   }
 
-  pub fn quantity(&self) -> u32 {
-    let mut mem = core::mem::MaybeUninit::<<u32 as EndianScalar>::Scalar>::uninit();
+  pub fn quantity(&self) -> u16 {
+    let mut mem = core::mem::MaybeUninit::<<u16 as EndianScalar>::Scalar>::uninit();
     // Safety:
     // Created from a valid Table for this object
     // Which contains a valid value in this slot
@@ -115,13 +115,13 @@ impl<'a> ItemDrop {
       core::ptr::copy_nonoverlapping(
         self.0[4..].as_ptr(),
         mem.as_mut_ptr() as *mut u8,
-        core::mem::size_of::<<u32 as EndianScalar>::Scalar>(),
+        core::mem::size_of::<<u16 as EndianScalar>::Scalar>(),
       );
       mem.assume_init()
     })
   }
 
-  pub fn set_quantity(&mut self, x: u32) {
+  pub fn set_quantity(&mut self, x: u16) {
     let x_le = x.to_little_endian();
     // Safety:
     // Created from a valid Table for this object
@@ -130,7 +130,7 @@ impl<'a> ItemDrop {
       core::ptr::copy_nonoverlapping(
         &x_le as *const _ as *const u8,
         self.0[4..].as_mut_ptr(),
-        core::mem::size_of::<<u32 as EndianScalar>::Scalar>(),
+        core::mem::size_of::<<u16 as EndianScalar>::Scalar>(),
       );
     }
   }

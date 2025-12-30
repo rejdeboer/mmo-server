@@ -1,8 +1,5 @@
 use crate::{
-    assets::{
-        ContentId, LootDb, LootTable, LootTableLibrary, LootTableLibraryHandle, MonsterLibrary,
-        MonsterLibraryHandle,
-    },
+    assets::{LootDb, LootTable},
     components::{
         ClientIdComponent, Dead, InterestedClients, Loot, LootEntry, MonsterId,
         MovementSpeedComponent, Tapped, Vitals,
@@ -58,6 +55,7 @@ pub fn reward_kill(
     mut commands: Commands,
     q_victim: Query<(Option<&MonsterId>, Option<&Tapped>)>,
     loot_db: LootDb,
+    mut writer: MessageWriter<OutgoingMessage>,
 ) {
     let entity = event.0;
     let Ok((monster_id, tapped)) = q_victim.get(entity) else {
@@ -78,8 +76,16 @@ pub fn reward_kill(
 
     let loot_entries = generate_loot(loot_tables);
     commands.entity(entity).insert(Loot {
-        entries: loot_entries,
+        entries: loot_entries.clone(),
         owner_id: killer_client_id,
+    });
+
+    writer.write(OutgoingMessage {
+        client_id: killer_client_id,
+        data: OutgoingMessageData::KillReward {
+            victim: entity,
+            loot: loot_entries,
+        },
     });
 }
 

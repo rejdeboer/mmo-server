@@ -1,5 +1,5 @@
 use crate::{
-    components::{NameComponent, Vitals},
+    components::{LootEntry, NameComponent, Vitals},
     systems::{EntityAttributes, serialize_entity},
 };
 use bevy::{platform::collections::HashSet, prelude::*};
@@ -73,6 +73,10 @@ pub enum OutgoingMessageData {
     },
     Death {
         entity: Entity,
+    },
+    KillReward {
+        victim: Entity,
+        loot: Vec<LootEntry>,
     },
     StartCasting {
         entity: Entity,
@@ -200,7 +204,22 @@ impl OutgoingMessageData {
                     builder,
                     &schema::EntityDeathEventArgs {
                         entity_id: entity.to_bits(),
-                        loot: None,
+                    },
+                )
+                .as_union_value()
+            }
+            Self::KillReward { victim, loot } => {
+                data_type = schema::EventData::KillRewardEvent;
+                builder.start_vector::<schema::ItemDrop>(loot.len());
+                for entry in loot {
+                    builder.push(schema::ItemDrop::new(entry.item_id, entry.quantity));
+                }
+                let fb_loot = builder.end_vector(loot.len());
+                schema::KillRewardEvent::create(
+                    builder,
+                    &schema::KillRewardEventArgs {
+                        victim_id: victim.to_bits(),
+                        loot: Some(fb_loot),
                     },
                 )
                 .as_union_value()
