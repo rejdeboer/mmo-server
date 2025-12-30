@@ -211,7 +211,7 @@ impl OutgoingMessageData {
             Self::KillReward { victim, loot } => {
                 data_type = schema::EventData::KillRewardEvent;
                 builder.start_vector::<schema::ItemDrop>(loot.len());
-                for entry in loot {
+                for entry in loot.iter.rev() {
                     builder.push(schema::ItemDrop::new(entry.item_id, entry.quantity));
                 }
                 let fb_loot = builder.end_vector(loot.len());
