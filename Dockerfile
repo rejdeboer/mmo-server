@@ -30,5 +30,6 @@ LABEL service=web-server
 FROM runtime-base AS mmo-server
 COPY --from=builder /app/target/release/mmo-server mmo-server
 COPY mmo-server/configuration configuration
+COPY mmo-server/assets assets
 CMD ["./mmo-server"]
 LABEL service=mmo-server
