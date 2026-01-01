@@ -1,4 +1,4 @@
-use clap::{Parser, Subcommand, arg};
+use clap::{Parser, Subcommand};
 use provisioner::{Application, ServerSettings, get_configuration, init_telemetry, seed_db};
 use sqlx::postgres::PgPoolOptions;
 use web_server::configuration::NetcodePrivateKey;

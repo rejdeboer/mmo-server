@@ -88,6 +88,7 @@ pub struct LootEntry {
 }
 
 #[derive(Component)]
+#[allow(dead_code)]
 pub struct Loot {
     pub entries: Vec<LootEntry>,
     pub owner_id: ClientId,
