@@ -1,7 +1,6 @@
 tests
 target
 scripts
-assets/world*
 
 schemas/schemas
 schemas/build.rs
