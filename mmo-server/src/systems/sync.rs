@@ -65,10 +65,6 @@ pub fn sync_players(
             .network_bytes_total
             .with_label_values(metric_labels)
             .inc_by(data.len() as u64);
-        metrics
-            .network_packet_size_bytes
-            .with_label_values(&["outgoing"])
-            .observe(data.len() as f64);
 
         server.send_message(client_id, channel, data);
         builder.reset();

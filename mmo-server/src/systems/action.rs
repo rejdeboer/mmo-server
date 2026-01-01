@@ -24,10 +24,6 @@ pub fn process_client_actions(
                 .network_bytes_total
                 .with_label_values(&["incoming", "unreliable"])
                 .inc_by(message.len() as u64);
-            metrics
-                .network_packet_size_bytes
-                .with_label_values(&["incoming"])
-                .observe(message.len() as f64);
             process_message(entity, message, &mut commands);
         } else if let Some(message) =
             server.receive_message(client_id.0, DefaultChannel::ReliableOrdered)
@@ -40,10 +36,6 @@ pub fn process_client_actions(
                 .network_bytes_total
                 .with_label_values(&["incoming", "reliable"])
                 .inc_by(message.len() as u64);
-            metrics
-                .network_packet_size_bytes
-                .with_label_values(&["incoming"])
-                .observe(message.len() as f64);
             process_message(entity, message, &mut commands);
         }
     }

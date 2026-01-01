@@ -26,7 +26,6 @@ pub struct Metrics {
     pub tick_rate: Gauge,
     pub network_packets_total: IntCounterVec,
     pub network_bytes_total: IntCounterVec,
-    pub network_packet_size_bytes: HistogramVec,
     pub server_rtt: Histogram,
 }
 
@@ -74,18 +73,6 @@ impl Default for Metrics {
             .register(Box::new(network_bytes_total.clone()))
             .unwrap();
 
-        // TODO: Maybe create separate histograms for incoming / outgoing?
-        let network_packet_size_bytes = register_histogram_vec!(
-            "network_packet_size_bytes",
-            "Size of packets sent / received in bytes",
-            &["direction"],
-            vec![32.0, 64.0, 128.0, 256.0, 512.0, 1024.0, 1400.0, 2048.0],
-        )
-        .unwrap();
-        registry
-            .register(Box::new(network_packet_size_bytes.clone()))
-            .unwrap();
-
         let server_rtt =
             Histogram::with_opts(HistogramOpts::new("server_rtt", "Packet round trip time"))
                 .unwrap();
@@ -105,7 +92,6 @@ impl Default for Metrics {
             tick_rate,
             network_packets_total,
             network_bytes_total,
-            network_packet_size_bytes,
             server_rtt,
         }
     }
