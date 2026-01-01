@@ -4,10 +4,7 @@ use bevy_tokio_tasks::TaskContext;
 use opentelemetry::global;
 use opentelemetry_otlp::{Protocol, WithExportConfig};
 use opentelemetry_sdk::propagation::TraceContextPropagator;
-use prometheus::{
-    Encoder, Gauge, HistogramVec, IntCounterVec, Opts, Registry, TextEncoder,
-    register_histogram_vec,
-};
+use prometheus::{Encoder, Gauge, IntCounterVec, Opts, Registry, TextEncoder};
 use prometheus::{Histogram, HistogramOpts, IntGauge};
 use std::fs::File;
 use std::io::Write;
