@@ -20,21 +20,28 @@ We'll run the simulator for 1 minute multiple times, using a different number of
 
 ## 3. Results Summary
 
-### Metric 1: Payload Size (Bandwidth)
-*Lower is better. This is the primary motivation for the migration.*
+### Metric 1: Payload Size (Bandwidth measured with 100 clients)
 
-| Flatbuffers (Bytes) | Bitcode (Bytes) | Reduction % |
-| :--- | :--- | :--- |
-| 32 B | 4 B | **-87.5%** |
-
-### Metric 2: CPU Cost (Latency)
-
-| Operation | Flatbuffers (ns) | Bitcode (ns) | Impact |
+| Direction | Flatbuffers (Bytes) | Bitcode (Bytes) | Reduction % |
 | :--- | :--- | :--- | :--- |
-| **Serialize** | 150 ns | 800 ns | **5.3x Slower** |
-| **Deserialize** | 0 ns* | 600 ns | **Infinite** |
+| Incoming | 68 B | 4 B | **-87.5%** |
+| Outgoing | 4.19 KiB | 4 B | **-87.5%** |
 
-> *Note: Flatbuffers "Deserialize" is 0ns because it is zero-copy. The cost is paid during field access.*
+### Metric 2: Sync system duration
+
+| #Clients | Flatbuffers (ns) | Bitcode (ns) | Impact |
+| :--- | :--- | :--- | :--- |
+| 10 | 150 ns | 800 ns | **5.3x Slower** |
+| 50 | 0 ns* | 600 ns | **Infinite** |
+| 100 | 0 ns* | 600 ns | **Infinite** |
+
+### Metric 3: Server RTT
+
+| #Clients | Flatbuffers (ns) | Bitcode (ns) | Impact |
+| :--- | :--- | :--- | :--- |
+| 10 | 20.4 ms | 800 ns | **5.3x Slower** |
+| 50 | 22.3 ms | 600 ns | **Infinite** |
+| 100 | 24.29 ms | 800 ns | **5.3x Slower** |
 
 ---
 
