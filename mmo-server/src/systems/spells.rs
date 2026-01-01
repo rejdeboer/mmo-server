@@ -154,7 +154,7 @@ pub fn apply_spell_effect(
             // NOTE: caster's own ID is not within the interested set
             if msg.caster_entity == msg.target_entity {
                 writer.write(OutgoingMessage {
-                    client_id: caster_client_id.clone(),
+                    client_id: caster_client_id,
                     data: outgoing_msg,
                 });
             }
