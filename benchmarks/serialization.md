@@ -27,13 +27,15 @@ We'll run the simulator for 1 minute multiple times, using a different number of
 | Incoming | 68 B | 4 B | **-87.5%** |
 | Outgoing | 4.19 KiB | 4 B | **-87.5%** |
 
-### Metric 2: Sync system duration
+### Metric 2: Sync system duration using Tracy profiler
 
 | #Clients | Flatbuffers (ns) | Bitcode (ns) | Impact |
 | :--- | :--- | :--- | :--- |
 | 10 | 435 us | 800 ns | **5.3x Slower** |
 | 50 | 32.5 ms | 600 ns | **Infinite** |
 | 100 | 90.0 ms | 600 ns | **Infinite** |
+
+Note: these tests were performed on a developer PC with development configuration, not on the Kubernetes cluster. This is why the numbers vary wildly from the production server RTT.
 
 ### Metric 3: Server RTT
 
