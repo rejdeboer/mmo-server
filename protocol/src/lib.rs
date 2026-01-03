@@ -41,3 +41,14 @@ pub struct Actor {
     level: i32,
     movement_speed: u16,
 }
+
+#[derive(Encode, Decode)]
+pub enum ServerEvent {
+    ActorMoveEvent {
+        actor_id: u64,
+        position: Vec3,
+        yaw: u16,
+    },
+    ActorSpawnEvent(Box<Actor>),
+    ActorDespawnEvent(u64),
+}
