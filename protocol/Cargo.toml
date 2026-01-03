@@ -7,6 +7,10 @@ edition = "2024"
 path = "src/lib.rs"
 
 [dependencies]
+bevy_ecs = { version = "0.17", optional = true }
 bitcode = { workspace = true }
-glam = { version = "0.30.9", features = ["serde"] }
 serde = { version = "1.0", features = ["derive"] }
+
+[features]
+default = []
+bevy = ["dep:bevy_ecs"]

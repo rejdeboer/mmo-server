@@ -45,10 +45,24 @@ pub struct Actor {
 #[derive(Encode, Decode)]
 pub enum ServerEvent {
     ActorMoveEvent {
-        actor_id: u64,
+        entity_id: u64,
         position: Vec3,
         yaw: u16,
     },
     ActorSpawnEvent(Box<Actor>),
     ActorDespawnEvent(u64),
+}
+
+#[derive(Encode, Decode)]
+pub enum PlayerAction {
+    Movement {
+        yaw: u16,
+        forward: u8,
+        sideways: u8,
+    },
+    Jump,
+    CastSpell {
+        spell_id: u32,
+        target_entity_id: u64,
+    },
 }
