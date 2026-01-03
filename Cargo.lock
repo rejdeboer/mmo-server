@@ -5614,8 +5614,8 @@ dependencies = [
 name = "protocol"
 version = "0.1.0"
 dependencies = [
+ "bevy_ecs",
  "bitcode",
- "glam 0.30.9",
  "serde 1.0.228",
 ]
 
