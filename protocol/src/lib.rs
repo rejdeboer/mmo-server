@@ -13,9 +13,9 @@ pub enum ActorAttributes {
 
 #[derive(Encode, Decode)]
 pub struct Vec3 {
-    pub x: u16,
-    pub y: u16,
-    pub z: u16,
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
 }
 
 #[derive(Encode, Decode)]
