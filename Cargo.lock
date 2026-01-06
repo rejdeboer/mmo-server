@@ -4351,6 +4351,7 @@ dependencies = [
  "bevy_common_assets",
  "bevy_panorbit_camera",
  "bevy_renet",
+ "bitcode",
  "config",
  "fake 4.4.0",
  "flatbuffers",
@@ -5615,6 +5616,7 @@ name = "protocol"
 version = "0.1.0"
 dependencies = [
  "bitcode",
+ "glam 0.30.9",
  "serde 1.0.228",
 ]
 

@@ -1,6 +1,6 @@
 use crate::{
     models::{Actor, ChatChannel, ItemDrop},
-    primitives::Vec3,
+    primitives::Transform,
 };
 use bitcode::{Decode, Encode};
 
@@ -8,8 +8,7 @@ use bitcode::{Decode, Encode};
 pub enum ServerEvent {
     ActorMove {
         entity_id: u64,
-        position: Vec3,
-        yaw: u16,
+        transform: Transform,
     },
     ActorSpawn(Box<Actor>),
     ActorDespawn(u64),
