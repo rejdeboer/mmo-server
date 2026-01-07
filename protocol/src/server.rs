@@ -4,12 +4,14 @@ use crate::{
 };
 use bitcode::{Decode, Encode};
 
+#[derive(Encode, Decode, Clone)]
+pub struct ActorTransformUpdate {
+    pub actor_id: u64,
+    pub transform: Transform,
+}
+
 #[derive(Encode, Decode)]
 pub enum ServerEvent {
-    ActorMove {
-        entity_id: u64,
-        transform: Transform,
-    },
     ActorSpawn(Box<Actor>),
     ActorDespawn(u64),
     ActorDeath(u64),

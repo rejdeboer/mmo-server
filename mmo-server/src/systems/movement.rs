@@ -1,6 +1,6 @@
 use crate::{
-    components::{ClientIdComponent, GroundedComponent, InterestedClients, MovementSpeedComponent},
-    messages::{JumpActionMessage, MoveActionMessage, OutgoingMessage, OutgoingMessageData},
+    components::{ClientIdComponent, GroundedComponent, MovementSpeedComponent},
+    messages::{JumpActionMessage, MoveActionMessage},
 };
 use avian3d::prelude::{LinearVelocity, ShapeHits};
 use bevy::prelude::*;
@@ -37,37 +37,6 @@ pub fn process_move_action_messages(
         velocity.x = target_velocity.x;
         velocity.z = target_velocity.z;
     })
-}
-
-pub fn send_transform_updates(
-    mut writer: MessageWriter<OutgoingMessage>,
-    q_moved: Query<
-        (
-            Entity,
-            &Transform,
-            &InterestedClients,
-            Option<&ClientIdComponent>,
-        ),
-        Changed<Transform>,
-    >,
-) {
-    q_moved
-        .iter()
-        .for_each(|(entity, transform, interested, client_id_option)| {
-            if let Some(client_id) = client_id_option {
-                writer.write(OutgoingMessage::new(
-                    client_id.0,
-                    OutgoingMessageData::Movement(entity, *transform),
-                ));
-            }
-
-            for client_id in interested.clients.iter() {
-                writer.write(OutgoingMessage::new(
-                    *client_id,
-                    OutgoingMessageData::Movement(entity, *transform),
-                ));
-            }
-        })
 }
 
 pub fn process_jump_action_messages(

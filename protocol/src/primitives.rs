@@ -3,7 +3,7 @@ use bitcode::{Decode, Encode};
 pub const YAW_QUANTIZATION_FACTOR: f32 = 65535.0;
 pub const MOVEMENT_QUANTIZATION_FACTOR: f32 = 127.0;
 
-#[derive(Encode, Decode)]
+#[derive(Encode, Decode, Clone)]
 pub struct Transform {
     position: glam::Vec3,
     yaw: u16,
