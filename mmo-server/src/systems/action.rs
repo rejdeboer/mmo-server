@@ -5,8 +5,7 @@ use crate::{
 };
 use bevy::prelude::*;
 use bevy_renet::renet::{DefaultChannel, RenetServer};
-use flatbuffers::root;
-use schemas::game as schema;
+use protocol::client::PlayerAction;
 
 pub fn process_client_actions(
     mut server: ResMut<RenetServer>,
@@ -42,61 +41,54 @@ pub fn process_client_actions(
 }
 
 fn process_message(entity: Entity, message: bevy_renet::renet::Bytes, commands: &mut Commands) {
-    match root::<schema::BatchedActions>(&message) {
-        Ok(batch) => {
-            for action in batch.actions().unwrap() {
-                match action.data_type() {
-                    schema::ActionData::game_ClientChatMessage => {
-                        let chat_message = action.data_as_game_client_chat_message().unwrap();
-                        commands.write_message(IncomingChatMessage {
-                            author: entity,
-                            channel: chat_message.channel(),
-                            text: chat_message.text().to_string(),
-                        });
-                    }
-                    schema::ActionData::PlayerMoveAction => {
-                        process_player_move_action(
-                            entity,
-                            action.data_as_player_move_action().unwrap(),
-                            commands,
-                        );
-                    }
-                    schema::ActionData::PlayerJumpAction => {
-                        process_player_jump_action(entity, commands);
-                    }
-                    schema::ActionData::CastSpellAction => {
-                        let spell_action = action.data_as_cast_spell_action().unwrap();
-                        commands.write_message(CastSpellActionMessage {
-                            caster_entity: entity,
-                            target_entity: Entity::from_bits(spell_action.target_entity_id()),
-                            spell_id: spell_action.spell_id(),
-                        });
-                    }
-                    _ => {
-                        tracing::warn!("unhandled event data type");
-                    }
-                }
+    match bitcode::decode::<Vec<PlayerAction>>(&message) {
+        Ok(actions) => {
+            for action in actions {
+                process_player_action(entity, action, commands);
             }
         }
         Err(error) => {
-            tracing::error!(?error, "message does not follow event schema");
+            tracing::error!(?error, "message does not follow action schema");
         }
     }
 }
 
-fn process_player_move_action(
-    entity: Entity,
-    action: schema::PlayerMoveAction,
-    commands: &mut Commands,
-) {
-    commands.write_message(MoveActionMessage {
-        entity,
-        yaw: action.yaw(),
-        forward: action.forward(),
-        sideways: action.sideways(),
-    });
-}
-
-fn process_player_jump_action(entity: Entity, commands: &mut Commands) {
-    commands.write_message(JumpActionMessage { entity });
+fn process_player_action(entity: Entity, action: PlayerAction, commands: &mut Commands) {
+    match action {
+        PlayerAction::Chat { channel, text } => {
+            commands.write_message(IncomingChatMessage {
+                author: entity,
+                channel,
+                text,
+            });
+        }
+        PlayerAction::Movement {
+            yaw,
+            forward,
+            sideways,
+        } => {
+            commands.write_message(MoveActionMessage {
+                entity,
+                yaw,
+                forward,
+                sideways,
+            });
+        }
+        PlayerAction::Jump => {
+            commands.write_message(JumpActionMessage { entity });
+        }
+        PlayerAction::CastSpell {
+            spell_id,
+            target_entity_id,
+        } => {
+            commands.write_message(CastSpellActionMessage {
+                caster_entity: entity,
+                target_entity: Entity::from_bits(target_entity_id),
+                spell_id,
+            });
+        }
+        _ => {
+            tracing::warn!("unhandled event data type");
+        }
+    }
 }

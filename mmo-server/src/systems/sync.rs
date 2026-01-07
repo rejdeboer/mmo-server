@@ -4,8 +4,7 @@ use crate::{
 };
 use bevy::{platform::collections::HashMap, prelude::*};
 use bevy_renet::renet::{ClientId, DefaultChannel, RenetServer};
-use flatbuffers::{FlatBufferBuilder, WIPOffset};
-use schemas::game as schema;
+use protocol::server::ServerEvent;
 
 // TODO: Maybe use change detection for transform changes
 pub fn sync_players(
@@ -25,32 +24,20 @@ pub fn sync_players(
         return;
     }
 
-    let mut builder = FlatBufferBuilder::new();
     for (client_id, messages) in client_messages {
-        let mut player_messages = Vec::<WIPOffset<schema::Event>>::with_capacity(messages.len());
+        let mut player_messages = Vec::<ServerEvent>::with_capacity(messages.len());
         let mut channel = DefaultChannel::Unreliable;
 
         for msg in messages {
             if !matches!(msg, OutgoingMessageData::Movement(_, _)) {
                 channel = DefaultChannel::ReliableOrdered;
             }
-            player_messages.push(msg.encode(&mut builder));
+            player_messages.push(bitcode::encode(msg));
         }
 
         if player_messages.is_empty() {
             return;
         }
-
-        let fb_events = builder.create_vector(player_messages.as_slice());
-        let batch = schema::BatchedEvents::create(
-            &mut builder,
-            &schema::BatchedEventsArgs {
-                events: Some(fb_events),
-            },
-        );
-
-        builder.finish_minimal(batch);
-        let data = builder.finished_data().to_vec();
 
         let channel_label = match channel {
             DefaultChannel::Unreliable => "unreliable",

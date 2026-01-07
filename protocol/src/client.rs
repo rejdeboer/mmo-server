@@ -5,8 +5,8 @@ use bitcode::{Decode, Encode};
 pub enum PlayerAction {
     Movement {
         yaw: u16,
-        forward: u8,
-        sideways: u8,
+        forward: i8,
+        sideways: i8,
     },
     Jump,
     CastSpell {

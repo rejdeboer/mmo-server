@@ -5,6 +5,7 @@ use crate::{
 use bevy::{platform::collections::HashSet, prelude::*};
 use bevy_renet::renet::ClientId;
 use flatbuffers::{FlatBufferBuilder, WIPOffset};
+use protocol::{models::ChatChannel, server::ServerEvent};
 use schema::ChannelType;
 use schemas::game as schema;
 use std::sync::Arc;
@@ -32,7 +33,7 @@ pub struct CastSpellActionMessage {
 #[derive(Message, Debug)]
 pub struct IncomingChatMessage {
     pub author: Entity,
-    pub channel: ChannelType,
+    pub channel: ChatChannel,
     pub text: String,
 }
 
@@ -59,7 +60,11 @@ impl OutgoingMessage {
 #[derive(Debug, Clone)]
 // TODO: Box large enum variants?
 pub enum OutgoingMessageData {
-    ChatMessage(ChannelType, NameComponent, String),
+    ChatMessage {
+        channel: ChatChannel,
+        sender_name: NameComponent,
+        text: String,
+    },
     Despawn(Entity),
     Movement(Entity, Transform),
     Spawn {
@@ -100,67 +105,12 @@ impl OutgoingMessageData {
             data: self.clone(),
         }));
     }
+}
 
-    pub fn encode<'a>(&self, builder: &mut FlatBufferBuilder<'a>) -> WIPOffset<schema::Event<'a>> {
-        let data_type;
-        let data = match self {
-            Self::ChatMessage(channel, author, msg) => {
-                data_type = schema::EventData::game_ServerChatMessage;
-                let fb_author = builder.create_string(&author.0);
-                let fb_msg = builder.create_string(msg);
-                schema::ServerChatMessage::create(
-                    builder,
-                    &schema::ServerChatMessageArgs {
-                        channel: *channel,
-                        sender_name: Some(fb_author),
-                        text: Some(fb_msg),
-                    },
-                )
-                .as_union_value()
-            }
-            Self::Movement(id, transform) => {
-                data_type = schema::EventData::EntityMoveEvent;
-                let pos = transform.translation;
-                let (yaw, _, _) = transform.rotation.to_euler(EulerRot::YXZ);
-                let fb_transform =
-                    schema::Transform::new(&schema::Vec3::new(pos.x, pos.y, pos.z), yaw);
-                schema::EntityMoveEvent::create(
-                    builder,
-                    &schema::EntityMoveEventArgs {
-                        entity_id: id.to_bits(),
-                        transform: Some(&fb_transform),
-                    },
-                )
-                .as_union_value()
-            }
-            Self::StartCasting { entity, spell_id } => {
-                data_type = schema::EventData::StartCastingEvent;
-                schema::StartCastingEvent::create(
-                    builder,
-                    &schema::StartCastingEventArgs {
-                        entity_id: entity.to_bits(),
-                        spell_id: *spell_id,
-                    },
-                )
-                .as_union_value()
-            }
-            Self::SpellImpact {
-                target_entity,
-                spell_id,
-                impact_amount,
-            } => {
-                data_type = schema::EventData::SpellImpactEvent;
-                schema::SpellImpactEvent::create(
-                    builder,
-                    &schema::SpellImpactEventArgs {
-                        target_id: target_entity.to_bits(),
-                        spell_id: *spell_id,
-                        impact_amount: *impact_amount,
-                    },
-                )
-                .as_union_value()
-            }
-            Self::Spawn {
+impl From<OutgoingMessageData> for ServerEvent {
+    fn from(value: OutgoingMessageData) -> Self {
+        match value {
+            OutgoingMessageData::Spawn {
                 entity,
                 attributes,
                 name,
@@ -168,70 +118,7 @@ impl OutgoingMessageData {
                 level,
                 vitals,
                 movement_speed,
-            } => {
-                data_type = schema::EventData::EntitySpawnEvent;
-                let fb_entity = serialize_entity(
-                    builder,
-                    *entity,
-                    attributes,
-                    name,
-                    transform,
-                    vitals,
-                    *level,
-                    *movement_speed,
-                );
-                schema::EntitySpawnEvent::create(
-                    builder,
-                    &schema::EntitySpawnEventArgs {
-                        entity: Some(fb_entity),
-                    },
-                )
-                .as_union_value()
-            }
-            Self::Despawn(id) => {
-                data_type = schema::EventData::EntityDespawnEvent;
-                schema::EntityDespawnEvent::create(
-                    builder,
-                    &schema::EntityDespawnEventArgs {
-                        entity_id: id.to_bits(),
-                    },
-                )
-                .as_union_value()
-            }
-            Self::Death { entity } => {
-                data_type = schema::EventData::EntityDeathEvent;
-                schema::EntityDeathEvent::create(
-                    builder,
-                    &schema::EntityDeathEventArgs {
-                        entity_id: entity.to_bits(),
-                    },
-                )
-                .as_union_value()
-            }
-            Self::KillReward { victim, loot } => {
-                data_type = schema::EventData::KillRewardEvent;
-                builder.start_vector::<schema::ItemDrop>(loot.len());
-                for entry in loot.iter().rev() {
-                    builder.push(schema::ItemDrop::new(entry.item_id, entry.quantity));
-                }
-                let fb_loot = builder.end_vector(loot.len());
-                schema::KillRewardEvent::create(
-                    builder,
-                    &schema::KillRewardEventArgs {
-                        victim_id: victim.to_bits(),
-                        loot: Some(fb_loot),
-                    },
-                )
-                .as_union_value()
-            }
-        };
-
-        schema::Event::create(
-            builder,
-            &schema::EventArgs {
-                data_type,
-                data: Some(data),
-            },
-        )
+            } => Self::ActorSpawn(()),
+        }
     }
 }
