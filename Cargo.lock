@@ -4331,7 +4331,9 @@ name = "mmo-client"
 version = "0.1.0"
 dependencies = [
  "base64 0.12.3",
+ "bitcode",
  "flatbuffers",
+ "protocol",
  "renet",
  "renet_netcode",
  "schemas",
@@ -8235,6 +8237,7 @@ dependencies = [
  "axum 0.8.6",
  "axum-extra",
  "base64 0.12.3",
+ "bitcode",
  "config",
  "fake 2.3.0",
  "flatbuffers",
@@ -8249,6 +8252,7 @@ dependencies = [
  "opentelemetry-otlp",
  "opentelemetry_sdk",
  "prometheus",
+ "protocol",
  "quickcheck",
  "quickcheck_macros",
  "rand 0.8.5",

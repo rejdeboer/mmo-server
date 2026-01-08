@@ -1,7 +1,6 @@
 use crate::configuration::NetcodePrivateKey;
-use flatbuffers::FlatBufferBuilder;
+use protocol::server::TokenUserData;
 use renetcode::{ConnectToken, NETCODE_USER_DATA_BYTES, TokenGenerationError};
-use schemas::protocol::{TokenUserData, TokenUserDataArgs};
 use std::{
     net::SocketAddr,
     time::{SystemTime, UNIX_EPOCH},
@@ -17,20 +16,13 @@ pub fn generate_connect_token(
 ) -> Result<ConnectToken, TokenGenerationError> {
     let public_addresses: Vec<SocketAddr> = vec![server_addr];
 
-    let mut builder = FlatBufferBuilder::new();
-    let traceparent = traceparent.map(|v| builder.create_string(&v));
-    let response_offset = TokenUserData::create(
-        &mut builder,
-        &TokenUserDataArgs {
-            character_id,
-            traceparent,
-        },
-    );
-    builder.finish_minimal(response_offset);
+    let copy_data = bitcode::encode(&TokenUserData {
+        character_id,
+        traceparent,
+    });
 
     let mut user_data: [u8; NETCODE_USER_DATA_BYTES] = [0; NETCODE_USER_DATA_BYTES];
-    let copy_data = builder.finished_data();
-    user_data[0..copy_data.len()].copy_from_slice(copy_data);
+    user_data[0..copy_data.len()].copy_from_slice(copy_data.as_slice());
 
     let token = ConnectToken::generate(
         SystemTime::now().duration_since(UNIX_EPOCH).unwrap(),

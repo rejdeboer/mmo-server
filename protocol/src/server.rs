@@ -41,3 +41,9 @@ pub enum ServerEvent {
 pub struct EnterGameResponse {
     pub player_actor: Actor,
 }
+
+#[derive(Encode, Decode)]
+pub struct TokenUserData {
+    pub character_id: i32,
+    pub traceparent: Option<String>,
+}

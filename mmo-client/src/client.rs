@@ -2,9 +2,9 @@ use crate::Entity;
 use crate::action::{MoveAction, PlayerAction};
 use crate::event::{GameEvent, read_event_batch};
 use flatbuffers::{FlatBufferBuilder, WIPOffset, root};
+use protocol::server::{EnterGameResponse, TokenUserData};
 use renet::{ConnectionConfig, DefaultChannel, RenetClient};
 use renet_netcode::{ClientAuthentication, ConnectToken, NetcodeClientTransport};
-use schemas::game as schema;
 use std::net::{IpAddr, SocketAddr, UdpSocket};
 use std::time::{Duration, SystemTime};
 
@@ -77,7 +77,7 @@ impl GameClient {
             ClientState::Connected => {
                 if let Some(message) = self.client.receive_message(DefaultChannel::ReliableOrdered)
                 {
-                    match root::<schema::EnterGameResponse>(&message) {
+                    match bitcode::decode::<EnterGameResponse>(&message) {
                         Ok(response) => match response.try_into() {
                             Ok(player_entity) => {
                                 self.state = ClientState::InGame;
@@ -189,19 +189,13 @@ impl GameClient {
         let ip_addr = IpAddr::V4(host.parse().expect("host should be IPV4 addr"));
         let server_addr: SocketAddr = SocketAddr::new(ip_addr, port);
 
-        let mut builder = FlatBufferBuilder::new();
-        let response_offset = schemas::protocol::TokenUserData::create(
-            &mut builder,
-            &schemas::protocol::TokenUserDataArgs {
-                character_id,
-                traceparent: None,
-            },
-        );
-        builder.finish_minimal(response_offset);
+        let copy_data = bitcode::encode(&TokenUserData {
+            character_id,
+            traceparent: None,
+        });
 
         let mut user_data: [u8; 256] = [0; 256];
-        let copy_data = builder.finished_data();
-        user_data[0..copy_data.len()].copy_from_slice(copy_data);
+        user_data[0..copy_data.len()].copy_from_slice(copy_data.as_slice());
 
         let authentication = ClientAuthentication::Unsecure {
             server_addr,

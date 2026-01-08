@@ -18,7 +18,7 @@ use flatbuffers::{FlatBufferBuilder, UnionWIPOffset, WIPOffset, root};
 use protocol::{
     models::{Actor, ActorAttributes},
     primitives::Transform as NetTransform,
-    server::EnterGameResponse,
+    server::{EnterGameResponse, TokenUserData},
 };
 use sqlx::PgPool;
 use std::{collections::HashMap, sync::Arc};
@@ -138,14 +138,14 @@ fn process_client_connected(
     }
     let user_data = user_data_option.unwrap();
 
-    match root::<TokenUserData>(&user_data) {
+    match bitcode::decode::<TokenUserData>(&user_data) {
         Ok(data) => {
-            let character_id = data.character_id();
+            let character_id = data.character_id;
             let db_pool = pool.0.clone();
 
             let span =
                 tracing::span!(Level::INFO, "process_client_connected", client_id = %client_id);
-            if let Some(traceparent) = data.traceparent() {
+            if let Some(traceparent) = data.traceparent {
                 let mut headers = HashMap::new();
                 headers.insert("traceparent".to_string(), traceparent.to_string());
                 let parent_ctx =
