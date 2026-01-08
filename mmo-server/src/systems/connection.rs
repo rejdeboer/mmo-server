@@ -15,8 +15,11 @@ use bevy_renet::{
 };
 use bevy_tokio_tasks::{TaskContext, TokioTasksRuntime};
 use flatbuffers::{FlatBufferBuilder, UnionWIPOffset, WIPOffset, root};
-use schemas::game::{self as schema};
-use schemas::protocol::TokenUserData;
+use protocol::{
+    models::{Actor, ActorAttributes},
+    primitives::Transform as NetTransform,
+    server::EnterGameResponse,
+};
 use sqlx::PgPool;
 use std::{collections::HashMap, sync::Arc};
 use tracing::{Instrument, Level, instrument};
@@ -86,90 +89,6 @@ impl CharacterBundle {
             visible_entities: VisibleEntities::default(),
         }
     }
-}
-
-#[derive(Debug, Clone)]
-pub enum EntityAttributes {
-    Player {
-        character_id: i32,
-        #[allow(dead_code)]
-        guild_id: Option<i32>,
-    },
-    Npc {
-        asset_id: u32,
-    },
-}
-
-impl EntityAttributes {
-    pub fn serialize(
-        &self,
-        builder: &mut FlatBufferBuilder,
-    ) -> (WIPOffset<UnionWIPOffset>, schema::EntityAttributes) {
-        match self {
-            EntityAttributes::Player {
-                character_id,
-                guild_id: _,
-            } => {
-                let fb_attr = schema::PlayerAttributes::create(
-                    builder,
-                    &schema::PlayerAttributesArgs {
-                        character_id: *character_id,
-                        guild_name: None,
-                    },
-                )
-                .as_union_value();
-                (fb_attr, schema::EntityAttributes::PlayerAttributes)
-            }
-            EntityAttributes::Npc { asset_id } => {
-                let fb_attr = schema::NpcAttributes::create(
-                    builder,
-                    &schema::NpcAttributesArgs {
-                        asset_id: *asset_id,
-                    },
-                )
-                .as_union_value();
-                (fb_attr, schema::EntityAttributes::NpcAttributes)
-            }
-        }
-    }
-}
-
-#[allow(clippy::too_many_arguments)]
-pub fn serialize_entity<'a>(
-    builder: &mut FlatBufferBuilder<'a>,
-    entity: Entity,
-    attributes: &EntityAttributes,
-    name: &str,
-    transform: &Transform,
-    vitals: &Vitals,
-    level: i32,
-    movement_speed: f32,
-) -> WIPOffset<schema::Entity<'a>> {
-    let (fb_attr, attr_type) = attributes.serialize(builder);
-
-    let pos = transform.translation;
-    let fb_transform = schema::Transform::new(
-        &schema::Vec3::new(pos.x, pos.y, pos.z),
-        transform.rotation.y,
-    );
-    let fb_vitals = schema::Vitals::new(vitals.hp, vitals.max_hp);
-    let fb_name = builder.create_string(name);
-
-    let quantized_speed = (movement_speed * SPEED_PRECISION_MULTIPLIER).round() as u16;
-
-    schema::Entity::create(
-        builder,
-        &schema::EntityArgs {
-            id: entity.to_bits(),
-            attributes_type: attr_type,
-            attributes: Some(fb_attr),
-            name: Some(fb_name),
-            vitals: Some(&fb_vitals),
-            transform: Some(&fb_transform),
-            level,
-            movement_speed: quantized_speed,
-        },
-    )
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -285,34 +204,31 @@ async fn handle_enter_game_task(
             ))
             .id();
 
-        let attributes = EntityAttributes::Player {
+        let attributes = ActorAttributes::Player {
             character_id: character.id,
-            guild_id: character.guild_id,
+            // TODO: Handle guild fetching
+            guild_name: None,
         };
 
-        let mut builder = FlatBufferBuilder::new();
-        let entity_offset = serialize_entity(
-            &mut builder,
-            entity,
-            &attributes,
-            &character.name,
-            &transform,
-            &vitals,
-            character.level,
-            BASE_MOVEMENT_SPEED,
-        );
-        let response_offset = schema::EnterGameResponse::create(
-            &mut builder,
-            &schema::EnterGameResponseArgs {
-                player_entity: Some(entity_offset),
-            },
-        );
-        builder.finish_minimal(response_offset);
-        let response = builder.finished_data().to_vec();
+        let player_actor = Actor {
+            id: entity.to_bits(),
+            attributes,
+            name: character.name,
+            transform: NetTransform::from_glam(transform.translation, transform.rotation),
+            vitals: vitals.into(),
+            level: character.level as u8,
+            movement_speed: BASE_MOVEMENT_SPEED.into(),
+        };
+
+        let response = EnterGameResponse { player_actor };
 
         let mut server = ctx.world.get_resource_mut::<RenetServer>().unwrap();
         tracing::info!("approving enter game request for client {}", client_id);
-        server.send_message(client_id, DefaultChannel::ReliableOrdered, response);
+        server.send_message(
+            client_id,
+            DefaultChannel::ReliableOrdered,
+            bitcode::encode(&response),
+        );
     })
     .await;
     tracing::info!("successfully sent EnterGameResponse");

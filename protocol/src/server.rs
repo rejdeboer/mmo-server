@@ -39,5 +39,5 @@ pub enum ServerEvent {
 
 #[derive(Encode, Decode)]
 pub struct EnterGameResponse {
-    player_actor: Actor,
+    pub player_actor: Actor,
 }

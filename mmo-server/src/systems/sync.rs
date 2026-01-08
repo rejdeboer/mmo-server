@@ -168,7 +168,7 @@ pub fn sync_visibility(
                     attributes,
                     name: name.0.to_string(),
                     transform: NetTransform::from_glam(transform.translation, transform.rotation),
-                    vitals: NetVitals::from(vitals),
+                    vitals: NetVitals::from(vitals.clone()),
                     movement_speed: speed.0.into(),
                     level: level.0 as u8,
                 };
