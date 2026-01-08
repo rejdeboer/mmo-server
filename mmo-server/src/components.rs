@@ -36,8 +36,8 @@ pub struct Vitals {
     pub max_hp: i32,
 }
 
-impl From<Vitals> for NetVitals {
-    fn from(value: Vitals) -> Self {
+impl From<&Vitals> for NetVitals {
+    fn from(value: &Vitals) -> Self {
         Self {
             hp: value.hp,
             max_hp: value.max_hp,

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     components::{
         AssetIdComponent, CharacterIdComponent, ClientIdComponent, InterestedClients,
@@ -12,7 +14,10 @@ use protocol::{
     models::Actor,
     server::{ActorTransformUpdate, ServerEvent},
 };
-use protocol::{models::ActorAttributes, primitives::Transform as NetTransform};
+use protocol::{
+    models::{ActorAttributes, Vitals as NetVitals},
+    primitives::Transform as NetTransform,
+};
 
 pub fn sync_movement(
     mut server: ResMut<RenetServer>,
@@ -123,7 +128,7 @@ pub fn sync_visibility(
     spawn_cache.clear();
 
     for msg in reader.read() {
-        for entity in msg.removed {
+        for &entity in &msg.removed {
             let data = encode_buffer.encode(&ServerEvent::ActorDespawn(entity.to_bits()));
             server.send_message(
                 msg.client_id,
@@ -132,7 +137,7 @@ pub fn sync_visibility(
             );
         }
 
-        for entity in msg.added {
+        for &entity in &msg.added {
             if let Some(cached_spawn) = spawn_cache.get(&entity) {
                 server.send_message(
                     msg.client_id,
@@ -161,10 +166,11 @@ pub fn sync_visibility(
                 let actor = Actor {
                     id: entity.to_bits(),
                     attributes,
-                    name: name.0.clone(),
+                    name: name.0.to_string(),
                     transform: NetTransform::from_glam(transform.translation, transform.rotation),
-                    vitals: *vitals.into(),
-                    movement_speed: speed.0,
+                    vitals: NetVitals::from(vitals),
+                    movement_speed: speed.0.into(),
+                    level: level.0 as u8,
                 };
 
                 let data = encode_buffer

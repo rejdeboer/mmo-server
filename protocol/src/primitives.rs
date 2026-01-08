@@ -27,3 +27,20 @@ impl Transform {
         glam::Quat::from_rotation_y(yaw_rad)
     }
 }
+
+#[derive(Encode, Decode)]
+pub struct MovementSpeed(u16);
+
+impl MovementSpeed {
+    const SPEED_PRECISION_MULTIPLIER: f32 = 100.0;
+
+    pub fn as_f32(self) -> f32 {
+        self.0 as f32 / Self::SPEED_PRECISION_MULTIPLIER
+    }
+}
+
+impl From<f32> for MovementSpeed {
+    fn from(value: f32) -> Self {
+        Self((value * Self::SPEED_PRECISION_MULTIPLIER) as u16)
+    }
+}

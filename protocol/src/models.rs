@@ -1,4 +1,4 @@
-use crate::primitives::Transform;
+use crate::primitives::{MovementSpeed, Transform};
 use bitcode::{Decode, Encode};
 
 #[derive(Encode, Decode)]
@@ -32,8 +32,8 @@ pub struct Actor {
     pub name: String,
     pub transform: Transform,
     pub vitals: Vitals,
-    pub level: i32,
-    pub movement_speed: u16,
+    pub level: u8,
+    pub movement_speed: MovementSpeed,
 }
 
 #[repr(u8)]
