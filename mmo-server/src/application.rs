@@ -144,7 +144,11 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
         FixedPostUpdate,
         (
             crate::systems::apply_spell_effect,
-            crate::systems::update_player_visibility,
+            (
+                crate::systems::update_player_visibility,
+                crate::systems::sync_visibility,
+            )
+                .chain(),
             crate::systems::sync_players,
             crate::systems::sync_movement,
         )
