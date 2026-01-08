@@ -20,20 +20,20 @@ pub struct Vitals {
 
 #[derive(Encode, Decode)]
 pub struct ItemDrop {
-    item_id: u32,
-    quantity: u16,
+    pub item_id: u32,
+    pub quantity: u16,
 }
 
 #[derive(Encode, Decode)]
 pub struct Actor {
     /// The entity ID assigned by bevy
-    id: u64,
-    attributes: ActorAttributes,
-    name: String,
-    transform: Transform,
-    vitals: Vitals,
-    level: i32,
-    movement_speed: u16,
+    pub id: u64,
+    pub attributes: ActorAttributes,
+    pub name: String,
+    pub transform: Transform,
+    pub vitals: Vitals,
+    pub level: i32,
+    pub movement_speed: u16,
 }
 
 #[repr(u8)]

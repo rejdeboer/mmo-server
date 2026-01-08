@@ -46,6 +46,13 @@ pub struct ApplySpellEffectMessage {
 }
 
 #[derive(Message, Debug)]
+pub struct VisibilityChangedMessage {
+    pub client_id: ClientId,
+    pub added: Vec<Entity>,
+    pub removed: Vec<Entity>,
+}
+
+#[derive(Message, Debug)]
 pub struct OutgoingMessage {
     pub client_id: ClientId,
     pub data: OutgoingMessageData,

@@ -1,12 +1,18 @@
 use crate::{
-    components::{ClientIdComponent, InterestedClients},
-    messages::{OutgoingMessage, OutgoingMessageData},
+    components::{
+        AssetIdComponent, CharacterIdComponent, ClientIdComponent, InterestedClients,
+        LevelComponent, MovementSpeedComponent, NameComponent, Vitals,
+    },
+    messages::{OutgoingMessage, OutgoingMessageData, VisibilityChangedMessage},
     telemetry::Metrics,
 };
 use bevy::{platform::collections::HashMap, prelude::*};
 use bevy_renet::renet::{ClientId, DefaultChannel, RenetServer};
-use protocol::primitives::Transform as NetTransform;
-use protocol::server::{ActorTransformUpdate, ServerEvent};
+use protocol::{
+    models::Actor,
+    server::{ActorTransformUpdate, ServerEvent},
+};
+use protocol::{models::ActorAttributes, primitives::Transform as NetTransform};
 
 pub fn sync_movement(
     mut server: ResMut<RenetServer>,
@@ -94,5 +100,80 @@ pub fn sync_players(
 
         server.send_message(client_id, DefaultChannel::ReliableOrdered, data);
         builder.reset();
+    }
+}
+
+type SpawnableComponents<'a> = (
+    &'a NameComponent,
+    &'a Transform,
+    &'a Vitals,
+    &'a LevelComponent,
+    &'a MovementSpeedComponent,
+    Option<&'a CharacterIdComponent>,
+    Option<&'a AssetIdComponent>,
+);
+
+pub fn sync_visibility(
+    mut server: ResMut<RenetServer>,
+    q_spawnables: Query<SpawnableComponents>,
+    mut reader: MessageReader<VisibilityChangedMessage>,
+    mut encode_buffer: Local<bitcode::Buffer>,
+    mut spawn_cache: Local<HashMap<Entity, Vec<u8>>>,
+) {
+    spawn_cache.clear();
+
+    for msg in reader.read() {
+        for entity in msg.removed {
+            let data = encode_buffer.encode(&ServerEvent::ActorDespawn(entity.to_bits()));
+            server.send_message(
+                msg.client_id,
+                DefaultChannel::ReliableOrdered,
+                data.to_vec(),
+            );
+        }
+
+        for entity in msg.added {
+            if let Some(cached_spawn) = spawn_cache.get(&entity) {
+                server.send_message(
+                    msg.client_id,
+                    DefaultChannel::ReliableOrdered,
+                    cached_spawn.clone(),
+                );
+                continue;
+            }
+
+            if let Ok((name, transform, vitals, level, speed, char_id, asset_id)) =
+                q_spawnables.get(entity)
+            {
+                let attributes = if let Some(cid) = char_id {
+                    ActorAttributes::Player {
+                        character_id: cid.0,
+                        // TODO: Correctly handle guild
+                        guild_name: None,
+                    }
+                } else if let Some(aid) = asset_id {
+                    ActorAttributes::Npc { asset_id: aid.0 }
+                } else {
+                    tracing::warn!(name = %name.0, "failed to create entity attributes");
+                    continue;
+                };
+
+                let actor = Actor {
+                    id: entity.to_bits(),
+                    attributes,
+                    name: name.0.clone(),
+                    transform: NetTransform::from_glam(transform.translation, transform.rotation),
+                    vitals: *vitals.into(),
+                    movement_speed: speed.0,
+                };
+
+                let data = encode_buffer
+                    .encode(&ServerEvent::ActorSpawn(Box::new(actor)))
+                    .to_vec();
+                server.send_message(msg.client_id, DefaultChannel::ReliableOrdered, data.clone());
+
+                spawn_cache.insert(entity, data);
+            }
+        }
     }
 }
