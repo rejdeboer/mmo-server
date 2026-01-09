@@ -1,7 +1,6 @@
-use crate::Entity;
 use crate::action::{MoveAction, PlayerAction};
 use crate::event::{GameEvent, read_event_batch};
-use flatbuffers::{FlatBufferBuilder, WIPOffset, root};
+use protocol::models::Actor;
 use protocol::server::{EnterGameResponse, TokenUserData};
 use renet::{ConnectionConfig, DefaultChannel, RenetClient};
 use renet_netcode::{ClientAuthentication, ConnectToken, NetcodeClientTransport};
@@ -20,7 +19,7 @@ pub enum ClientState {
 pub enum ConnectionEvent {
     Connected,
     Disconnected,
-    EnterGameSuccess { player_entity: Entity },
+    EnterGameSuccess { player_actor: Actor },
 }
 
 pub struct GameClient {
@@ -78,17 +77,12 @@ impl GameClient {
                 if let Some(message) = self.client.receive_message(DefaultChannel::ReliableOrdered)
                 {
                     match bitcode::decode::<EnterGameResponse>(&message) {
-                        Ok(response) => match response.try_into() {
-                            Ok(player_entity) => {
-                                self.state = ClientState::InGame;
-                                return Some(ConnectionEvent::EnterGameSuccess { player_entity });
-                            }
-                            Err(err) => {
-                                tracing::error!(?err, "received invalid player entity");
-                                self.state = ClientState::Disconnected;
-                                return Some(ConnectionEvent::Disconnected);
-                            }
-                        },
+                        Ok(response) => {
+                            self.state = ClientState::InGame;
+                            return Some(ConnectionEvent::EnterGameSuccess {
+                                player_actor: response.player_actor,
+                            });
+                        }
                         Err(e) => {
                             tracing::error!("received invalid EnterGameResponse {}", e);
                             self.state = ClientState::Disconnected;

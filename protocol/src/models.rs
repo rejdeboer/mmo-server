@@ -24,7 +24,7 @@ pub struct ItemDrop {
     pub quantity: u16,
 }
 
-#[derive(Encode, Decode)]
+#[derive(Encode, Decode, Debug)]
 pub struct Actor {
     /// The entity ID assigned by bevy
     pub id: u64,
