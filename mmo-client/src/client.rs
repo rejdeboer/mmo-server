@@ -1,5 +1,6 @@
 use crate::action::{MoveAction, PlayerAction};
 use crate::event::{GameEvent, read_event_batch};
+use protocol::client::{MoveAction, PlayerAction};
 use protocol::models::Actor;
 use protocol::server::{EnterGameResponse, TokenUserData};
 use renet::{ConnectionConfig, DefaultChannel, RenetClient};
@@ -128,34 +129,15 @@ impl GameClient {
         if movement.is_none() && actions.is_empty() {
             return;
         }
-        let can_be_unreliable = actions.is_empty();
 
-        let mut builder = FlatBufferBuilder::new();
-        let mut fb_actions = Vec::<WIPOffset<schema::Action>>::with_capacity(actions.len());
-
-        if let Some(movement) = movement {
-            fb_actions.push(movement.encode(&mut builder));
-        }
-
-        for action in actions {
-            fb_actions.push(action.encode(&mut builder));
-        }
-
-        let actions_vec = builder.create_vector(fb_actions.as_slice());
-        let fb_batch = schema::BatchedActions::create(
-            &mut builder,
-            &schema::BatchedActionsArgs {
-                actions: Some(actions_vec),
-            },
-        );
-        builder.finish_minimal(fb_batch);
-        let data = builder.finished_data().to_vec();
-
-        if can_be_unreliable {
-            self.client.send_message(DefaultChannel::Unreliable, data);
-        } else {
+        if let Some(move_action) = movement {
             self.client
-                .send_message(DefaultChannel::ReliableOrdered, data);
+                .send_message(DefaultChannel::Unreliable, bitcode::encode(move_action));
+        }
+
+        for action in actions.into_iter() {
+            self.client
+                .send_message(DefaultChannel::ReliableOrdered, bitcode::encode(action));
         }
 
         self.transport

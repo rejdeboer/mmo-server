@@ -1,4 +1,3 @@
-mod action;
 mod client;
 mod domain;
 mod event;
