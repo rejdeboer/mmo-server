@@ -1,10 +1,10 @@
-use crate::Entity;
 use crate::action::{MoveAction, PlayerAction};
 use crate::event::{GameEvent, read_event_batch};
-use flatbuffers::{FlatBufferBuilder, WIPOffset, root};
+use protocol::client::{MoveAction, PlayerAction};
+use protocol::models::Actor;
+use protocol::server::{EnterGameResponse, TokenUserData};
 use renet::{ConnectionConfig, DefaultChannel, RenetClient};
 use renet_netcode::{ClientAuthentication, ConnectToken, NetcodeClientTransport};
-use schemas::game as schema;
 use std::net::{IpAddr, SocketAddr, UdpSocket};
 use std::time::{Duration, SystemTime};
 
@@ -20,7 +20,7 @@ pub enum ClientState {
 pub enum ConnectionEvent {
     Connected,
     Disconnected,
-    EnterGameSuccess { player_entity: Entity },
+    EnterGameSuccess { player_actor: Actor },
 }
 
 pub struct GameClient {
@@ -77,18 +77,13 @@ impl GameClient {
             ClientState::Connected => {
                 if let Some(message) = self.client.receive_message(DefaultChannel::ReliableOrdered)
                 {
-                    match root::<schema::EnterGameResponse>(&message) {
-                        Ok(response) => match response.try_into() {
-                            Ok(player_entity) => {
-                                self.state = ClientState::InGame;
-                                return Some(ConnectionEvent::EnterGameSuccess { player_entity });
-                            }
-                            Err(err) => {
-                                tracing::error!(?err, "received invalid player entity");
-                                self.state = ClientState::Disconnected;
-                                return Some(ConnectionEvent::Disconnected);
-                            }
-                        },
+                    match bitcode::decode::<EnterGameResponse>(&message) {
+                        Ok(response) => {
+                            self.state = ClientState::InGame;
+                            return Some(ConnectionEvent::EnterGameSuccess {
+                                player_actor: response.player_actor,
+                            });
+                        }
                         Err(e) => {
                             tracing::error!("received invalid EnterGameResponse {}", e);
                             self.state = ClientState::Disconnected;
@@ -134,34 +129,15 @@ impl GameClient {
         if movement.is_none() && actions.is_empty() {
             return;
         }
-        let can_be_unreliable = actions.is_empty();
 
-        let mut builder = FlatBufferBuilder::new();
-        let mut fb_actions = Vec::<WIPOffset<schema::Action>>::with_capacity(actions.len());
-
-        if let Some(movement) = movement {
-            fb_actions.push(movement.encode(&mut builder));
-        }
-
-        for action in actions {
-            fb_actions.push(action.encode(&mut builder));
-        }
-
-        let actions_vec = builder.create_vector(fb_actions.as_slice());
-        let fb_batch = schema::BatchedActions::create(
-            &mut builder,
-            &schema::BatchedActionsArgs {
-                actions: Some(actions_vec),
-            },
-        );
-        builder.finish_minimal(fb_batch);
-        let data = builder.finished_data().to_vec();
-
-        if can_be_unreliable {
-            self.client.send_message(DefaultChannel::Unreliable, data);
-        } else {
+        if let Some(move_action) = movement {
             self.client
-                .send_message(DefaultChannel::ReliableOrdered, data);
+                .send_message(DefaultChannel::Unreliable, bitcode::encode(move_action));
+        }
+
+        for action in actions.into_iter() {
+            self.client
+                .send_message(DefaultChannel::ReliableOrdered, bitcode::encode(action));
         }
 
         self.transport
@@ -189,19 +165,13 @@ impl GameClient {
         let ip_addr = IpAddr::V4(host.parse().expect("host should be IPV4 addr"));
         let server_addr: SocketAddr = SocketAddr::new(ip_addr, port);
 
-        let mut builder = FlatBufferBuilder::new();
-        let response_offset = schemas::protocol::TokenUserData::create(
-            &mut builder,
-            &schemas::protocol::TokenUserDataArgs {
-                character_id,
-                traceparent: None,
-            },
-        );
-        builder.finish_minimal(response_offset);
+        let copy_data = bitcode::encode(&TokenUserData {
+            character_id,
+            traceparent: None,
+        });
 
         let mut user_data: [u8; 256] = [0; 256];
-        let copy_data = builder.finished_data();
-        user_data[0..copy_data.len()].copy_from_slice(copy_data);
+        user_data[0..copy_data.len()].copy_from_slice(copy_data.as_slice());
 
         let authentication = ClientAuthentication::Unsecure {
             server_addr,

@@ -16,6 +16,7 @@ argon2 = "0.5.3"
 async-trait = "0.1.88"
 axum-extra = { version = "0.10", features = ["typed-header"] }
 base64 = "0.12"
+bitcode.workspace = true
 config = "0.11"
 flatbuffers = { workspace = true }
 futures = "0.3"
@@ -32,6 +33,7 @@ opentelemetry-otlp = { workspace = true }
 opentelemetry_sdk = { workspace = true }
 prometheus = { workspace = true }
 rand = { version = "0.8", features = ["std_rng"] }
+protocol = { path = "../protocol" }
 schemars = "0.8.6"
 schemas = { path = "../schemas" }
 secrecy = { version = "0.10.3", features = ["serde"] }
