@@ -26,7 +26,7 @@ pub fn tick_corpse_despawn_timers(
     for (entity, mut dead, interested) in q_dead.iter_mut() {
         dead.despawn_timer.tick(time.delta());
         if dead.despawn_timer.is_finished() {
-            OutgoingMessageData::Despawn(entity).broadcast(&interested.clients, &mut writer);
+            let outgoing_msg = OutgoingMessageData::Despawn(entity);
             commands.entity(entity).despawn();
         }
     }

@@ -47,13 +47,16 @@ pub struct VisibilityChangedMessage {
 
 #[derive(Message, Debug, Clone)]
 pub struct OutgoingMessage {
-    pub client_id: ClientId,
+    pub recipients: Vec<ClientId>,
     pub data: OutgoingMessageData,
 }
 
 impl OutgoingMessage {
-    pub fn new(client_id: ClientId, data: OutgoingMessageData) -> Self {
-        Self { client_id, data }
+    pub fn new(client_ids: Vec<ClientId>, data: OutgoingMessageData) -> Self {
+        Self {
+            recipients: client_ids,
+            data,
+        }
     }
 }
 
