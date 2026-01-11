@@ -149,7 +149,7 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
                 crate::systems::sync_visibility,
             )
                 .chain(),
-            crate::systems::sync_players,
+            crate::systems::sync_server_events,
             crate::systems::sync_movement,
         )
             .after(PhysicsSystems::Last),

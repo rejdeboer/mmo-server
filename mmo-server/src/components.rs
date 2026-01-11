@@ -1,6 +1,6 @@
 use bevy::{platform::collections::HashSet, prelude::*};
 use bevy_renet::renet::ClientId;
-use protocol::models::Vitals as NetVitals;
+use protocol::models::{ItemDrop, Vitals as NetVitals};
 use std::sync::Arc;
 
 use crate::assets::ContentId;
@@ -95,6 +95,15 @@ pub struct Tapped {
 pub struct LootEntry {
     pub item_id: u32,
     pub quantity: u16,
+}
+
+impl From<LootEntry> for ItemDrop {
+    fn from(value: LootEntry) -> Self {
+        Self {
+            item_id: value.item_id,
+            quantity: value.quantity,
+        }
+    }
 }
 
 #[derive(Component)]

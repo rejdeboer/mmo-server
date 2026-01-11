@@ -1,7 +1,7 @@
 use crate::primitives::{MovementSpeed, Transform};
 use bitcode::{Decode, Encode};
 
-#[derive(Encode, Decode)]
+#[derive(Encode, Decode, Debug)]
 pub enum ActorAttributes {
     Player {
         character_id: i32,
@@ -37,7 +37,7 @@ pub struct Actor {
 }
 
 #[repr(u8)]
-#[derive(Encode, Decode)]
+#[derive(Encode, Decode, Debug)]
 pub enum ChatChannel {
     Say,
     Yell,

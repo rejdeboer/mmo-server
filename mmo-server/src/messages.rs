@@ -1,14 +1,7 @@
-use crate::{
-    components::{LootEntry, NameComponent, Vitals},
-    systems::{EntityAttributes, serialize_entity},
-};
-use bevy::{platform::collections::HashSet, prelude::*};
+use crate::components::{LootEntry, NameComponent};
+use bevy::prelude::*;
 use bevy_renet::renet::ClientId;
-use flatbuffers::{FlatBufferBuilder, WIPOffset};
 use protocol::{models::ChatChannel, server::ServerEvent};
-use schema::ChannelType;
-use schemas::game as schema;
-use std::sync::Arc;
 
 #[derive(Message, Debug)]
 pub struct MoveActionMessage {
@@ -52,7 +45,7 @@ pub struct VisibilityChangedMessage {
     pub removed: Vec<Entity>,
 }
 
-#[derive(Message, Debug)]
+#[derive(Message, Debug, Clone)]
 pub struct OutgoingMessage {
     pub client_id: ClientId,
     pub data: OutgoingMessageData,
@@ -64,24 +57,13 @@ impl OutgoingMessage {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 // TODO: Box large enum variants?
 pub enum OutgoingMessageData {
     ChatMessage {
         channel: ChatChannel,
         sender_name: NameComponent,
         text: String,
-    },
-    Despawn(Entity),
-    Movement(Entity, Transform),
-    Spawn {
-        entity: Entity,
-        attributes: EntityAttributes,
-        name: Arc<str>,
-        transform: Transform,
-        level: i32,
-        vitals: Vitals,
-        movement_speed: f32,
     },
     Death {
         entity: Entity,
@@ -101,31 +83,36 @@ pub enum OutgoingMessageData {
     },
 }
 
-impl OutgoingMessageData {
-    pub fn broadcast(
-        &self,
-        recipients: &HashSet<ClientId>,
-        writer: &mut MessageWriter<OutgoingMessage>,
-    ) {
-        writer.write_batch(recipients.iter().map(|client_id| OutgoingMessage {
-            client_id: *client_id,
-            data: self.clone(),
-        }));
-    }
-}
-
 impl From<OutgoingMessageData> for ServerEvent {
     fn from(value: OutgoingMessageData) -> Self {
         match value {
-            OutgoingMessageData::Spawn {
-                entity,
-                attributes,
-                name,
-                transform,
-                level,
-                vitals,
-                movement_speed,
-            } => Self::ActorSpawn(()),
+            OutgoingMessageData::Death { entity } => ServerEvent::ActorDeath(entity.to_bits()),
+            OutgoingMessageData::KillReward { victim, loot } => ServerEvent::KillReward {
+                victim_id: victim.to_bits(),
+                loot: loot.into_iter().map(|e| e.into()).collect(),
+            },
+            OutgoingMessageData::ChatMessage {
+                channel,
+                sender_name,
+                text,
+            } => ServerEvent::Chat {
+                channel,
+                sender_name: sender_name.0.to_string(),
+                text,
+            },
+            OutgoingMessageData::StartCasting { entity, spell_id } => ServerEvent::StartCasting {
+                actor_id: entity.to_bits(),
+                spell_id,
+            },
+            OutgoingMessageData::SpellImpact {
+                target_entity,
+                spell_id,
+                impact_amount,
+            } => ServerEvent::SpellImpact {
+                target_id: target_entity.to_bits(),
+                spell_id,
+                impact_amount,
+            },
         }
     }
 }

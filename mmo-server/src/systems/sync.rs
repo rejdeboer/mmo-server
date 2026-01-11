@@ -73,27 +73,18 @@ pub fn sync_movement(
     }
 }
 
-pub fn sync_players(
+pub fn sync_server_events(
     mut server: ResMut<RenetServer>,
-    mut ev_msg: MessageReader<OutgoingMessage>,
+    mut encode_buffer: Local<bitcode::Buffer>,
+    mut reader: MessageReader<OutgoingMessage>,
     metrics: Res<Metrics>,
 ) {
-    let mut client_messages: HashMap<ClientId, Vec<&OutgoingMessageData>> = HashMap::new();
-    for event in ev_msg.read() {
-        client_messages
-            .entry(event.client_id)
-            .or_default()
-            .push(&event.data);
-    }
+    let metric_labels = &["outgoing", "reliable"];
 
-    if client_messages.is_empty() {
-        return;
-    }
+    for msg in reader.read() {
+        let event: ServerEvent = msg.data.clone().into();
+        let event_data = encode_buffer.encode(&event);
 
-    for (client_id, messages) in client_messages {
-        let mut player_messages = Vec::<ServerEvent>::with_capacity(messages.len());
-
-        let metric_labels = &["outgoing", "reliable"];
         metrics
             .network_packets_total
             .with_label_values(metric_labels)
@@ -101,10 +92,9 @@ pub fn sync_players(
         metrics
             .network_bytes_total
             .with_label_values(metric_labels)
-            .inc_by(data.len() as u64);
+            .inc_by(event_data.len() as u64);
 
-        server.send_message(client_id, DefaultChannel::ReliableOrdered, data);
-        builder.reset();
+        server.send_message(msg.client_id, DefaultChannel::ReliableOrdered, event_data);
     }
 }
 
