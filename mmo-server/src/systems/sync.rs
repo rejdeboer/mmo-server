@@ -1,15 +1,13 @@
-use std::sync::Arc;
-
 use crate::{
     components::{
         AssetIdComponent, CharacterIdComponent, ClientIdComponent, InterestedClients,
         LevelComponent, MovementSpeedComponent, NameComponent, Vitals,
     },
-    messages::{OutgoingMessage, OutgoingMessageData, VisibilityChangedMessage},
+    messages::{OutgoingMessage, VisibilityChangedMessage},
     telemetry::Metrics,
 };
 use bevy::{platform::collections::HashMap, prelude::*};
-use bevy_renet::renet::{ClientId, DefaultChannel, RenetServer};
+use bevy_renet::renet::{DefaultChannel, RenetServer};
 use protocol::{
     models::Actor,
     server::{ActorTransformUpdate, ServerEvent},
@@ -94,7 +92,11 @@ pub fn sync_server_events(
             .with_label_values(metric_labels)
             .inc_by(event_data.len() as u64);
 
-        server.send_message(msg.client_id, DefaultChannel::ReliableOrdered, event_data);
+        server.send_message(
+            msg.client_id,
+            DefaultChannel::ReliableOrdered,
+            event_data.to_vec(),
+        );
     }
 }
 

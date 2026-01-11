@@ -37,7 +37,7 @@ pub struct Actor {
 }
 
 #[repr(u8)]
-#[derive(Encode, Decode, Debug)]
+#[derive(Encode, Decode, Debug, Clone)]
 pub enum ChatChannel {
     Say,
     Yell,
