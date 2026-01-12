@@ -71,6 +71,7 @@ pub enum OutgoingMessageData {
     Death {
         entity: Entity,
     },
+    DespawnCorpse(Entity),
     KillReward {
         victim: Entity,
         loot: Vec<LootEntry>,
@@ -90,6 +91,9 @@ impl From<OutgoingMessageData> for ServerEvent {
     fn from(value: OutgoingMessageData) -> Self {
         match value {
             OutgoingMessageData::Death { entity } => ServerEvent::ActorDeath(entity.to_bits()),
+            OutgoingMessageData::DespawnCorpse(entity) => {
+                ServerEvent::ActorDespawn(entity.to_bits())
+            }
             OutgoingMessageData::KillReward { victim, loot } => ServerEvent::KillReward {
                 victim_id: victim.to_bits(),
                 loot: loot.into_iter().map(|e| e.into()).collect(),

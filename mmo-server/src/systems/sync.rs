@@ -92,11 +92,13 @@ pub fn sync_server_events(
             .with_label_values(metric_labels)
             .inc_by(event_data.len() as u64);
 
-        server.send_message(
-            msg.client_id,
-            DefaultChannel::ReliableOrdered,
-            event_data.to_vec(),
-        );
+        for &client_id in &msg.recipients {
+            server.send_message(
+                client_id,
+                DefaultChannel::ReliableOrdered,
+                event_data.to_vec(),
+            );
+        }
     }
 }
 
