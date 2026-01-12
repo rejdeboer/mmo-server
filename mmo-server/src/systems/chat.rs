@@ -1,10 +1,10 @@
-use bevy::prelude::*;
-use schemas::game::ChannelType;
-
 use crate::{
     components::{ClientIdComponent, NameComponent, VisibleEntities},
     messages::{IncomingChatMessage, OutgoingMessage, OutgoingMessageData},
 };
+use bevy::prelude::*;
+use bevy_renet::renet::ClientId;
+use protocol::models::ChatChannel;
 
 const MAX_SAY_DISTANCE: f32 = 32.0;
 
@@ -25,17 +25,13 @@ pub fn process_incoming_chat(
             continue;
         };
 
-        writer.write(OutgoingMessage::new(
-            author_id.0,
-            OutgoingMessageData::ChatMessage(msg.channel, name.clone(), msg.text.clone()),
-        ));
-
+        let mut recipients: Vec<ClientId> = vec![author_id.0];
         for entity in visible.entities.iter() {
             let Ok((recipient_id, recipient_transform)) = q_recipients.get(*entity) else {
                 continue;
             };
 
-            if msg.channel == ChannelType::Say
+            if msg.channel == ChatChannel::Say
                 && author_transform
                     .translation
                     .distance(recipient_transform.translation)
@@ -44,11 +40,16 @@ pub fn process_incoming_chat(
                 continue;
             }
 
-            // TODO: Do we have to clone text here? Probably should use Arc
-            writer.write(OutgoingMessage::new(
-                recipient_id.0,
-                OutgoingMessageData::ChatMessage(msg.channel, name.clone(), msg.text.clone()),
-            ));
+            recipients.push(recipient_id.0);
         }
+
+        writer.write(OutgoingMessage::new(
+            recipients,
+            OutgoingMessageData::ChatMessage {
+                channel: msg.channel.clone(),
+                sender_name: name.0.to_string(),
+                text: msg.text.clone(),
+            },
+        ));
     }
 }

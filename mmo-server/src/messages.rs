@@ -65,7 +65,7 @@ impl OutgoingMessage {
 pub enum OutgoingMessageData {
     ChatMessage {
         channel: ChatChannel,
-        sender_name: NameComponent,
+        sender_name: String,
         text: String,
     },
     Death {
@@ -104,7 +104,7 @@ impl From<OutgoingMessageData> for ServerEvent {
                 text,
             } => ServerEvent::Chat {
                 channel,
-                sender_name: sender_name.0.to_string(),
+                sender_name,
                 text,
             },
             OutgoingMessageData::StartCasting { entity, spell_id } => ServerEvent::StartCasting {
