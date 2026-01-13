@@ -85,7 +85,7 @@ pub fn reward_kill(
     });
 
     writer.write(OutgoingMessage {
-        client_id: killer_client_id,
+        recipients: vec![killer_client_id],
         data: OutgoingMessageData::KillReward {
             victim: entity,
             loot: loot_entries,

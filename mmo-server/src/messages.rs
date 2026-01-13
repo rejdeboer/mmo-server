@@ -1,4 +1,4 @@
-use crate::components::{LootEntry, NameComponent};
+use crate::components::LootEntry;
 use bevy::prelude::*;
 use bevy_renet::renet::ClientId;
 use protocol::{models::ChatChannel, server::ServerEvent};

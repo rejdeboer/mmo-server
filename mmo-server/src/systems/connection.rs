@@ -14,7 +14,6 @@ use bevy_renet::{
     renet::{ClientId, DefaultChannel, DisconnectReason, RenetServer, ServerEvent},
 };
 use bevy_tokio_tasks::{TaskContext, TokioTasksRuntime};
-use flatbuffers::{FlatBufferBuilder, UnionWIPOffset, WIPOffset, root};
 use protocol::{
     models::{Actor, ActorAttributes},
     primitives::Transform as NetTransform,

@@ -31,7 +31,6 @@ bevy_panorbit_camera = { version = "0.33", optional = true }
 bevy_renet = { git = "https://github.com/lucaspoffo/renet" }
 bitcode.workspace = true
 config = "0.11"
-flatbuffers = { workspace = true }
 opentelemetry = { workspace = true }
 opentelemetry-otlp = { workspace = true }
 opentelemetry_sdk = { workspace = true }
