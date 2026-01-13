@@ -45,6 +45,8 @@ pub fn process_client_movements(
     mut writer: MessageWriter<MoveActionMessage>,
 ) {
     for (entity, client_id) in clients.iter() {
+        let mut latest_action: Option<MoveAction> = None;
+
         while let Some(message) = server.receive_message(client_id.0, DefaultChannel::Unreliable) {
             metrics
                 .network_packets_total
@@ -57,12 +59,17 @@ pub fn process_client_movements(
 
             match bitcode::decode::<MoveAction>(&message) {
                 Ok(action) => {
-                    process_player_movement(entity, action, &mut writer);
+                    latest_action = Some(action);
                 }
                 Err(error) => {
                     tracing::error!(?error, "movement message does not follow action schema");
                 }
             }
+        }
+
+        // NOTE: We only handle the latest move action to prevent flooding
+        if let Some(action) = latest_action {
+            process_player_movement(entity, action, &mut writer);
         }
     }
 }
