@@ -1,9 +1,0 @@
-include "entity.fbs";
-
-namespace game;
-
-table EnterGameResponse {
-	player_entity: game.Entity;
-}
-
-root_type EnterGameResponse;

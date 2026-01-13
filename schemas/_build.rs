@@ -3,16 +3,9 @@ use std::path::Path;
 #[allow(clippy::all)]
 fn main() {
     let schema_files = [
-        "schemas/game/action.fbs",
-        "schemas/game/chat.fbs",
-        "schemas/game/common.fbs",
-        "schemas/game/entity.fbs",
-        "schemas/game/event.fbs",
-        "schemas/game/enter_game_response.fbs",
         "schemas/social/common.fbs",
         "schemas/social/action.fbs",
         "schemas/social/event.fbs",
-        "schemas/protocol/token_user_data.fbs",
     ];
 
     for schema in &schema_files {
