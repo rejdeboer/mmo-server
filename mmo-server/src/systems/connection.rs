@@ -25,7 +25,6 @@ use tracing::{Instrument, Level, instrument};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 // TODO: This should probably be done in another module
-const SPEED_PRECISION_MULTIPLIER: f32 = 100.;
 const BASE_MOVEMENT_SPEED: f32 = 7.5;
 
 #[derive(Bundle)]

@@ -4356,7 +4356,6 @@ dependencies = [
  "bitcode",
  "config",
  "fake 4.4.0",
- "flatbuffers",
  "once_cell",
  "opentelemetry",
  "opentelemetry-otlp",

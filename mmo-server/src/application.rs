@@ -115,6 +115,7 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
         FixedPreUpdate,
         (
             crate::systems::process_client_actions,
+            crate::systems::process_client_movements,
             crate::systems::check_ground_status,
             (
                 crate::systems::process_incoming_chat,

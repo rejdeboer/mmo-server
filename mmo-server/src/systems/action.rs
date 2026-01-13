@@ -5,7 +5,7 @@ use crate::{
 };
 use bevy::prelude::*;
 use bevy_renet::renet::{DefaultChannel, RenetServer};
-use protocol::client::PlayerAction;
+use protocol::client::{MoveAction, PlayerAction};
 
 pub fn process_client_actions(
     mut server: ResMut<RenetServer>,
@@ -14,17 +14,7 @@ pub fn process_client_actions(
     metrics: Res<Metrics>,
 ) {
     for (entity, client_id) in clients.iter() {
-        if let Some(message) = server.receive_message(client_id.0, DefaultChannel::Unreliable) {
-            metrics
-                .network_packets_total
-                .with_label_values(&["incoming", "unreliable"])
-                .inc();
-            metrics
-                .network_bytes_total
-                .with_label_values(&["incoming", "unreliable"])
-                .inc_by(message.len() as u64);
-            process_message(entity, message, &mut commands);
-        } else if let Some(message) =
+        while let Some(message) =
             server.receive_message(client_id.0, DefaultChannel::ReliableOrdered)
         {
             metrics
@@ -35,20 +25,44 @@ pub fn process_client_actions(
                 .network_bytes_total
                 .with_label_values(&["incoming", "reliable"])
                 .inc_by(message.len() as u64);
-            process_message(entity, message, &mut commands);
+
+            match bitcode::decode::<PlayerAction>(&message) {
+                Ok(action) => {
+                    process_player_action(entity, action, &mut commands);
+                }
+                Err(error) => {
+                    tracing::error!(?error, "action message does not follow action schema");
+                }
+            }
         }
     }
 }
 
-fn process_message(entity: Entity, message: bevy_renet::renet::Bytes, commands: &mut Commands) {
-    match bitcode::decode::<Vec<PlayerAction>>(&message) {
-        Ok(actions) => {
-            for action in actions {
-                process_player_action(entity, action, commands);
+pub fn process_client_movements(
+    mut server: ResMut<RenetServer>,
+    clients: Query<(Entity, &ClientIdComponent)>,
+    metrics: Res<Metrics>,
+    mut writer: MessageWriter<MoveActionMessage>,
+) {
+    for (entity, client_id) in clients.iter() {
+        while let Some(message) = server.receive_message(client_id.0, DefaultChannel::Unreliable) {
+            metrics
+                .network_packets_total
+                .with_label_values(&["incoming", "unreliable"])
+                .inc();
+            metrics
+                .network_bytes_total
+                .with_label_values(&["incoming", "unreliable"])
+                .inc_by(message.len() as u64);
+
+            match bitcode::decode::<MoveAction>(&message) {
+                Ok(action) => {
+                    process_player_movement(entity, action, &mut writer);
+                }
+                Err(error) => {
+                    tracing::error!(?error, "movement message does not follow action schema");
+                }
             }
-        }
-        Err(error) => {
-            tracing::error!(?error, "message does not follow action schema");
         }
     }
 }
@@ -60,18 +74,6 @@ fn process_player_action(entity: Entity, action: PlayerAction, commands: &mut Co
                 author: entity,
                 channel,
                 text,
-            });
-        }
-        PlayerAction::Movement {
-            yaw,
-            forward,
-            sideways,
-        } => {
-            commands.write_message(MoveActionMessage {
-                entity,
-                yaw,
-                forward,
-                sideways,
             });
         }
         PlayerAction::Jump => {
@@ -87,8 +89,18 @@ fn process_player_action(entity: Entity, action: PlayerAction, commands: &mut Co
                 spell_id,
             });
         }
-        _ => {
-            tracing::warn!("unhandled event data type");
-        }
     }
+}
+
+fn process_player_movement(
+    entity: Entity,
+    action: MoveAction,
+    writer: &mut MessageWriter<MoveActionMessage>,
+) {
+    writer.write(MoveActionMessage {
+        entity,
+        yaw: action.yaw,
+        forward: action.forward,
+        sideways: action.sideways,
+    });
 }
