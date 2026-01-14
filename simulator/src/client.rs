@@ -50,9 +50,9 @@ impl SimulatedClient {
                 SimulatedClientState::Disconnected => {
                     if let Some(event) = self.client.poll_connection(dt) {
                         match event {
-                            ConnectionEvent::EnterGameSuccess { player_entity } => {
+                            ConnectionEvent::EnterGameSuccess { player_actor } => {
                                 tracing::info!("successfully entered game");
-                                self.state = SimulatedClientState::Connected(player_entity);
+                                self.state = SimulatedClientState::Connected(player_actor);
                             }
                             ConnectionEvent::Disconnected => {
                                 tracing::error!("disconnected during connection phase");

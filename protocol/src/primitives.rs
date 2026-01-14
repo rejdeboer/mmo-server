@@ -28,7 +28,7 @@ impl Transform {
     }
 }
 
-#[derive(Encode, Decode, Debug)]
+#[derive(Encode, Decode, Debug, Clone, Copy)]
 pub struct MovementSpeed(u16);
 
 impl MovementSpeed {

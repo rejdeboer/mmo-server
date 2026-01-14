@@ -1,8 +1,7 @@
-use crate::action::{MoveAction, PlayerAction};
 use crate::event::{GameEvent, read_event_batch};
 use protocol::client::{MoveAction, PlayerAction};
 use protocol::models::Actor;
-use protocol::server::{EnterGameResponse, TokenUserData};
+use protocol::server::{ActorTransformUpdate, EnterGameResponse, ServerEvent, TokenUserData};
 use renet::{ConnectionConfig, DefaultChannel, RenetClient};
 use renet_netcode::{ClientAuthentication, ConnectToken, NetcodeClientTransport};
 use std::net::{IpAddr, SocketAddr, UdpSocket};
@@ -102,7 +101,7 @@ impl GameClient {
         None
     }
 
-    pub fn update_game(&mut self, dt: Duration) -> Vec<GameEvent> {
+    pub fn update_game(&mut self, dt: Duration) -> (Vec<ServerEvent>, Vec<ActorTransformUpdate>) {
         debug_assert!(matches!(self.state, ClientState::InGame));
         self.client.update(dt);
         self.transport
@@ -111,18 +110,23 @@ impl GameClient {
             .update(dt, &mut self.client)
             .expect("transport updated");
 
-        let mut events: Vec<GameEvent> = vec![];
+        let mut world_events: Vec<ServerEvent> = vec![];
         while let Some(message) = self.client.receive_message(DefaultChannel::ReliableOrdered) {
-            if let Err(error) = read_event_batch(&mut events, message) {
-                tracing::error!(?error, "unexpected reliable message received");
+            match bitcode::decode::<ServerEvent>(&message) {
+                Ok(event) => world_events.push(event),
+                Err(err) => tracing::error!(?err, "unexpected reliable message received"),
             };
         }
+
+        let mut movement_updates: Vec<ActorTransformUpdate> = vec![];
         while let Some(message) = self.client.receive_message(DefaultChannel::Unreliable) {
-            if let Err(error) = read_event_batch(&mut events, message) {
-                tracing::error!(?error, "unexpected unreliable message received");
+            match bitcode::decode::<ActorTransformUpdate>(&message) {
+                Ok(update) => movement_updates.push(update),
+                Err(err) => tracing::error!(?err, "unexpected unreliable message received"),
             };
         }
-        events
+
+        (world_events, movement_updates)
     }
 
     pub fn send_actions(&mut self, movement: Option<MoveAction>, actions: Vec<PlayerAction>) {
@@ -132,12 +136,12 @@ impl GameClient {
 
         if let Some(move_action) = movement {
             self.client
-                .send_message(DefaultChannel::Unreliable, bitcode::encode(move_action));
+                .send_message(DefaultChannel::Unreliable, bitcode::encode(&move_action));
         }
 
         for action in actions.into_iter() {
             self.client
-                .send_message(DefaultChannel::ReliableOrdered, bitcode::encode(action));
+                .send_message(DefaultChannel::ReliableOrdered, bitcode::encode(&action));
         }
 
         self.transport

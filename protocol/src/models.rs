@@ -1,7 +1,7 @@
 use crate::primitives::{MovementSpeed, Transform};
 use bitcode::{Decode, Encode};
 
-#[derive(Encode, Decode, Debug)]
+#[derive(Encode, Decode, Debug, Clone)]
 pub enum ActorAttributes {
     Player {
         character_id: i32,
@@ -24,7 +24,7 @@ pub struct ItemDrop {
     pub quantity: u16,
 }
 
-#[derive(Encode, Decode, Debug)]
+#[derive(Encode, Decode, Debug, Clone)]
 pub struct Actor {
     /// The entity ID assigned by bevy
     pub id: u64,

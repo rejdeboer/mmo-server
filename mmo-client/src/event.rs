@@ -1,5 +1,6 @@
 use crate::domain::{Entity, Transform, Vec3};
 use flatbuffers::{InvalidFlatbuffer, root};
+use protocol::server::ServerEvent;
 use renet::Bytes;
 use schema::ChannelType;
 use schemas::game as schema;
@@ -17,6 +18,10 @@ pub enum GameEvent {
     },
     SpawnEntity(Entity),
     DespawnEntity(u64),
+}
+
+pub fn read_world_event(bytes: Bytes) -> Result<ServerEvent, bitcode::Error> {
+    let event: ServerEvent = bitcode::decode(&bytes)?;
 }
 
 pub fn read_event_batch(
