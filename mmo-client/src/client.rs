@@ -1,4 +1,3 @@
-use crate::event::{GameEvent, read_event_batch};
 use protocol::client::{MoveAction, PlayerAction};
 use protocol::models::Actor;
 use protocol::server::{ActorTransformUpdate, EnterGameResponse, ServerEvent, TokenUserData};
