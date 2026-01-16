@@ -1,4 +1,7 @@
-use mmo_client::{ConnectToken, ConnectionEvent, Entity, GameClient, MoveAction};
+use mmo_client::{
+    ConnectToken, ConnectionEvent, GameClient,
+    protocol::{client::MoveAction, models::Actor},
+};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use std::time::Duration;
@@ -9,7 +12,7 @@ const TICK_DURATION: Duration = Duration::from_millis(1000 / 20);
 
 pub enum SimulatedClientState {
     Disconnected,
-    Connected(Entity),
+    Connected(Actor),
 }
 
 pub struct SimulatedClient {
@@ -65,11 +68,11 @@ impl SimulatedClient {
                 SimulatedClientState::Connected(_entity) => {
                     let _game_events = self.client.update_game(dt);
 
-                    let move_action = MoveAction {
-                        forward: self.rng.random::<f32>(),
-                        sideways: self.rng.random::<f32>(),
-                        yaw: 0.,
-                    };
+                    let move_action = MoveAction::from_f32(
+                        0.,
+                        self.rng.random::<f32>(),
+                        self.rng.random::<f32>(),
+                    );
 
                     self.client.send_actions(Some(move_action), vec![]);
                 }
