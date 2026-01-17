@@ -130,11 +130,9 @@ fn process_client_connected(
     pool: &DatabasePool,
     runtime: &TokioTasksRuntime,
 ) {
-    let user_data_option = transport.user_data(client_id);
-    if user_data_option.is_none() {
+    let Some(user_data) = transport.user_data(client_id) else {
         return server.disconnect(client_id);
-    }
-    let user_data = user_data_option.unwrap();
+    };
 
     match bitcode::decode::<TokenUserData>(&user_data) {
         Ok(data) => {
