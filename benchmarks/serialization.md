@@ -31,9 +31,9 @@ We'll run the simulator for 1 minute multiple times, using a different number of
 
 | #Clients | Flatbuffers (ns) | Bitcode (ns) |
 | :--- | :--- | :--- |
-| 10 | 435 us | 25 us |
-| 50 | 32.5 ms | 150 us |
-| 100 | 90.0 ms | 250 us |
+| 10 | 23 us | 25 us |
+| 50 | 145 us | 150 us |
+| 100 | 250 us | 250 us |
 Note: these tests were performed on a developer PC, not on the Kubernetes cluster. This is why the numbers may vary from the production server RTT.
 
 ### Metric 3: Server RTT
