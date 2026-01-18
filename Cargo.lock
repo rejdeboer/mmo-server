@@ -1798,6 +1798,30 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5e764a1d40d510daf35e07be9eb06e75770908c27d411ee6c92109c9840eaaf7"
 
 [[package]]
+name = "bitcode"
+version = "0.6.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0a6ed1b54d8dc333e7be604d00fa9262f4635485ffea923647b6521a5fff045d"
+dependencies = [
+ "arrayvec 0.7.6",
+ "bitcode_derive",
+ "bytemuck",
+ "glam 0.30.9",
+ "serde 1.0.228",
+]
+
+[[package]]
+name = "bitcode_derive"
+version = "0.6.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "238b90427dfad9da4a9abd60f3ec1cdee6b80454bde49ed37f1781dd8e9dc7f9"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.109",
+]
+
+[[package]]
 name = "bitflags"
 version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4307,7 +4331,9 @@ name = "mmo-client"
 version = "0.1.0"
 dependencies = [
  "base64 0.12.3",
+ "bitcode",
  "flatbuffers",
+ "protocol",
  "renet",
  "renet_netcode",
  "schemas",
@@ -4327,17 +4353,17 @@ dependencies = [
  "bevy_common_assets",
  "bevy_panorbit_camera",
  "bevy_renet",
+ "bitcode",
  "config",
  "fake 4.4.0",
- "flatbuffers",
  "once_cell",
  "opentelemetry",
  "opentelemetry-otlp",
  "opentelemetry_sdk",
  "prometheus",
+ "protocol",
  "rand 0.8.5",
  "ron 0.12.0",
- "schemas",
  "secrecy",
  "serde 1.0.228",
  "serde-aux 4.7.0",
@@ -5584,6 +5610,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3e36c2f31e0a47f9280fb347ef5e461ffcd2c52dd520d8e216b52f93b0b0d7d6"
 dependencies = [
  "thiserror 1.0.69",
+]
+
+[[package]]
+name = "protocol"
+version = "0.1.0"
+dependencies = [
+ "bitcode",
+ "glam 0.30.9",
+ "serde 1.0.228",
 ]
 
 [[package]]
@@ -8201,6 +8236,7 @@ dependencies = [
  "axum 0.8.6",
  "axum-extra",
  "base64 0.12.3",
+ "bitcode",
  "config",
  "fake 2.3.0",
  "flatbuffers",
@@ -8215,6 +8251,7 @@ dependencies = [
  "opentelemetry-otlp",
  "opentelemetry_sdk",
  "prometheus",
+ "protocol",
  "quickcheck",
  "quickcheck_macros",
  "rand 0.8.5",

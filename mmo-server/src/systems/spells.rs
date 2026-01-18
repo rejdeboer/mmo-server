@@ -74,9 +74,13 @@ pub fn process_spell_casts(
             entity: msg.caster_entity,
             spell_id: msg.spell_id,
         };
-        outgoing_msg.broadcast(&interested.clients, &mut writer);
+
+        let mut recipients = Vec::with_capacity(interested.clients.len() + 1);
+        recipients.extend(interested.clients.iter().copied());
+        recipients.push(caster_client_id.0);
+
         writer.write(OutgoingMessage {
-            client_id: caster_client_id.0,
+            recipients,
             data: outgoing_msg,
         });
     }
@@ -148,15 +152,14 @@ pub fn apply_spell_effect(
             spell_id: msg.spell_id,
             impact_amount: spell.damage,
         };
-        outgoing_msg.broadcast(&interested.clients, &mut writer);
+
+        let mut recipients = Vec::with_capacity(interested.clients.len() + 1);
+        recipients.extend(interested.clients.iter().copied());
 
         if let Some(caster_client_id) = msg.caster_client_id {
             // NOTE: caster's own ID is not within the interested set
             if msg.caster_entity == msg.target_entity {
-                writer.write(OutgoingMessage {
-                    client_id: caster_client_id,
-                    data: outgoing_msg,
-                });
+                recipients.push(caster_client_id);
             }
 
             // TODO: Healing something should not tap it
@@ -167,6 +170,11 @@ pub fn apply_spell_effect(
                 });
             }
         }
+
+        writer.write(OutgoingMessage {
+            recipients,
+            data: outgoing_msg,
+        });
 
         target_vitals.hp -= spell.damage;
     }

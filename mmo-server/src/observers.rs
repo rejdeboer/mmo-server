@@ -40,14 +40,18 @@ pub fn on_entity_death(
         return tracing::error!(?entity, "could not retrieve victim components");
     };
 
-    let outgoing_msg = OutgoingMessageData::Death { entity };
-    outgoing_msg.broadcast(&interested.clients, &mut writer);
+    let mut recipients = Vec::with_capacity(interested.clients.len() + 1);
+    recipients.extend(interested.clients.iter().copied());
+
     if let Some(victim_client_id) = victim_client_id {
-        writer.write(OutgoingMessage {
-            client_id: victim_client_id.0,
-            data: outgoing_msg,
-        });
+        recipients.push(victim_client_id.0);
     }
+
+    let outgoing_msg = OutgoingMessageData::Death { entity };
+    writer.write(OutgoingMessage {
+        recipients,
+        data: outgoing_msg,
+    });
 }
 
 pub fn reward_kill(
@@ -81,7 +85,7 @@ pub fn reward_kill(
     });
 
     writer.write(OutgoingMessage {
-        client_id: killer_client_id,
+        recipients: vec![killer_client_id],
         data: OutgoingMessageData::KillReward {
             victim: entity,
             loot: loot_entries,

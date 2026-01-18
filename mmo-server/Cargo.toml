@@ -23,17 +23,19 @@ profiling = ["dep:tracing-tracy", "bevy/trace"]
 agones = { version = "1.53" }
 anyhow = "1.0"
 base64 = "0.12.0"
-bevy_common_assets = { version = "0.14.0", default-features = false, features = ["ron"] }
+bevy_common_assets = { version = "0.14.0", default-features = false, features = [
+	"ron",
+] }
 bevy-tokio-tasks = { version = "0.17", default-features = false }
 bevy_panorbit_camera = { version = "0.33", optional = true }
 bevy_renet = { git = "https://github.com/lucaspoffo/renet" }
+bitcode.workspace = true
 config = "0.11"
-flatbuffers = { workspace = true }
 opentelemetry = { workspace = true }
 opentelemetry-otlp = { workspace = true }
 opentelemetry_sdk = { workspace = true }
 prometheus = { workspace = true }
-schemas = { path = "../schemas" }
+protocol = { path = "../protocol" }
 secrecy = { version = "0.10.3", features = ["serde"] }
 serde = { version = "1.0.219", features = ["derive"] }
 serde-aux = "4.7.0"

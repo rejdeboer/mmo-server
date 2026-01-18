@@ -1,5 +1,6 @@
 use bevy::{platform::collections::HashSet, prelude::*};
 use bevy_renet::renet::ClientId;
+use protocol::models::{ItemDrop, Vitals as NetVitals};
 use std::sync::Arc;
 
 use crate::assets::ContentId;
@@ -33,6 +34,15 @@ pub struct VisibleEntities {
 pub struct Vitals {
     pub hp: i32,
     pub max_hp: i32,
+}
+
+impl From<Vitals> for NetVitals {
+    fn from(value: Vitals) -> Self {
+        Self {
+            hp: value.hp,
+            max_hp: value.max_hp,
+        }
+    }
 }
 
 #[derive(Debug, Component)]
@@ -85,6 +95,15 @@ pub struct Tapped {
 pub struct LootEntry {
     pub item_id: u32,
     pub quantity: u16,
+}
+
+impl From<LootEntry> for ItemDrop {
+    fn from(value: LootEntry) -> Self {
+        Self {
+            item_id: value.item_id,
+            quantity: value.quantity,
+        }
+    }
 }
 
 #[derive(Component)]

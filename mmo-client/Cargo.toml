@@ -8,8 +8,10 @@ path = "src/lib.rs"
 
 [dependencies]
 base64 = "0.12"
+bitcode.workspace = true
 flatbuffers = { workspace = true }
 renet = { git = "https://github.com/lucaspoffo/renet" }
 renet_netcode = { git = "https://github.com/lucaspoffo/renet" }
+protocol = { path = "../protocol" }
 schemas = { path = "../schemas" }
 tracing = { workspace = true }

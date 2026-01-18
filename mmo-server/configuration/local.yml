@@ -9,4 +9,4 @@ server:
   enable_agones: true
 tracing:
   format: pretty
-  otel_exporter_endpoint: http://localhost:4317
+  # otel_exporter_endpoint: http://localhost:4317
