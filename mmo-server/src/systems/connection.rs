@@ -134,7 +134,8 @@ fn process_client_connected(
         return server.disconnect(client_id);
     };
 
-    match bitcode::decode::<TokenUserData>(&user_data) {
+    let user_data_len = user_data[0] as usize;
+    match bitcode::decode::<TokenUserData>(&user_data[1..1 + user_data_len]) {
         Ok(data) => {
             let character_id = data.character_id;
             let db_pool = pool.0.clone();

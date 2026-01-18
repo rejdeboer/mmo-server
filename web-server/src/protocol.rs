@@ -16,13 +16,21 @@ pub fn generate_connect_token(
 ) -> Result<ConnectToken, TokenGenerationError> {
     let public_addresses: Vec<SocketAddr> = vec![server_addr];
 
-    let copy_data = bitcode::encode(&TokenUserData {
+    let user_data = bitcode::encode(&TokenUserData {
         character_id,
         traceparent,
     });
 
-    let mut user_data: [u8; NETCODE_USER_DATA_BYTES] = [0; NETCODE_USER_DATA_BYTES];
-    user_data[0..copy_data.len()].copy_from_slice(copy_data.as_slice());
+    if user_data.len() > NETCODE_USER_DATA_BYTES - 1 {
+        return Err(TokenGenerationError::IoError(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("user data too large: {} bytes (max 255)", user_data.len()),
+        )));
+    }
+
+    let mut user_data_buffer: [u8; NETCODE_USER_DATA_BYTES] = [0; NETCODE_USER_DATA_BYTES];
+    user_data_buffer[0] = user_data.len() as u8;
+    user_data_buffer[1..1 + user_data.len()].copy_from_slice(user_data.as_slice());
 
     let token = ConnectToken::generate(
         SystemTime::now().duration_since(UNIX_EPOCH).unwrap(),
@@ -31,7 +39,7 @@ pub fn generate_connect_token(
         account_id as u64,
         15,
         public_addresses,
-        Some(&user_data),
+        Some(&user_data_buffer),
         private_key.as_ref(),
     )?;
 
