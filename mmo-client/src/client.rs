@@ -119,8 +119,8 @@ impl GameClient {
 
         let mut movement_updates: Vec<ActorTransformUpdate> = vec![];
         while let Some(message) = self.client.receive_message(DefaultChannel::Unreliable) {
-            match bitcode::decode::<ActorTransformUpdate>(&message) {
-                Ok(update) => movement_updates.push(update),
+            match bitcode::decode::<Vec<ActorTransformUpdate>>(&message) {
+                Ok(updates) => movement_updates.extend(updates.into_iter()),
                 Err(err) => tracing::error!(?err, "unexpected unreliable message received"),
             };
         }
