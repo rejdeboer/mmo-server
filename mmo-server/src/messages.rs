@@ -61,7 +61,6 @@ impl OutgoingMessage {
 }
 
 #[derive(Debug, Clone)]
-// TODO: Box large enum variants?
 pub enum OutgoingMessageData {
     ChatMessage {
         channel: ChatChannel,
