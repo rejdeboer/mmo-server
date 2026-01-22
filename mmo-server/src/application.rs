@@ -5,7 +5,7 @@ use crate::messages::{
 };
 use crate::observers::{on_entity_death, reward_kill};
 use crate::plugins::{AppPlugin, AssetsPlugin};
-use crate::systems::{setup_spawners, update_server_metrics};
+use crate::systems::{on_connection_event, setup_spawners, update_server_metrics};
 use crate::telemetry::{Metrics, run_metrics_exporter};
 use avian3d::prelude::*;
 use bevy::platform::collections::HashMap;
@@ -15,7 +15,7 @@ use bevy_renet::RenetServerPlugin;
 use bevy_renet::netcode::{
     NetcodeServerPlugin, NetcodeServerTransport, ServerAuthentication, ServerConfig,
 };
-use bevy_renet::renet::{ConnectionConfig, RenetServer};
+use bevy_renet::{RenetServer, renet::ConnectionConfig};
 use bevy_tokio_tasks::{TokioTasksPlugin, TokioTasksRuntime};
 use sqlx::{PgPool, postgres::PgPoolOptions};
 use std::net::{IpAddr, SocketAddr, UdpSocket};
@@ -126,7 +126,6 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
         )
             .chain(),
     );
-    app.add_systems(Update, crate::systems::handle_connection_events);
     app.add_systems(
         PostUpdate,
         update_server_metrics.run_if(on_timer(Duration::from_secs(5))),
@@ -156,6 +155,7 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
             .after(PhysicsSystems::Last),
     );
 
+    app.add_observer(on_connection_event);
     app.add_observer(on_entity_death);
     app.add_observer(reward_kill);
 

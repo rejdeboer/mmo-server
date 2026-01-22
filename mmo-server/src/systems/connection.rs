@@ -10,8 +10,9 @@ use crate::{
 use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_renet::{
+    RenetServer, RenetServerEvent,
     netcode::NetcodeServerTransport,
-    renet::{ClientId, DefaultChannel, DisconnectReason, RenetServer, ServerEvent},
+    renet::{ClientId, DefaultChannel, DisconnectReason, ServerEvent},
 };
 use bevy_tokio_tasks::{TaskContext, TokioTasksRuntime};
 use protocol::{
@@ -90,8 +91,8 @@ impl CharacterBundle {
 }
 
 #[allow(clippy::too_many_arguments)]
-pub fn handle_connection_events(
-    mut events: MessageReader<ServerEvent>,
+pub fn on_connection_event(
+    event: On<RenetServerEvent>,
     mut commands: Commands,
     mut server: ResMut<RenetServer>,
     transport: Res<NetcodeServerTransport>,
@@ -104,21 +105,12 @@ pub fn handle_connection_events(
     runtime: Res<TokioTasksRuntime>,
     pool: Res<DatabasePool>,
 ) {
-    for event in events.read() {
-        match event {
-            ServerEvent::ClientConnected { client_id } => {
-                process_client_connected(*client_id, &transport, &mut server, &pool, &runtime)
-            }
-            ServerEvent::ClientDisconnected { client_id, reason } => {
-                process_client_disconnected(
-                    *client_id,
-                    reason,
-                    &mut commands,
-                    players,
-                    &pool,
-                    &runtime,
-                );
-            }
+    match **event {
+        ServerEvent::ClientConnected { client_id } => {
+            process_client_connected(client_id, &transport, &mut server, &pool, &runtime)
+        }
+        ServerEvent::ClientDisconnected { client_id, reason } => {
+            process_client_disconnected(client_id, reason, &mut commands, players, &pool, &runtime);
         }
     }
 }
@@ -234,7 +226,7 @@ async fn handle_enter_game_task(
 #[instrument(skip_all, fields(client_id = client_id))]
 fn process_client_disconnected(
     client_id: ClientId,
-    reason: &DisconnectReason,
+    reason: DisconnectReason,
     commands: &mut Commands,
     players: Query<(
         Entity,

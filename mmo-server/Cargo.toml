@@ -23,12 +23,12 @@ profiling = ["dep:tracing-tracy", "bevy/trace"]
 agones = { version = "1.53" }
 anyhow = "1.0"
 base64 = "0.12.0"
-bevy_common_assets = { version = "0.14.0", default-features = false, features = [
+bevy_common_assets = { version = "0.15", default-features = false, features = [
 	"ron",
 ] }
-bevy-tokio-tasks = { version = "0.17", default-features = false }
+bevy-tokio-tasks = { version = "0.18", default-features = false }
 bevy_panorbit_camera = { version = "0.33", optional = true }
-bevy_renet = { git = "https://github.com/lucaspoffo/renet" }
+bevy_renet = { version = "4.0" }
 bitcode.workspace = true
 config = "0.11"
 opentelemetry = { workspace = true }
@@ -50,12 +50,12 @@ rand = "0.8"
 ron = "0.12.0"
 
 [dependencies.avian3d]
-version = "0.4.1"
+version = "0.5"
 default-features = false
 features = ["3d", "bevy_scene", "collider-from-mesh", "parry-f32", "f32"]
 
 [dependencies.bevy]
-version = "0.17"
+version = "0.18"
 default-features = false
 features = [
 	"bevy_asset",

@@ -7,7 +7,7 @@ use crate::{
     telemetry::Metrics,
 };
 use bevy::{platform::collections::HashMap, prelude::*};
-use bevy_renet::renet::{DefaultChannel, RenetServer};
+use bevy_renet::{RenetServer, renet::DefaultChannel};
 use protocol::{
     models::Actor,
     server::{ActorTransformUpdate, ServerEvent},

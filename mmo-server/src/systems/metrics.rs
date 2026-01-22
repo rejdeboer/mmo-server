@@ -1,7 +1,6 @@
-use bevy::prelude::*;
-use bevy_renet::renet::RenetServer;
-
 use crate::telemetry::Metrics;
+use bevy::prelude::*;
+use bevy_renet::RenetServer;
 
 pub fn update_server_metrics(server: Res<RenetServer>, metrics: ResMut<Metrics>) {
     metrics
