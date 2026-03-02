@@ -3767,6 +3767,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "game-client"
+version = "0.1.0"
+dependencies = [
+ "base64 0.12.3",
+ "bitcode",
+ "flatbuffers",
+ "protocol",
+ "renet",
+ "renet_netcode",
+ "tracing",
+]
+
+[[package]]
 name = "generator"
 version = "0.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5131,7 +5144,6 @@ dependencies = [
  "protocol",
  "renet",
  "renet_netcode",
- "schemas",
  "tracing",
 ]
 

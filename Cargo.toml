@@ -1,5 +1,6 @@
 [workspace]
 members = [
+	"game-client",
 	"mmo-client",
 	"mmo-server",
 	"protocol",
