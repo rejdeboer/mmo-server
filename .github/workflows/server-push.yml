@@ -4,8 +4,8 @@ on:
   push:
     paths:
       - ".github/workflows/server-push.yml"
-      - "web-server/**"
-      - "mmo-server/**"
+      - "crates/web-server/**"
+      - "crates/game-server/**"
       - "Dockerfile"
       - "Cargo.toml"
   workflow_dispatch:
@@ -53,7 +53,7 @@ jobs:
           sudo apt-get install libpq-dev -y
           SKIP_DOCKER=true SEED=false ./scripts/init_db.sh
       - name: Check sqlx-data.json is up-to-date
-        run: cargo sqlx prepare --workspace --check -- --package provisioner --package mmo-server --package web-server
+        run: cargo sqlx prepare --workspace --check -- --package provisioner --package game-server --package web-server
       - name: Run tests
         run: cargo test
 
@@ -158,11 +158,11 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and push mmo-server
+      - name: Build and push game-server
         uses: ./.github/actions/push-image
         with:
-          image: rejdeboer/mmo-server
-          target: mmo-server
+          image: rejdeboer/game-server
+          target: game-server
       - name: Build and push web server
         uses: ./.github/actions/push-image
         with:

@@ -10,7 +10,7 @@ path = "src/lib.rs"
 anyhow = "1.0.100"
 clap = { workspace = true }
 futures = "0.3.31"
-mmo-client = { path = "../mmo-client" }
+game-client = { path = "../game-client" }
 provisioner = { path = "../provisioner" }
 rand = "0.9.2"
 rand_chacha = "0.9.0"

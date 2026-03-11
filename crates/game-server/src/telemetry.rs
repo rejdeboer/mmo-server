@@ -159,7 +159,7 @@ pub fn init_subscriber(settings: &TracingSettings) {
             .with_batch_exporter(exporter)
             .with_resource(
                 opentelemetry_sdk::Resource::builder()
-                    .with_service_name("mmo-server")
+                    .with_service_name("game-server")
                     .build(),
             )
             .build();

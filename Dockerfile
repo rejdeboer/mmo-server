@@ -8,10 +8,10 @@ RUN cargo chef prepare --recipe-path recipe.json
 
 FROM chef AS builder
 COPY --from=planner /app/recipe.json recipe.json
-RUN cargo chef cook --release --recipe-path recipe.json -p web-server -p mmo-server
+RUN cargo chef cook --release --recipe-path recipe.json -p web-server -p game-server
 COPY . ./
 ENV SQLX_OFFLINE true
-RUN cargo build --release -p web-server -p mmo-server
+RUN cargo build --release -p web-server -p game-server
 
 FROM debian:trixie-slim AS runtime-base
 WORKDIR /app
@@ -27,10 +27,10 @@ COPY web-server/configuration configuration
 CMD ["./web-server"]
 LABEL service=web-server
 
-FROM runtime-base AS mmo-server
-COPY --from=builder /app/target/release/mmo-server mmo-server
-COPY mmo-server/configuration configuration
+FROM runtime-base AS game-server
+COPY --from=builder /app/target/release/game-server game-server
+COPY game-server/configuration configuration
 # TODO: Probably we want to improve the way we handle assets in prod
-COPY mmo-server/assets assets
-CMD ["./mmo-server"]
-LABEL service=mmo-server
+COPY game-server/assets assets
+CMD ["./game-server"]
+LABEL service=game-server

@@ -1,8 +1,7 @@
 [workspace]
 members = [
 	"crates/game-client",
-	"crates/mmo-client",
-	"crates/mmo-server",
+	"crates/game-server",
 	"crates/protocol",
 	"crates/provisioner",
 	"crates/schemas",
@@ -10,7 +9,7 @@ members = [
 	"crates/web-client",
 	"crates/web-server",
 ]
-default-members = ["crates/mmo-server", "crates/web-server"]
+default-members = ["crates/game-server", "crates/web-server"]
 
 resolver = "3"
 

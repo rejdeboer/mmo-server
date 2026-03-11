@@ -1,6 +1,4 @@
 use clap::Parser;
-use rand_chacha::ChaCha8Rng;
-use simulator::SimulatedClient;
 use std::time::Duration;
 
 /// A dev tool to quickly spin up a testing client session
