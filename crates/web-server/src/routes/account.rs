@@ -3,15 +3,8 @@ use crate::{ApplicationState, error::ApiError};
 use argon2::password_hash::PasswordHashString;
 use axum::Json;
 use axum::extract::State;
-use serde::{Deserialize, Serialize};
 use tracing::instrument;
-
-#[derive(Clone, Deserialize, Serialize)]
-pub struct AccountCreate {
-    pub username: String,
-    pub email: String,
-    pub password: String,
-}
+use web_types::AccountCreate;
 
 pub struct NewAccount {
     pub username: Username,
@@ -19,10 +12,19 @@ pub struct NewAccount {
     pub passhash: PasswordHashString,
 }
 
-#[derive(Debug, Clone, Serialize, sqlx::FromRow)]
-pub struct AccountCreateRow {
+#[derive(Debug, Clone, sqlx::FromRow)]
+pub struct AccountRow {
     pub username: String,
     pub email: String,
+}
+
+impl From<AccountRow> for web_types::Account {
+    fn from(value: AccountRow) -> Self {
+        web_types::Account {
+            username: value.username,
+            email: value.email,
+        }
+    }
 }
 
 impl TryInto<NewAccount> for AccountCreate {
@@ -49,11 +51,11 @@ impl TryInto<NewAccount> for AccountCreate {
 pub async fn account_create(
     State(state): State<ApplicationState>,
     Json(payload): Json<AccountCreate>,
-) -> Result<Json<AccountCreateRow>, ApiError> {
+) -> Result<Json<web_types::Account>, ApiError> {
     let new_account: NewAccount = payload.try_into().map_err(ApiError::BadRequest)?;
 
     let row = sqlx::query_as!(
-        AccountCreateRow,
+        AccountRow,
         r#"
         INSERT INTO accounts (username, email, passhash)
         VALUES ($1, $2, $3)
@@ -71,5 +73,5 @@ pub async fn account_create(
         ApiError::UnexpectedError
     })?;
 
-    Ok(Json(row))
+    Ok(Json(row.into()))
 }

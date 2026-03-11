@@ -5,18 +5,7 @@ use argon2::PasswordHash;
 use axum::Json;
 use axum::extract::State;
 use secrecy::ExposeSecret;
-use serde::{Deserialize, Serialize};
-
-#[derive(Deserialize, Serialize)]
-pub struct LoginBody {
-    pub email: String,
-    pub password: String,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct TokenResponse {
-    pub jwt: String,
-}
+use web_types::{LoginBody, TokenResponse};
 
 struct LoginAttempt {
     pub email: EmailAddress,

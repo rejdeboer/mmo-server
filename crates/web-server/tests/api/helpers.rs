@@ -1,17 +1,15 @@
-use axum::http::HeaderMap;
 use fake::Fake;
 use fake::faker::internet::en::{Password, SafeEmail, Username};
 use once_cell::sync::Lazy;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
+use web_client::{WebClient, WebClientError};
 use web_server::configuration::{
     DatabaseSettings, TelemetrySettings, TracingFormat, get_configuration,
 };
 use web_server::domain::SafePassword;
-use web_server::routes::{
-    CharacterCreate, GameEntryRequest, GameEntryResponse, LoginBody, TokenResponse,
-};
 use web_server::server::{Application, get_connection_pool};
 use web_server::telemetry::init_subscriber;
+use web_types::LoginBody;
 
 static TRACING: Lazy<()> = Lazy::new(|| {
     init_subscriber(&TelemetrySettings {
@@ -75,79 +73,25 @@ impl TestCharacter {
 }
 
 pub struct TestApp {
-    pub address: String,
     // pub db_pool: PgPool,
-    pub api_client: reqwest::Client,
+    pub client: WebClient,
     pub account: TestAccount,
     pub character: TestCharacter,
 }
 
 impl TestApp {
-    // pub fn signed_jwt(&self, account_id: i32) -> String {
-    //     encode_jwt(
-    //         account_id,
-    //         Username().fake(),
-    //         self.jwt_signing_key.expose_secret().as_ref(),
-    //     )
-    //     .expect("JWT encoded")
-    // }
-
-    pub async fn login_account(&mut self) {
-        let login_response = self
-            .api_client
-            .post(format!("{}/token", &self.address))
-            .json(&LoginBody {
+    pub async fn login_account(&mut self) -> Result<(), WebClientError> {
+        self.client
+            .login(&LoginBody {
                 email: self.account.email.clone(),
                 password: self.account.password.clone(),
             })
-            .send()
             .await
-            .expect("Failed to execute request.")
-            .json::<TokenResponse>()
-            .await
-            .unwrap();
-
-        let mut headers = HeaderMap::new();
-        headers.insert(
-            reqwest::header::AUTHORIZATION,
-            format!("Bearer {}", login_response.jwt).parse().unwrap(),
-        );
-
-        self.api_client = create_api_client(Some(headers));
     }
 
-    pub async fn login_character(&mut self) {
-        self.login_account().await;
-
-        let login_response = self
-            .api_client
-            .post(format!("{}/game/request-entry", &self.address))
-            .json(&GameEntryRequest {
-                character_id: self.character.id,
-            })
-            .send()
-            .await
-            .expect("Failed to execute request.")
-            .json::<GameEntryResponse>()
-            .await
-            .unwrap();
-
-        let mut headers = HeaderMap::new();
-        headers.insert(
-            reqwest::header::AUTHORIZATION,
-            format!("Bearer {}", login_response.jwt).parse().unwrap(),
-        );
-
-        self.api_client = create_api_client(Some(headers));
-    }
-
-    pub async fn create_character(&self, body: CharacterCreate) -> reqwest::Response {
-        self.api_client
-            .post(format!("{}/character", self.address))
-            .json(&body)
-            .send()
-            .await
-            .expect("Failed to execute request.")
+    pub async fn login_character(&mut self) -> Result<(), WebClientError> {
+        self.login_account().await?;
+        self.client.select_character(self.character.id).await
     }
 }
 
@@ -177,23 +121,12 @@ pub async fn spawn_app() -> TestApp {
     let character = TestCharacter::create(&pool, account_id).await;
 
     TestApp {
-        address: format!("http://localhost:{application_port}"),
         // db_pool: pool,
         // jwt_signing_key: settings.application.jwt_signing_key,
-        api_client: create_api_client(None),
+        client: WebClient::new(format!("http://localhost:{application_port}")),
         account,
         character,
     }
-}
-
-fn create_api_client(default_headers: Option<HeaderMap>) -> reqwest::Client {
-    let mut client = reqwest::Client::builder().redirect(reqwest::redirect::Policy::none());
-
-    if let Some(headers) = default_headers {
-        client = client.default_headers(headers);
-    }
-
-    client.build().unwrap()
 }
 
 async fn configure_database(config: &DatabaseSettings) -> PgPool {
@@ -208,7 +141,7 @@ async fn configure_database(config: &DatabaseSettings) -> PgPool {
     let connection_pool = PgPool::connect_with(config.with_db())
         .await
         .expect("Failed to connect to Postgres.");
-    sqlx::migrate!("../db/migrations")
+    sqlx::migrate!("../../db/migrations")
         .run(&connection_pool)
         .await
         .expect("migration successful");

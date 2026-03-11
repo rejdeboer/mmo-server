@@ -29,7 +29,7 @@ services:
 
   provisioner:
     build: 
-      dockerfile: ./provisioner/Dockerfile
+      dockerfile: ./crates/provisioner/Dockerfile
     working_dir: /app
     ports:
       - 8032:8032

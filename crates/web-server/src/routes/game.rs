@@ -7,19 +7,8 @@ use crate::{
 };
 use axum::{Extension, Json, extract::State, response::Result};
 use secrecy::ExposeSecret;
-use serde::{Deserialize, Serialize};
 use tracing::instrument;
-
-#[derive(Serialize, Deserialize)]
-pub struct GameEntryRequest {
-    pub character_id: i32,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct GameEntryResponse {
-    pub connect_token: String,
-    pub jwt: String,
-}
+use web_types::{GameEntryRequest, GameEntryResponse};
 
 #[instrument(skip(state, payload))]
 pub async fn game_entry(

@@ -1,21 +1,22 @@
 [workspace]
 members = [
-	"game-client",
-	"mmo-client",
-	"mmo-server",
-	"protocol",
-	"provisioner",
-	"schemas",
-	"simulator",
-	"web-client",
-	"web-server",
+	"crates/game-client",
+	"crates/mmo-client",
+	"crates/mmo-server",
+	"crates/protocol",
+	"crates/provisioner",
+	"crates/schemas",
+	"crates/simulator",
+	"crates/web-client",
+	"crates/web-server",
 ]
-default-members = ["mmo-server", "web-server"]
+default-members = ["crates/mmo-server", "crates/web-server"]
 
 resolver = "3"
 
 [workspace.dependencies]
 bitcode = { version = "0.6.9", features = ["glam"] }
+clap = { version = "4.5.50", features = ["derive"] }
 flatbuffers = "25.2.10"
 opentelemetry = { version = "0.31" }
 opentelemetry_sdk = { version = "0.31", default-features = false, features = [
