@@ -5,8 +5,8 @@ pub const MOVEMENT_QUANTIZATION_FACTOR: f32 = 127.0;
 
 #[derive(Encode, Decode, Debug, Clone)]
 pub struct Transform {
-    position: glam::Vec3,
-    yaw: u16,
+    pub position: glam::Vec3,
+    pub yaw: u16,
 }
 
 impl Transform {
@@ -42,5 +42,11 @@ impl MovementSpeed {
 impl From<f32> for MovementSpeed {
     fn from(value: f32) -> Self {
         Self((value * Self::SPEED_PRECISION_MULTIPLIER) as u16)
+    }
+}
+
+impl From<MovementSpeed> for f32 {
+    fn from(value: MovementSpeed) -> Self {
+        value.0 as f32 / MovementSpeed::SPEED_PRECISION_MULTIPLIER
     }
 }

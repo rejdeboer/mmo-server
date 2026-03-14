@@ -1,9 +1,10 @@
 use crate::{
     assets::{ContentId, MonsterDef, MonsterLibrary, MonsterLibraryHandle},
-    components::{AssetIdComponent, MobSpawner, MonsterId, Spawned, Vitals},
+    components::{AssetIdComponent, MobSpawner, MonsterId, Spawned},
     systems::ActorBundle,
 };
 use bevy::prelude::*;
+use game_core::components::Vitals;
 use rand::Rng;
 use std::time::Duration;
 

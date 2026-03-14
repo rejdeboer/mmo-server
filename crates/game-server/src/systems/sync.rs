@@ -1,13 +1,13 @@
 use crate::{
     components::{
-        AssetIdComponent, CharacterIdComponent, ClientIdComponent, InterestedClients,
-        LevelComponent, MovementSpeedComponent, NameComponent, Vitals,
+        AssetIdComponent, CharacterIdComponent, ClientIdComponent, InterestedClients, NameComponent,
     },
     messages::{OutgoingMessage, VisibilityChangedMessage},
     telemetry::Metrics,
 };
 use bevy::{platform::collections::HashMap, prelude::*};
 use bevy_renet::{RenetServer, renet::DefaultChannel};
+use game_core::components::{LevelComponent, MovementSpeedComponent, Vitals};
 use protocol::{
     models::Actor,
     server::{ActorTransformUpdate, ServerEvent},

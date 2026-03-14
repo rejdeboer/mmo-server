@@ -2,8 +2,7 @@ use crate::{
     application::DatabasePool,
     collision::GameLayer,
     components::{
-        CharacterIdComponent, ClientIdComponent, InterestedClients, LevelComponent,
-        MovementSpeedComponent, NameComponent, VisibleEntities, Vitals,
+        CharacterIdComponent, ClientIdComponent, InterestedClients, NameComponent, VisibleEntities,
     },
     database::load_character_data,
 };
@@ -15,6 +14,7 @@ use bevy_renet::{
     renet::{ClientId, DefaultChannel, DisconnectReason, ServerEvent},
 };
 use bevy_tokio_tasks::{TaskContext, TokioTasksRuntime};
+use game_core::components::{LevelComponent, MovementSpeedComponent, Vitals};
 use protocol::{
     models::{Actor, ActorAttributes},
     primitives::Transform as NetTransform,

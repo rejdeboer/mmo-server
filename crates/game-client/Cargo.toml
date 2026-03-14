@@ -7,12 +7,19 @@ edition = "2024"
 path = "src/lib.rs"
 
 [dependencies]
+anyhow = "1.0.102"
 base64 = "0.12"
+bevy = { workspace = true, default-features = true }
+bevy_enhanced_input = "0.24.1"
+bevy_renet = { version = "4.0" }
 bitcode.workspace = true
+clap.workspace = true
 config = "0.11"
 flatbuffers = { workspace = true }
-renet = { version = "2.0" }
-renet_netcode = { version = "2.0" }
+game-core = { path = "../game-core" }
 protocol = { path = "../protocol" }
+serde = { version = "1", features = ["derive"] }
 tokio = { workspace = true }
 tracing = { workspace = true }
+tracing-subscriber = "0.3.22"
+web-client = { path = "../web-client" }

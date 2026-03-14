@@ -1,9 +1,10 @@
 use crate::{
-    components::{ClientIdComponent, Dead, InterestedClients, Vitals},
+    components::{ClientIdComponent, Dead, InterestedClients},
     messages::{OutgoingMessage, OutgoingMessageData},
     observers::EntityDeath,
 };
 use bevy::prelude::*;
+use game_core::components::Vitals;
 
 pub fn on_vitals_changed(
     mut commands: Commands,

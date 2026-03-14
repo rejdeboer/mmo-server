@@ -1,5 +1,8 @@
 use clap::Parser;
-use std::time::Duration;
+use game_client::application::create_authenticated_app;
+use game_client::configuration::get_configuration;
+use game_client::decode_token;
+use web_client::WebClient;
 
 /// A dev tool to quickly spin up a testing client session
 #[derive(Parser, Debug)]
@@ -13,76 +16,40 @@ struct Args {
     password: String,
     /// Testing character id
     #[arg(short, long, default_value_t = 1)]
-    character_id: String,
+    character_id: i32,
 }
 
-#[tokio::main]
 async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt::Subscriber::builder()
         .with_max_level(tracing::Level::INFO)
         .init();
 
     let args = Args::parse();
+    let settings = get_configuration()?;
 
-    let game_server_addr = format!("{}:{}", args.server_host, args.server_port);
-    let result =
-        execute_provision(&args.provisioner_endpoint, args.clients, game_server_addr).await?;
+    let rt = tokio::runtime::Runtime::new()?;
+    let web_client = WebClient::new(settings.web_server.endpoint);
+    let (web_client, encoded_token) = rt.block_on(async {
+        tracing::info!("connecting to web server");
+        web_client
+            .login(&LoginBody {
+                email: args.email,
+                password: args.password,
+            })
+            .await
+            .expect("logged into test user");
 
-    let seed = args.seed.unwrap_or_else(|| {
-        let random_seed = rand::rng().random();
-        tracing::info!("no seed provided, generating: {random_seed}");
-        random_seed
+        let connect_token = web_client
+            .select_character(args.character_id)
+            .await
+            .expect("selected test character");
+
+        (web_client, connect_token)
     });
+    let connect_token = decode_token(encoded_token)?;
 
-    let mut main_rng = ChaCha8Rng::seed_from_u64(seed);
-    let mut tasks = vec![];
-
-    for token in result.tokens {
-        let connect_token = decode_token(token)?;
-        let bot_seed = main_rng.random();
-        let client = SimulatedClient::new(connect_token.client_id, bot_seed);
-        tasks.push(tokio::spawn(client.run(connect_token)));
-    }
-
-    let timeout_duration = Duration::from_secs(args.duration);
-    match tokio::time::timeout(timeout_duration, join_all(tasks)).await {
-        Ok(results) => {
-            tracing::info!("simulation finished naturally");
-            let successful_runs = results
-                .iter()
-                .filter(|res| res.is_ok() && res.as_ref().unwrap().is_ok())
-                .count();
-            tracing::info!(
-                "{successful_runs}/{} bots completed without error",
-                args.clients
-            );
-        }
-        Err(_) => {
-            tracing::info!(
-                "simulation ended after reaching the {} second timeout",
-                args.duration
-            );
-        }
-    }
+    let mut app = create_authenticated_app(settings, web_client);
+    app.run();
 
     Ok(())
-}
-
-async fn execute_provision(
-    endpoint: &str,
-    clients: usize,
-    game_server_addr: String,
-) -> anyhow::Result<ProvisionResult> {
-    let res = reqwest::Client::new()
-        .post(endpoint)
-        .json(&ProvisionParams {
-            count: clients,
-            server_addr: game_server_addr,
-        })
-        .send()
-        .await?
-        .error_for_status()?
-        .json()
-        .await?;
-    Ok(res)
 }

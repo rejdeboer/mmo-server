@@ -1,5 +1,7 @@
+pub mod application;
 mod client;
-mod util;
+pub mod configuration;
+pub mod util;
 
 pub use client::*;
 pub use protocol;

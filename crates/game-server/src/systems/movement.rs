@@ -1,9 +1,10 @@
 use crate::{
-    components::{ClientIdComponent, GroundedComponent, MovementSpeedComponent},
+    components::ClientIdComponent,
     messages::{JumpActionMessage, MoveActionMessage},
 };
 use avian3d::prelude::{LinearVelocity, ShapeHits};
 use bevy::prelude::*;
+use game_core::components::{GroundedComponent, MovementSpeedComponent};
 use std::f32::consts::TAU;
 
 const YAW_QUANTIZATION_FACTOR: f32 = 65535.0;

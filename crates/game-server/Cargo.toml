@@ -31,6 +31,7 @@ bevy_panorbit_camera = { version = "0.33", optional = true }
 bevy_renet = { version = "4.0" }
 bitcode.workspace = true
 config = "0.11"
+game-core = { path = "../game-core" }
 opentelemetry = { workspace = true }
 opentelemetry-otlp = { workspace = true }
 opentelemetry_sdk = { workspace = true }
@@ -55,8 +56,7 @@ default-features = false
 features = ["3d", "bevy_scene", "collider-from-mesh", "parry-f32", "f32"]
 
 [dependencies.bevy]
-version = "0.18"
-default-features = false
+workspace = true
 features = [
 	"bevy_asset",
 	"bevy_gltf",

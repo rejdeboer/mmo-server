@@ -1,12 +1,13 @@
 use crate::{
     assets::{SpellLibrary, SpellLibraryHandle},
-    components::{Casting, ClientIdComponent, InterestedClients, Tapped, Vitals},
+    components::{Casting, ClientIdComponent, InterestedClients, Tapped},
     messages::{
         ApplySpellEffectMessage, CastSpellActionMessage, OutgoingMessage, OutgoingMessageData,
     },
 };
 use avian3d::prelude::LinearVelocity;
 use bevy::prelude::*;
+use game_core::components::Vitals;
 
 pub fn process_spell_casts(
     mut commands: Commands,

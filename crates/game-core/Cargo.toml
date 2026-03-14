@@ -1,0 +1,12 @@
+[package]
+name = "game-core"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+bevy.workspace = true
+protocol = { path = "../protocol" }
+serde = { version = "1", features = ["derive"] }

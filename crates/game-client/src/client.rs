@@ -1,8 +1,6 @@
 use protocol::client::{MoveAction, PlayerAction};
 use protocol::models::Actor;
 use protocol::server::{ActorTransformUpdate, EnterGameResponse, ServerEvent, TokenUserData};
-use renet::{ConnectionConfig, DefaultChannel, RenetClient};
-use renet_netcode::{ClientAuthentication, ConnectToken, NetcodeClientTransport};
 use std::net::{IpAddr, SocketAddr, UdpSocket};
 use std::time::{Duration, SystemTime};
 
@@ -49,55 +47,6 @@ impl GameClient {
 
     pub fn get_state(&self) -> &ClientState {
         &self.state
-    }
-
-    /// Poll events on a pending connection request
-    pub fn poll_connection(&mut self, dt: Duration) -> Option<ConnectionEvent> {
-        self.client.update(dt);
-
-        if let Some(transport) = self.transport.as_mut() {
-            transport
-                .update(dt, &mut self.client)
-                .expect("failed to update transport");
-        }
-
-        match self.state {
-            ClientState::Connecting => {
-                if self.client.is_connected() {
-                    self.state = ClientState::Connected;
-                    return Some(ConnectionEvent::Connected);
-                } else if self.client.is_disconnected() {
-                    // TODO: Handle reason
-                    self.state = ClientState::Disconnected;
-                    return Some(ConnectionEvent::Disconnected);
-                }
-            }
-            ClientState::Connected => {
-                if let Some(message) = self.client.receive_message(DefaultChannel::ReliableOrdered)
-                {
-                    match bitcode::decode::<EnterGameResponse>(&message) {
-                        Ok(response) => {
-                            self.state = ClientState::InGame;
-                            return Some(ConnectionEvent::EnterGameSuccess {
-                                player_actor: response.player_actor,
-                            });
-                        }
-                        Err(e) => {
-                            tracing::error!("received invalid EnterGameResponse {}", e);
-                            self.state = ClientState::Disconnected;
-                            return Some(ConnectionEvent::Disconnected);
-                        }
-                    }
-                }
-            }
-            ClientState::InGame => {
-                if !self.is_connected() {
-                    return Some(ConnectionEvent::Disconnected);
-                }
-            }
-            _ => (),
-        };
-        None
     }
 
     pub fn update_game(&mut self, dt: Duration) -> (Vec<ServerEvent>, Vec<ActorTransformUpdate>) {

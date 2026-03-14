@@ -1,4 +1,0 @@
-database:
-  require_ssl: true
-tracing:
-  format: json

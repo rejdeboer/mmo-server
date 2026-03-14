@@ -51,7 +51,7 @@ impl WebClient {
         Ok(())
     }
 
-    pub async fn select_character(&mut self, character_id: i32) -> Result<(), WebClientError> {
+    pub async fn select_character(&mut self, character_id: i32) -> Result<String, WebClientError> {
         let token = self
             .jwt
             .as_deref()
@@ -78,7 +78,7 @@ impl WebClient {
 
         self.jwt = Some(login_response.jwt);
 
-        Ok(())
+        Ok(login_response.connect_token)
     }
 
     pub async fn create_character(

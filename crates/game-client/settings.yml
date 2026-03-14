@@ -1,0 +1,2 @@
+web_server:
+  endpoint: http://localhost:8000
