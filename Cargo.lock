@@ -4081,6 +4081,7 @@ name = "game-client"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "avian3d",
  "base64 0.12.3",
  "bevy 0.18.1",
  "bevy_enhanced_input",

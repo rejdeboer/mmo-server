@@ -1,5 +1,6 @@
 use crate::configuration::Settings;
-use bevy::prelude::*;
+use avian3d::prelude::*;
+use bevy::{ecs::system::SystemParam, prelude::*};
 use bevy_renet::{
     RenetClient, RenetClientPlugin,
     netcode::{ClientAuthentication, ConnectToken, NetcodeClientPlugin, NetcodeClientTransport},
@@ -35,6 +36,15 @@ pub struct PlayerComponent;
 #[derive(Message)]
 pub struct ActorSpawnMessage(pub Actor);
 
+#[derive(Message)]
+pub struct ActorDespawnMessage(pub NetworkId);
+
+#[derive(SystemParam)]
+pub struct NetworkMessageWriters<'w> {
+    pub spawns: MessageWriter<'w, ActorSpawnMessage>,
+    pub despawns: MessageWriter<'w, ActorDespawnMessage>,
+}
+
 /// Function used for testing to skip the login page
 pub fn create_authenticated_app(
     settings: Settings,
@@ -45,6 +55,7 @@ pub fn create_authenticated_app(
 
     app.add_plugins(DefaultPlugins);
     app.add_plugins((RenetClientPlugin, NetcodeClientPlugin));
+    app.add_plugins(PhysicsPlugins::new(PostUpdate));
 
     app.insert_resource(settings);
     app.insert_resource(WebApi(api_client));
@@ -53,6 +64,7 @@ pub fn create_authenticated_app(
     app.insert_resource(transport);
 
     app.add_message::<ActorSpawnMessage>();
+    app.add_message::<ActorDespawnMessage>();
 
     app.add_observer(on_enter_game);
 
@@ -62,6 +74,7 @@ pub fn create_authenticated_app(
         Update,
         poll_connection.run_if(in_state(AppState::Connecting)),
     );
+    // app.add_systems(FixedPostUpdate, ().after(PhysicsSystems::Last));
     app.add_systems(OnEnter(AppState::InGame), setup_world);
 
     app
@@ -120,7 +133,7 @@ fn receive_transform_updates(
     mut client: ResMut<RenetClient>,
     network_id_mapping: Res<NetworkIdMapping>,
 ) {
-    if let Some(message) = client.receive_message(DefaultChannel::Unreliable) {
+    while let Some(message) = client.receive_message(DefaultChannel::Unreliable) {
         match bitcode::decode::<ActorTransformUpdate>(&message) {
             Ok(update) => {}
             Err(e) => {
@@ -130,12 +143,15 @@ fn receive_transform_updates(
     }
 }
 
-fn receive_server_events(mut commands: Commands, mut client: ResMut<RenetClient>) {
-    if let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
+fn receive_server_events(mut writers: NetworkMessageWriters, mut client: ResMut<RenetClient>) {
+    while let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
         match bitcode::decode::<ServerEvent>(&message) {
             Ok(event) => match event {
                 ServerEvent::ActorSpawn(actor) => {
-                    commands.write_message(ActorSpawnMessage(actor.into()));
+                    writers.spawns.write(ActorSpawnMessage(*actor));
+                }
+                ServerEvent::ActorDespawn(id) => {
+                    writers.despawns.write(ActorDespawnMessage(NetworkId(id)));
                 }
                 _ => todo!("Handle server event"),
             },
@@ -144,4 +160,11 @@ fn receive_server_events(mut commands: Commands, mut client: ResMut<RenetClient>
             }
         }
     }
+}
+
+pub fn handle_actor_spawn_messages(
+    mut reader: MessageReader<ActorSpawnMessage>,
+    mut network_id_mapping: ResMut<NetworkIdMapping>,
+) {
+    for message in reader.read() {}
 }

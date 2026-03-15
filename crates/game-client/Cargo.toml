@@ -23,3 +23,8 @@ tokio = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = "0.3.22"
 web-client = { path = "../web-client" }
+
+[dependencies.avian3d]
+version = "0.5"
+default-features = false
+features = ["3d", "bevy_scene", "collider-from-mesh", "parry-f32", "f32"]
