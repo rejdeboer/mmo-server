@@ -1,6 +1,5 @@
 use crate::{
     application::DatabasePool,
-    collision::GameLayer,
     components::{
         CharacterIdComponent, ClientIdComponent, InterestedClients, NameComponent, VisibleEntities,
     },
@@ -14,7 +13,11 @@ use bevy_renet::{
     renet::{ClientId, DefaultChannel, DisconnectReason, ServerEvent},
 };
 use bevy_tokio_tasks::{TaskContext, TokioTasksRuntime};
-use game_core::components::{LevelComponent, MovementSpeedComponent, Vitals};
+use game_core::{
+    collision::GameLayer,
+    components::{LevelComponent, MovementSpeedComponent, Vitals},
+    constants::BASE_MOVEMENT_SPEED,
+};
 use protocol::{
     models::{Actor, ActorAttributes},
     primitives::Transform as NetTransform,
@@ -24,9 +27,6 @@ use sqlx::PgPool;
 use std::{collections::HashMap, sync::Arc};
 use tracing::{Instrument, Level, instrument};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
-
-// TODO: This should probably be done in another module
-const BASE_MOVEMENT_SPEED: f32 = 7.5;
 
 #[derive(Bundle)]
 /// Base components used by entities that interact with the world, like players, monsters, NPCs

@@ -4103,6 +4103,7 @@ dependencies = [
 name = "game-core"
 version = "0.1.0"
 dependencies = [
+ "avian3d",
  "bevy 0.18.1",
  "protocol",
  "serde 1.0.228",

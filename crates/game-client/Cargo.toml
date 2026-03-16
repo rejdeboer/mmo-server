@@ -8,6 +8,7 @@ path = "src/lib.rs"
 
 [dependencies]
 anyhow = "1.0.102"
+avian3d.workspace = true
 base64 = "0.12"
 bevy = { workspace = true, default-features = true }
 bevy_enhanced_input = "0.24.1"
@@ -24,7 +25,3 @@ tracing = { workspace = true }
 tracing-subscriber = "0.3.22"
 web-client = { path = "../web-client" }
 
-[dependencies.avian3d]
-version = "0.5"
-default-features = false
-features = ["3d", "bevy_scene", "collider-from-mesh", "parry-f32", "f32"]

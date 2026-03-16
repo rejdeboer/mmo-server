@@ -29,3 +29,9 @@ prometheus = { version = "0.14.0", features = ["process"] }
 tokio = { version = "1.0", features = ["full"] }
 tracing = "0.1"
 tracing-opentelemetry = "0.32"
+
+[workspace.dependencies.avian3d]
+version = "0.5"
+default-features = false
+features = ["3d", "bevy_scene", "collider-from-mesh", "parry-f32", "f32"]
+
