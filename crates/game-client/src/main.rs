@@ -2,7 +2,7 @@ use clap::Parser;
 use game_client::application::create_authenticated_app;
 use game_client::configuration::get_configuration;
 use game_client::decode_token;
-use web_client::WebClient;
+use web_client::{LoginBody, WebClient};
 
 /// A dev tool to quickly spin up a testing client session
 #[derive(Parser, Debug)]
@@ -48,7 +48,7 @@ async fn main() -> anyhow::Result<()> {
     });
     let connect_token = decode_token(encoded_token)?;
 
-    let mut app = create_authenticated_app(settings, web_client);
+    let mut app = create_authenticated_app(settings, web_client, connect_token);
     app.run();
 
     Ok(())

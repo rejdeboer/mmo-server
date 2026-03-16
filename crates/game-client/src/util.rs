@@ -1,4 +1,4 @@
-use renet_netcode::{ConnectToken, NetcodeError};
+use bevy_renet::netcode::{ConnectToken, NetcodeError};
 
 pub fn decode_token(encoded: String) -> Result<ConnectToken, NetcodeError> {
     // NOTE: Take the base64 padding into account
