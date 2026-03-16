@@ -1,6 +1,7 @@
-use crate::configuration::Settings;
+use crate::{configuration::Settings, input::{Chatting, Movement}};
 use avian3d::prelude::*;
 use bevy::{ecs::system::SystemParam, prelude::*};
+use bevy_enhanced_input::prelude::*;
 use bevy_renet::{
     RenetClient, RenetClientPlugin,
     netcode::{ClientAuthentication, ConnectToken, NetcodeClientPlugin, NetcodeClientTransport},
@@ -39,6 +40,7 @@ pub struct PlayerComponent;
 
 #[derive(Component)]
 pub struct NameComponent(pub String);
+
 
 #[derive(Message)]
 pub struct ActorSpawnMessage(pub Actor);
@@ -103,6 +105,10 @@ pub fn create_authenticated_app(
     app.add_plugins(DefaultPlugins);
     app.add_plugins((RenetClientPlugin, NetcodeClientPlugin));
     app.add_plugins(PhysicsPlugins::new(PostUpdate));
+    app.add_plugins(EnhancedInputPlugin);
+
+    app.add_input_context::<PlayerComponent>();
+    app.add_input_context::<Chatting>();
 
     app.insert_resource(settings);
     app.insert_resource(WebApi(api_client));
@@ -163,13 +169,21 @@ fn on_enter_game(event: On<EnterGame>, mut commands: Commands) {
     let network_id = NetworkId(player_actor.id);
     let player_entity = commands.spawn((
         PlayerComponent,
-        network_id,
         ActorBundle::new(
             &player_actor.name,
             transform,
             Vitals::from(player_actor.vitals.clone()),
             player_actor.level as i32,
         ),
+        actions!(Player[
+            (
+                Action::<Movement>::new(),
+                DeadZone::default(),
+                DeltaScale::default(),
+                Scale::splat(10.0),
+                Bindings::spawn((Cardinal::wasd_keys(), Axial::left_stick())),
+            ),
+        ]),
     ));
 
     let network_id_mapping = HashMap::from([(network_id, player_entity.id())]);
@@ -247,3 +261,7 @@ pub fn handle_actor_despawn_messages(
         network_id_mapping.0.remove(&message.0);
     }
 }
+
+pub fn send_player_movement(
+    mut client: ResMut<RenetClient>,
+)

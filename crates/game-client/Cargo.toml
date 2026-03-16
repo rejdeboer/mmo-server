@@ -11,7 +11,7 @@ anyhow = "1.0.102"
 avian3d.workspace = true
 base64 = "0.12"
 bevy = { workspace = true, default-features = true }
-bevy_enhanced_input = "0.24.1"
+bevy_enhanced_input = { version = "0.24.1", features = ["serialize"] }
 bevy_renet = { version = "4.0" }
 bitcode.workspace = true
 clap.workspace = true
