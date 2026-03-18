@@ -5,15 +5,16 @@ use crate::{
 use bitcode::{Decode, Encode};
 use std::f32::consts::TAU;
 
-#[derive(Encode, Decode)]
+#[derive(Encode, Decode, Debug, Clone)]
 pub struct MoveAction {
+    pub tick: u32,
     pub yaw: u16,
     pub forward: i8,
     pub sideways: i8,
 }
 
 impl MoveAction {
-    pub fn from_f32(yaw: f32, forward: f32, sideways: f32) -> Self {
+    pub fn from_f32(yaw: f32, forward: f32, sideways: f32, tick: u32) -> Self {
         let quantized_forward =
             (forward.clamp(-1.0, 1.0) * MOVEMENT_QUANTIZATION_FACTOR).round() as i8;
         let quantized_sideways =
@@ -23,10 +24,16 @@ impl MoveAction {
         let quantized_yaw = (normalized_yaw * YAW_QUANTIZATION_FACTOR).round() as u16;
 
         Self {
+            tick,
             yaw: quantized_yaw,
             forward: quantized_forward,
             sideways: quantized_sideways,
         }
+    }
+
+    /// Returns true if this action contains any movement input.
+    pub fn has_movement(&self) -> bool {
+        self.forward != 0 || self.sideways != 0
     }
 }
 
@@ -40,5 +47,10 @@ pub enum PlayerAction {
     Chat {
         channel: ChatChannel,
         text: String,
+    },
+    /// Tick synchronization ping. The client sends its current tick
+    /// so the server can echo it back in a `Pong` for RTT measurement.
+    Ping {
+        client_tick: u32,
     },
 }

@@ -1,3 +1,4 @@
+use crate::components::ServerTick;
 use crate::configuration::Settings;
 use crate::messages::{
     ApplySpellEffectMessage, CastSpellActionMessage, IncomingChatMessage, JumpActionMessage,
@@ -92,12 +93,13 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
         socket,
     )?;
 
-    app.insert_resource(Time::<Fixed>::from_hz(20.));
+    app.insert_resource(Time::<Fixed>::from_hz(game_core::constants::TICK_RATE_HZ));
     app.insert_resource(netcode_server);
     app.insert_resource(netcode_transport);
     app.insert_resource(settings);
     app.insert_resource(SpatialGrid::default());
     app.insert_resource(Metrics::default());
+    app.insert_resource(ServerTick::default());
 
     app.add_message::<ApplySpellEffectMessage>();
     app.add_message::<CastSpellActionMessage>();
@@ -114,6 +116,7 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     app.add_systems(
         FixedPreUpdate,
         (
+            crate::systems::increment_server_tick,
             crate::systems::process_client_actions,
             crate::systems::process_client_movements,
             crate::systems::check_ground_status,

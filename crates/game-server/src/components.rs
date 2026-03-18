@@ -1,9 +1,23 @@
 use bevy::{platform::collections::HashSet, prelude::*};
 use bevy_renet::renet::ClientId;
-use protocol::models::{ItemDrop, Vitals as NetVitals};
+use protocol::models::ItemDrop;
 use std::sync::Arc;
 
 use crate::assets::ContentId;
+
+#[derive(Resource, Debug, Default)]
+pub struct ServerTick(pub u32);
+
+impl ServerTick {
+    pub fn next(&mut self) -> u32 {
+        let tick = self.0;
+        self.0 = self.0.wrapping_add(1);
+        tick
+    }
+}
+
+#[derive(Debug, Component, Default)]
+pub struct LastClientTick(pub u32);
 
 #[derive(Debug, Component)]
 pub struct ClientIdComponent(pub ClientId);

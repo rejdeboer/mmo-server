@@ -1,4 +1,4 @@
-use mmo_server::{agones::agones_connect, application, configuration, telemetry::init_subscriber};
+use game_server::{agones::agones_connect, application, configuration, telemetry::init_subscriber};
 
 fn main() -> anyhow::Result<()> {
     let mut settings = configuration::get_configuration().expect("config fetched");

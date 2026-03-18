@@ -1,4 +1,9 @@
-use crate::{configuration::Settings, input::{Chatting, Movement}};
+use crate::{
+    configuration::Settings,
+    input::{Chatting, Movement},
+    movement::{self, PredictionHistory},
+    tick_sync::{self, TickSync},
+};
 use avian3d::prelude::*;
 use bevy::{ecs::system::SystemParam, prelude::*};
 use bevy_enhanced_input::prelude::*;
@@ -14,7 +19,7 @@ use game_core::{
 };
 use protocol::{
     models::Actor,
-    server::{ActorTransformUpdate, EnterGameResponse, ServerEvent},
+    server::{EnterGameResponse, ServerEvent},
 };
 use std::{collections::HashMap, net::UdpSocket, time::SystemTime};
 use web_client::WebClient;
@@ -40,7 +45,6 @@ pub struct PlayerComponent;
 
 #[derive(Component)]
 pub struct NameComponent(pub String);
-
 
 #[derive(Message)]
 pub struct ActorSpawnMessage(pub Actor);
@@ -120,13 +124,39 @@ pub fn create_authenticated_app(
     app.add_message::<ActorDespawnMessage>();
 
     app.add_observer(on_enter_game);
+    app.add_observer(movement::apply_movement);
 
     app.insert_state(AppState::Connecting);
+    app.insert_resource(Time::<Fixed>::from_hz(game_core::constants::TICK_RATE_HZ));
 
     app.add_systems(
         Update,
         poll_connection.run_if(in_state(AppState::Connecting)),
     );
+
+    // Prediction systems run in FixedUpdate for deterministic tick-based simulation.
+    app.add_systems(
+        FixedUpdate,
+        (
+            (tick_sync::increment_tick, tick_sync::send_ping),
+            movement::predict_player_movement,
+            movement::send_player_input,
+        )
+            .chain()
+            .run_if(in_state(AppState::InGame)),
+    );
+
+    // Reconciliation and tick rate adjustment run in Update to process server messages as they arrive.
+    app.add_systems(
+        Update,
+        (
+            movement::reconcile_with_server,
+            receive_server_events,
+            tick_sync::adjust_tick_rate,
+        )
+            .run_if(in_state(AppState::InGame)),
+    );
+
     // app.add_systems(FixedPostUpdate, ().after(PhysicsSystems::Last));
     app.add_systems(OnEnter(AppState::InGame), setup_world);
 
@@ -162,20 +192,29 @@ fn create_renet_transport(authentication: ClientAuthentication) -> NetcodeClient
 }
 
 fn on_enter_game(event: On<EnterGame>, mut commands: Commands) {
-    let player_actor = &event.0.player_actor;
+    let response = &event.0;
+    let player_actor = &response.player_actor;
     let transform = Transform::from_translation(player_actor.transform.position)
         .with_rotation(player_actor.transform.get_quat());
 
-    let network_id = NetworkId(player_actor.id);
+    commands.insert_resource(TickSync::new(response.server_tick));
+    tracing::info!(
+        server_tick = ?response.server_tick,
+        "initial tick sync established"
+    );
+
+    let (_, yaw, _) = transform.rotation.to_euler(EulerRot::YXZ);
+
     let player_entity = commands.spawn((
         PlayerComponent,
+        PredictionHistory::new(transform.translation, yaw),
         ActorBundle::new(
             &player_actor.name,
             transform,
             Vitals::from(player_actor.vitals.clone()),
             player_actor.level as i32,
         ),
-        actions!(Player[
+        actions!(PlayerComponent[
             (
                 Action::<Movement>::new(),
                 DeadZone::default(),
@@ -186,27 +225,18 @@ fn on_enter_game(event: On<EnterGame>, mut commands: Commands) {
         ]),
     ));
 
+    let network_id = NetworkId(player_actor.id);
     let network_id_mapping = HashMap::from([(network_id, player_entity.id())]);
     commands.insert_resource(NetworkIdMapping(network_id_mapping));
 }
 
 fn setup_world() {}
 
-fn receive_transform_updates(
+fn receive_server_events(
+    mut writers: NetworkMessageWriters,
     mut client: ResMut<RenetClient>,
-    network_id_mapping: Res<NetworkIdMapping>,
+    mut tick_sync: ResMut<TickSync>,
 ) {
-    while let Some(message) = client.receive_message(DefaultChannel::Unreliable) {
-        match bitcode::decode::<ActorTransformUpdate>(&message) {
-            Ok(update) => {}
-            Err(e) => {
-                tracing::error!("received invalid ActorTransformUpdate {}", e);
-            }
-        }
-    }
-}
-
-fn receive_server_events(mut writers: NetworkMessageWriters, mut client: ResMut<RenetClient>) {
     while let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
         match bitcode::decode::<ServerEvent>(&message) {
             Ok(event) => match event {
@@ -215,6 +245,18 @@ fn receive_server_events(mut writers: NetworkMessageWriters, mut client: ResMut<
                 }
                 ServerEvent::ActorDespawn(id) => {
                     writers.despawns.write(ActorDespawnMessage(NetworkId(id)));
+                }
+                ServerEvent::Pong {
+                    client_tick,
+                    server_tick,
+                } => {
+                    tick_sync.observe_pong(server_tick, client_tick);
+                    tracing::debug!(
+                        server_tick,
+                        client_tick,
+                        current_tick = tick_sync.tick,
+                        "PONG"
+                    );
                 }
                 _ => todo!("Handle server event"),
             },
@@ -261,7 +303,3 @@ pub fn handle_actor_despawn_messages(
         network_id_mapping.0.remove(&message.0);
     }
 }
-
-pub fn send_player_movement(
-    mut client: ResMut<RenetClient>,
-)

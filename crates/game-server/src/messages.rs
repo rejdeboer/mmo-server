@@ -1,14 +1,12 @@
 use crate::components::LootEntry;
 use bevy::prelude::*;
 use bevy_renet::renet::ClientId;
-use protocol::{models::ChatChannel, server::ServerEvent};
+use protocol::{client::MoveAction, models::ChatChannel, server::ServerEvent};
 
 #[derive(Message, Debug)]
 pub struct MoveActionMessage {
     pub entity: Entity,
-    pub yaw: u16,
-    pub forward: i8,
-    pub sideways: i8,
+    pub action: MoveAction,
 }
 
 #[derive(Message, Debug)]

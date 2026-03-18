@@ -10,6 +10,12 @@ pub struct ActorTransformUpdate {
     pub transform: Transform,
 }
 
+#[derive(Encode, Decode, Clone)]
+pub struct ServerMovementPayload {
+    pub last_client_tick: u32,
+    pub updates: Vec<ActorTransformUpdate>,
+}
+
 #[derive(Encode, Decode)]
 pub enum ServerEvent {
     ActorSpawn(Box<Actor>),
@@ -35,11 +41,16 @@ pub enum ServerEvent {
         sender_name: String,
         text: String,
     },
+    Pong {
+        client_tick: u32,
+        server_tick: u32,
+    },
 }
 
 #[derive(Encode, Decode)]
 pub struct EnterGameResponse {
     pub player_actor: Actor,
+    pub server_tick: u32,
 }
 
 #[derive(Encode, Decode)]

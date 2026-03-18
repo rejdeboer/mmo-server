@@ -19,7 +19,7 @@ struct Args {
     character_id: i32,
 }
 
-async fn main() -> anyhow::Result<()> {
+fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt::Subscriber::builder()
         .with_max_level(tracing::Level::INFO)
         .init();
@@ -28,7 +28,7 @@ async fn main() -> anyhow::Result<()> {
     let settings = get_configuration()?;
 
     let rt = tokio::runtime::Runtime::new()?;
-    let web_client = WebClient::new(settings.web_server.endpoint);
+    let mut web_client = WebClient::new(settings.web_server.endpoint.clone());
     let (web_client, encoded_token) = rt.block_on(async {
         tracing::info!("connecting to web server");
         web_client

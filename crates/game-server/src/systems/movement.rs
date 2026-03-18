@@ -1,15 +1,19 @@
 use crate::{
-    components::ClientIdComponent,
+    components::{ClientIdComponent, ServerTick},
     messages::{JumpActionMessage, MoveActionMessage},
 };
 use avian3d::prelude::{LinearVelocity, ShapeHits};
 use bevy::prelude::*;
-use game_core::components::{GroundedComponent, MovementSpeedComponent};
-use std::f32::consts::TAU;
+use game_core::{
+    components::{GroundedComponent, MovementSpeedComponent},
+    movement::MoveInput,
+};
 
-const YAW_QUANTIZATION_FACTOR: f32 = 65535.0;
-const MOVEMENT_QUANTIZATION_FACTOR: f32 = 127.0;
 const JUMP_VELOCITY: f32 = 3.;
+
+pub fn increment_server_tick(mut tick: ResMut<ServerTick>) {
+    tick.next();
+}
 
 // TODO: Validate movement
 // TODO: Parallelism?
@@ -24,17 +28,10 @@ pub fn process_move_action_messages(
             return;
         };
 
-        let yaw = msg.yaw as f32 / YAW_QUANTIZATION_FACTOR * TAU;
-        transform.rotation = Quat::from_rotation_y(yaw);
+        let input = MoveInput::from(msg.action.clone());
+        transform.rotation = Quat::from_rotation_y(input.yaw);
 
-        let forward = transform.forward();
-        let right = transform.right();
-
-        let forward_input = msg.forward as f32 / MOVEMENT_QUANTIZATION_FACTOR;
-        let sideways_input = msg.sideways as f32 / MOVEMENT_QUANTIZATION_FACTOR;
-
-        let direction = (forward * forward_input) + (right * sideways_input);
-        let target_velocity = direction.normalize_or_zero() * movement_speed.0;
+        let target_velocity = input.target_velocity(movement_speed.0);
         velocity.x = target_velocity.x;
         velocity.z = target_velocity.z;
     })

@@ -1,7 +1,8 @@
 use crate::{
     application::DatabasePool,
     components::{
-        CharacterIdComponent, ClientIdComponent, InterestedClients, NameComponent, VisibleEntities,
+        CharacterIdComponent, ClientIdComponent, InterestedClients, LastClientTick, NameComponent,
+        ServerTick, VisibleEntities,
     },
     database::load_character_data,
 };
@@ -77,6 +78,7 @@ pub struct CharacterBundle {
     id: CharacterIdComponent,
     client_id: ClientIdComponent,
     visible_entities: VisibleEntities,
+    last_client_tick: LastClientTick,
 }
 
 impl CharacterBundle {
@@ -86,6 +88,7 @@ impl CharacterBundle {
             id: CharacterIdComponent(id),
             client_id: ClientIdComponent(client_id),
             visible_entities: VisibleEntities::default(),
+            last_client_tick: LastClientTick::default(),
         }
     }
 }
@@ -209,7 +212,16 @@ async fn handle_enter_game_task(
             movement_speed: BASE_MOVEMENT_SPEED.into(),
         };
 
-        let response = EnterGameResponse { player_actor };
+        let server_tick = ctx
+            .world
+            .get_resource::<ServerTick>()
+            .map(|t| t.0)
+            .unwrap_or(0);
+
+        let response = EnterGameResponse {
+            player_actor,
+            server_tick,
+        };
 
         let mut server = ctx.world.get_resource_mut::<RenetServer>().unwrap();
         tracing::info!("approving enter game request for client {}", client_id);

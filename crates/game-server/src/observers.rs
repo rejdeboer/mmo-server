@@ -1,12 +1,10 @@
 use crate::{
     assets::{LootDb, LootTable},
-    components::{
-        ClientIdComponent, Dead, InterestedClients, Loot, LootEntry, MonsterId,
-        MovementSpeedComponent, Tapped, Vitals,
-    },
+    components::{ClientIdComponent, Dead, InterestedClients, Loot, LootEntry, MonsterId, Tapped},
     messages::{OutgoingMessage, OutgoingMessageData},
 };
 use bevy::prelude::*;
+use game_core::components::{MovementSpeedComponent, Vitals};
 use rand::{Rng, thread_rng};
 use std::{collections::HashMap, time::Duration};
 

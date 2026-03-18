@@ -1,16 +1,17 @@
 use crate::{
     components::{
-        AssetIdComponent, CharacterIdComponent, ClientIdComponent, InterestedClients, NameComponent,
+        AssetIdComponent, CharacterIdComponent, ClientIdComponent, InterestedClients,
+        LastClientTick, NameComponent,
     },
     messages::{OutgoingMessage, VisibilityChangedMessage},
     telemetry::Metrics,
 };
 use bevy::{platform::collections::HashMap, prelude::*};
-use bevy_renet::{RenetServer, renet::DefaultChannel};
+use bevy_renet::{renet::DefaultChannel, RenetServer};
 use game_core::components::{LevelComponent, MovementSpeedComponent, Vitals};
 use protocol::{
     models::Actor,
-    server::{ActorTransformUpdate, ServerEvent},
+    server::{ActorTransformUpdate, ServerEvent, ServerMovementPayload},
 };
 use protocol::{
     models::{ActorAttributes, Vitals as NetVitals},
@@ -30,6 +31,7 @@ pub fn sync_movement(
         ),
         Changed<Transform>,
     >,
+    q_clients: Query<(&ClientIdComponent, &LastClientTick)>,
 ) {
     for clients in updates_per_client.values_mut() {
         clients.clear();
@@ -61,12 +63,23 @@ pub fn sync_movement(
         }
     }
 
+    // Build a quick lookup from renet ClientId (u64) -> last_client_tick
+    let client_tick_map: HashMap<u64, u32> =
+        q_clients.iter().map(|(cid, lct)| (cid.0, lct.0)).collect();
+
     for (client_id, updates) in updates_per_client.iter() {
         if updates.is_empty() {
             continue;
         }
 
-        let data = encode_buffer.encode(updates);
+        let last_client_tick = client_tick_map.get(client_id).copied().unwrap_or(0);
+
+        let payload = ServerMovementPayload {
+            last_client_tick,
+            updates: updates.clone(),
+        };
+
+        let data = encode_buffer.encode(&payload);
         server.send_message(*client_id, DefaultChannel::Unreliable, data.to_vec());
     }
 }
