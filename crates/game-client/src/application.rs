@@ -1,16 +1,16 @@
 use crate::{
     configuration::Settings,
     input::{Chatting, Movement},
-    movement::{self, PredictionHistory},
+    movement::{self, InterpolationState, PredictionHistory},
     tick_sync::{self, TickSync},
 };
 use avian3d::prelude::*;
 use bevy::{ecs::system::SystemParam, prelude::*};
 use bevy_enhanced_input::prelude::*;
 use bevy_renet::{
-    RenetClient, RenetClientPlugin,
     netcode::{ClientAuthentication, ConnectToken, NetcodeClientPlugin, NetcodeClientTransport},
     renet::{ConnectionConfig, DefaultChannel},
+    RenetClient, RenetClientPlugin,
 };
 use game_core::{
     collision::GameLayer,
@@ -124,7 +124,6 @@ pub fn create_authenticated_app(
     app.add_message::<ActorDespawnMessage>();
 
     app.add_observer(on_enter_game);
-    app.add_observer(movement::apply_movement);
 
     app.insert_state(AppState::Connecting);
     app.insert_resource(Time::<Fixed>::from_hz(game_core::constants::TICK_RATE_HZ));
@@ -134,25 +133,38 @@ pub fn create_authenticated_app(
         poll_connection.run_if(in_state(AppState::Connecting)),
     );
 
-    // Prediction systems run in FixedUpdate for deterministic tick-based simulation.
+    // Input processing and tick sync run in FixedPreUpdate, before physics,
+    // mirroring the server's schedule.
     app.add_systems(
-        FixedUpdate,
+        FixedPreUpdate,
         (
             (tick_sync::increment_tick, tick_sync::send_ping),
             movement::predict_player_movement,
-            movement::send_player_input,
         )
             .chain()
             .run_if(in_state(AppState::InGame)),
     );
 
-    // Reconciliation and tick rate adjustment run in Update to process server messages as they arrive.
+    // After physics has stepped, record the resulting state and send input to server.
+    app.add_systems(
+        FixedPostUpdate,
+        (
+            movement::record_predicted_state,
+            movement::send_player_input,
+        )
+            .chain()
+            .after(PhysicsSystems::Last)
+            .run_if(in_state(AppState::InGame)),
+    );
+
+    // Interpolation, reconciliation, and tick rate adjustment run every render frame.
     app.add_systems(
         Update,
         (
             movement::reconcile_with_server,
             receive_server_events,
             tick_sync::adjust_tick_rate,
+            movement::interpolate_player,
         )
             .run_if(in_state(AppState::InGame)),
     );
@@ -207,7 +219,8 @@ fn on_enter_game(event: On<EnterGame>, mut commands: Commands) {
 
     let player_entity = commands.spawn((
         PlayerComponent,
-        PredictionHistory::new(transform.translation, yaw),
+        InterpolationState::new(transform.translation, yaw),
+        PredictionHistory::default(),
         ActorBundle::new(
             &player_actor.name,
             transform,
