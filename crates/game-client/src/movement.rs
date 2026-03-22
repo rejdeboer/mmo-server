@@ -276,6 +276,10 @@ pub fn predict_player_movement(
         _ => Vec2::ZERO,
     };
 
+    if movement_value != Vec2::ZERO {
+        tracing::info!(?movement_value, ?trigger_state, "movement input received");
+    }
+
     // Use the camera's yaw as the movement direction reference.
     // WASD moves relative to where the camera is facing.
     let yaw_rad = q_camera
@@ -301,6 +305,15 @@ pub fn predict_player_movement(
     transform.translation = result.position;
     transform.rotation = Quat::from_rotation_y(result.yaw);
     vel_y.0 = result.velocity_y;
+
+    if movement_value != Vec2::ZERO {
+        tracing::info!(
+            position = ?result.position,
+            velocity_y = result.velocity_y,
+            grounded = result.grounded,
+            "movement step result"
+        );
+    }
 
     // Update grounded status.
     if result.grounded {
