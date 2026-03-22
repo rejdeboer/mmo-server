@@ -1,4 +1,5 @@
 pub mod application;
+mod camera;
 pub mod configuration;
 mod input;
 pub mod movement;

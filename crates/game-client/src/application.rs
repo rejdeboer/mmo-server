@@ -1,18 +1,20 @@
 use crate::{
+    camera::{self, ThirdPersonCamera},
     configuration::Settings,
     input::{Chatting, Movement},
-    movement::{self, InterpolationState, PredictionHistory},
+    movement::{self, PredictionHistory, RemoteInterpolation},
     tick_sync::{self, TickSync},
 };
 use avian3d::prelude::*;
-use bevy::{ecs::system::SystemParam, prelude::*};
+use bevy::{ecs::system::SystemParam, gltf::GltfLoaderSettings, prelude::*};
 use bevy_enhanced_input::prelude::*;
 use bevy_renet::{
+    RenetClient, RenetClientPlugin,
     netcode::{ClientAuthentication, ConnectToken, NetcodeClientPlugin, NetcodeClientTransport},
     renet::{ConnectionConfig, DefaultChannel},
-    RenetClient, RenetClientPlugin,
 };
 use game_core::{
+    character_controller::CharacterVelocityY,
     collision::GameLayer,
     components::{LevelComponent, MovementSpeedComponent, NetworkId, Vitals},
     constants::BASE_MOVEMENT_SPEED,
@@ -68,8 +70,6 @@ pub struct ActorBundle {
     body: RigidBody,
     collider: Collider,
     collision_layers: CollisionLayers,
-    shape_caster: ShapeCaster,
-    locked_axes: LockedAxes,
 }
 
 impl ActorBundle {
@@ -80,20 +80,12 @@ impl ActorBundle {
             vitals: vitals.clone(),
             movement_speed: MovementSpeedComponent(BASE_MOVEMENT_SPEED),
             level: LevelComponent(level),
-            body: RigidBody::Dynamic,
-            locked_axes: LockedAxes::ROTATION_LOCKED,
+            body: RigidBody::Kinematic,
             collider: Collider::capsule(1., 2.),
             collision_layers: CollisionLayers::new(
                 GameLayer::Player,
                 [GameLayer::Default, GameLayer::Ground],
             ),
-            shape_caster: ShapeCaster::new(
-                Collider::capsule(0.9, 0.1),
-                Vec3::ZERO,
-                Quat::IDENTITY,
-                Dir3::NEG_Y,
-            )
-            .with_query_filter(SpatialQueryFilter::from_mask(LayerMask::ALL)),
         }
     }
 }
@@ -108,7 +100,9 @@ pub fn create_authenticated_app(
 
     app.add_plugins(DefaultPlugins);
     app.add_plugins((RenetClientPlugin, NetcodeClientPlugin));
-    app.add_plugins(PhysicsPlugins::new(PostUpdate));
+    app.add_plugins(
+        PhysicsPlugins::new(FixedPostUpdate).set(PhysicsInterpolationPlugin::interpolate_all()),
+    );
     app.add_plugins(EnhancedInputPlugin);
 
     app.add_input_context::<PlayerComponent>();
@@ -145,27 +139,36 @@ pub fn create_authenticated_app(
             .run_if(in_state(AppState::InGame)),
     );
 
-    // After physics has stepped, record the resulting state and send input to server.
+    // After physics has stepped, send input to server.
     app.add_systems(
         FixedPostUpdate,
-        (
-            movement::record_predicted_state,
-            movement::send_player_input,
-        )
-            .chain()
+        movement::send_player_input
             .after(PhysicsSystems::Last)
             .run_if(in_state(AppState::InGame)),
     );
 
-    // Interpolation, reconciliation, and tick rate adjustment run every render frame.
+    // Reconciliation and tick rate adjustment run every render frame.
+    // Remote entity interpolation also runs here for smooth visual movement.
+    // Note: Local player visual interpolation is handled by avian3d's built-in
+    // TransformInterpolation (enabled via interpolate_all above).
     app.add_systems(
         Update,
         (
             movement::reconcile_with_server,
             receive_server_events,
             tick_sync::adjust_tick_rate,
-            movement::interpolate_player,
+            movement::interpolate_remote_actors,
         )
+            .run_if(in_state(AppState::InGame)),
+    );
+    app.add_systems(
+        Update,
+        (
+            camera::camera_input,
+            camera::manage_cursor_grab,
+            camera::update_camera_transform,
+        )
+            .chain()
             .run_if(in_state(AppState::InGame)),
     );
 
@@ -204,6 +207,7 @@ fn create_renet_transport(authentication: ClientAuthentication) -> NetcodeClient
 }
 
 fn on_enter_game(event: On<EnterGame>, mut commands: Commands) {
+    tracing::info!("entering game");
     let response = &event.0;
     let player_actor = &response.player_actor;
     let transform = Transform::from_translation(player_actor.transform.position)
@@ -215,12 +219,10 @@ fn on_enter_game(event: On<EnterGame>, mut commands: Commands) {
         "initial tick sync established"
     );
 
-    let (_, yaw, _) = transform.rotation.to_euler(EulerRot::YXZ);
-
     let player_entity = commands.spawn((
         PlayerComponent,
-        InterpolationState::new(transform.translation, yaw),
         PredictionHistory::default(),
+        CharacterVelocityY::default(),
         ActorBundle::new(
             &player_actor.name,
             transform,
@@ -237,13 +239,45 @@ fn on_enter_game(event: On<EnterGame>, mut commands: Commands) {
             ),
         ]),
     ));
+    let player_entity_id = player_entity.id();
+
+    commands.spawn((
+        Camera3d::default(),
+        ThirdPersonCamera::default(),
+        Transform::from_xyz(0.0, 10.0, 12.0).looking_at(transform.translation, Vec3::Y),
+    ));
 
     let network_id = NetworkId(player_actor.id);
-    let network_id_mapping = HashMap::from([(network_id, player_entity.id())]);
+    let network_id_mapping = HashMap::from([(network_id, player_entity_id)]);
     commands.insert_resource(NetworkIdMapping(network_id_mapping));
+    tracing::info!("spawned player");
 }
 
-fn setup_world() {}
+fn setup_world(mut commands: Commands, assets: Res<AssetServer>) {
+    commands.spawn((
+        SceneRoot(
+            assets.load_with_settings("world.gltf#Scene0", |s: &mut GltfLoaderSettings| {
+                s.load_cameras = false;
+                s.load_lights = false;
+                s.load_animations = false;
+            }),
+        ),
+        // TODO: We are trying to match Godot here to make it work, but this is hacky
+        Transform::from_xyz(0., -2., 0.),
+        RigidBody::Static,
+        ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
+    ));
+
+    // Directional sunlight.
+    commands.spawn((
+        DirectionalLight {
+            illuminance: 10_000.0,
+            shadows_enabled: true,
+            ..default()
+        },
+        Transform::from_rotation(Quat::from_euler(EulerRot::XYZ, -0.8, 0.4, 0.0)),
+    ));
+}
 
 fn receive_server_events(
     mut writers: NetworkMessageWriters,
@@ -289,11 +323,18 @@ pub fn handle_actor_spawn_messages(
         let actor = &message.0;
         let transform = Transform::from_translation(actor.transform.position)
             .with_rotation(actor.transform.get_quat());
-        let entity = commands.spawn(ActorBundle::new(
-            &actor.name,
-            transform,
-            Vitals::from(actor.vitals.clone()),
-            actor.level as i32,
+        let entity = commands.spawn((
+            RemoteInterpolation::default(),
+            // Disable avian's built-in transform easing for remote entities.
+            // Their visual position is driven by our RemoteInterpolation buffer
+            // (server snapshot interpolation), not by physics simulation.
+            NoTransformEasing,
+            ActorBundle::new(
+                &actor.name,
+                transform,
+                Vitals::from(actor.vitals.clone()),
+                actor.level as i32,
+            ),
         ));
         network_id_mapping
             .0

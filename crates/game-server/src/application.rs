@@ -38,7 +38,7 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     app.add_plugins(RenetServerPlugin);
     app.add_plugins(NetcodeServerPlugin);
     app.add_plugins(TokioTasksPlugin::default());
-    app.add_plugins(PhysicsPlugins::new(PostUpdate));
+    app.add_plugins(PhysicsPlugins::new(FixedPostUpdate));
 
     let host_ip_addr = IpAddr::V4(
         settings
@@ -119,7 +119,6 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
             crate::systems::increment_server_tick,
             crate::systems::process_client_actions,
             crate::systems::process_client_movements,
-            crate::systems::check_ground_status,
             (
                 crate::systems::process_incoming_chat,
                 crate::systems::process_jump_action_messages,

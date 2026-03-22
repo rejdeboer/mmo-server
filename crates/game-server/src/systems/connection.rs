@@ -15,6 +15,7 @@ use bevy_renet::{
 };
 use bevy_tokio_tasks::{TaskContext, TokioTasksRuntime};
 use game_core::{
+    character_controller::CharacterVelocityY,
     collision::GameLayer,
     components::{LevelComponent, MovementSpeedComponent, Vitals},
     constants::BASE_MOVEMENT_SPEED,
@@ -41,8 +42,7 @@ pub struct ActorBundle {
     body: RigidBody,
     collider: Collider,
     collision_layers: CollisionLayers,
-    shape_caster: ShapeCaster,
-    locked_axes: LockedAxes,
+    velocity_y: CharacterVelocityY,
 }
 
 impl ActorBundle {
@@ -54,20 +54,13 @@ impl ActorBundle {
             movement_speed: MovementSpeedComponent(BASE_MOVEMENT_SPEED),
             level: LevelComponent(level),
             interested_clients: InterestedClients::default(),
-            body: RigidBody::Dynamic,
-            locked_axes: LockedAxes::ROTATION_LOCKED,
+            body: RigidBody::Kinematic,
             collider: Collider::capsule(1., 2.),
             collision_layers: CollisionLayers::new(
                 GameLayer::Player,
                 [GameLayer::Default, GameLayer::Ground],
             ),
-            shape_caster: ShapeCaster::new(
-                Collider::capsule(0.9, 0.1),
-                Vec3::ZERO,
-                Quat::IDENTITY,
-                Dir3::NEG_Y,
-            )
-            .with_query_filter(SpatialQueryFilter::from_mask(LayerMask::ALL)),
+            velocity_y: CharacterVelocityY::default(),
         }
     }
 }
