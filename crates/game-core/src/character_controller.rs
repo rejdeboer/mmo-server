@@ -1,6 +1,7 @@
 use avian3d::prelude::*;
 use bevy::prelude::*;
 
+use crate::collision::GameLayer;
 use crate::constants::TICK_RATE_HZ;
 use crate::movement::MoveInput;
 
@@ -70,12 +71,16 @@ pub struct MoveResult {
 ///
 /// ## Algorithm
 ///
-/// 1. Apply gravity to vertical velocity.
-/// 2. Compute horizontal velocity from the input.
-/// 3. Combine into a 3D displacement vector (`velocity * dt`).
-/// 4. Run a collide-and-slide loop using capsule shape casts.
-/// 5. Check for ground contact below the final position.
-/// 6. If grounded, zero out negative vertical velocity and snap to the surface.
+/// Movement is split into two independent phases to prevent the capsule's
+/// ground contact from blocking horizontal movement:
+///
+/// 1. **Horizontal phase**: Apply input-driven horizontal velocity through
+///    collide-and-slide (only XZ displacement).
+/// 2. **Vertical phase**: Apply gravity-driven vertical velocity through
+///    collide-and-slide (only Y displacement).
+/// 3. **Ground check**: Cast the shape downward to detect walkable ground.
+/// 4. **Snap**: If grounded and falling, snap to the surface and zero
+///    vertical velocity.
 ///
 /// ## Parameters
 ///
@@ -98,31 +103,61 @@ pub fn character_move_step(
     spatial_query: &SpatialQuery,
 ) -> MoveResult {
     let dt = FIXED_DT;
+    let filter = SpatialQueryFilter::from_excluded_entities([entity])
+        .with_mask([GameLayer::Default, GameLayer::Ground]);
 
-    // --- 1. Apply gravity ---
-    let mut vy = velocity_y + GRAVITY * dt;
-
-    // --- 2. Compute horizontal velocity from input ---
+    // --- 1. Horizontal movement (collide-and-slide) ---
     let horizontal_velocity = input.target_velocity(movement_speed);
+    let horizontal_displacement =
+        Vec3::new(horizontal_velocity.x * dt, 0.0, horizontal_velocity.z * dt);
 
-    // --- 3. Combine into displacement ---
-    let displacement = Vec3::new(
-        horizontal_velocity.x * dt,
-        vy * dt,
-        horizontal_velocity.z * dt,
-    );
+    let after_horizontal = if horizontal_displacement.length_squared() > 0.0001 * 0.0001 {
+        let result = move_and_slide(
+            position,
+            horizontal_displacement,
+            shape,
+            &filter,
+            spatial_query,
+        );
+        // --- TEMPORARY DIAGNOSTICS ---
+        if (result - position).length_squared() < 0.00001
+            && horizontal_displacement.length_squared() > 0.001
+        {
+            bevy::log::warn!(
+                ?position,
+                ?horizontal_displacement,
+                ?result,
+                "horizontal move_and_slide produced no movement!"
+            );
+        }
+        // --- END TEMPORARY DIAGNOSTICS ---
+        result
+    } else {
+        position
+    };
 
-    // --- 4. Collide-and-slide ---
-    let filter = SpatialQueryFilter::from_excluded_entities([entity]);
-    let new_position = move_and_slide(position, displacement, shape, &filter, spatial_query);
+    // --- 2. Vertical movement (gravity / jump) ---
+    let mut vy = velocity_y + GRAVITY * dt;
+    let vertical_displacement = Vec3::new(0.0, vy * dt, 0.0);
 
-    // --- 5. Ground check ---
-    let ground_check_shape = shape.clone();
+    let after_vertical = if vertical_displacement.length_squared() > 0.0001 * 0.0001 {
+        move_and_slide(
+            after_horizontal,
+            vertical_displacement,
+            shape,
+            &filter,
+            spatial_query,
+        )
+    } else {
+        after_horizontal
+    };
+
+    // --- 3. Ground check ---
     let config = ShapeCastConfig::from_max_distance(GROUND_CHECK_DISTANCE);
     let is_grounded = spatial_query
         .cast_shape(
-            &ground_check_shape,
-            new_position,
+            shape,
+            after_vertical,
             Quat::IDENTITY,
             Dir3::NEG_Y,
             &config,
@@ -133,21 +168,22 @@ pub fn character_move_step(
             hit.normal1.angle_between(Vec3::Y) <= MAX_SLOPE_ANGLE
         });
 
-    // --- 6. Snap to ground / zero vertical velocity ---
-    let mut final_position = new_position;
+    // --- 4. Snap to ground / zero vertical velocity ---
+    let mut final_position = after_vertical;
     if is_grounded && vy <= 0.0 {
         // Snap the character down to the ground surface to prevent floating.
-        if let Some(hit) = spatial_query.cast_shape(
-            &ground_check_shape,
-            new_position,
-            Quat::IDENTITY,
-            Dir3::NEG_Y,
-            &config,
-            &filter,
-        ) {
-            if hit.distance > SKIN_WIDTH {
-                final_position.y -= hit.distance - SKIN_WIDTH;
-            }
+        if let Some(hit) = spatial_query
+            .cast_shape(
+                shape,
+                after_vertical,
+                Quat::IDENTITY,
+                Dir3::NEG_Y,
+                &config,
+                &filter,
+            )
+            .filter(|hit| hit.distance > SKIN_WIDTH)
+        {
+            final_position.y -= hit.distance - SKIN_WIDTH;
         }
         vy = 0.0;
     }
@@ -218,9 +254,11 @@ fn move_and_slide(
             // This removes the component that would push us into the surface.
             let normal = hit.normal1.normalize_or_zero();
             remaining -= normal * remaining.dot(normal);
+            // bevy::log::info!(?position, "collided");
         } else {
             // No collision — move the full remaining distance.
             position += remaining;
+            // bevy::log::info!(?position, "not collided");
             break;
         }
     }

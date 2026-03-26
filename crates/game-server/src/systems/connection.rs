@@ -42,6 +42,8 @@ pub struct ActorBundle {
     body: RigidBody,
     collider: Collider,
     collision_layers: CollisionLayers,
+    shape_caster: ShapeCaster,
+    locked_axes: LockedAxes,
     velocity_y: CharacterVelocityY,
 }
 
@@ -60,6 +62,14 @@ impl ActorBundle {
                 GameLayer::Player,
                 [GameLayer::Default, GameLayer::Ground],
             ),
+            shape_caster: ShapeCaster::new(
+                Collider::capsule(0.9, 0.1),
+                Vec3::ZERO,
+                Quat::IDENTITY,
+                Dir3::NEG_Y,
+            )
+            .with_query_filter(SpatialQueryFilter::from_mask(LayerMask::ALL)),
+            locked_axes: LockedAxes::ROTATION_LOCKED,
             velocity_y: CharacterVelocityY::default(),
         }
     }

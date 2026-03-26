@@ -119,6 +119,7 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
             crate::systems::increment_server_tick,
             crate::systems::process_client_actions,
             crate::systems::process_client_movements,
+            crate::systems::check_ground_status,
             (
                 crate::systems::process_incoming_chat,
                 crate::systems::process_jump_action_messages,

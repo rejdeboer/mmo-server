@@ -276,10 +276,6 @@ pub fn predict_player_movement(
         _ => Vec2::ZERO,
     };
 
-    if movement_value != Vec2::ZERO {
-        tracing::info!(?movement_value, ?trigger_state, "movement input received");
-    }
-
     // Use the camera's yaw as the movement direction reference.
     // WASD moves relative to where the camera is facing.
     let yaw_rad = q_camera
@@ -290,6 +286,27 @@ pub fn predict_player_movement(
 
     // Run the shared movement step with full collision detection.
     let move_input = MoveInput::from(action.clone());
+
+    // --- TEMPORARY DIAGNOSTICS ---
+    if movement_value != Vec2::ZERO {
+        let dir = move_input.direction();
+        let vel = move_input.target_velocity(speed.0);
+        tracing::info!(
+            raw_input = ?movement_value,
+            yaw_rad,
+            action_forward = action.forward,
+            action_sideways = action.sideways,
+            move_input_forward = move_input.forward,
+            move_input_sideways = move_input.sideways,
+            move_input_yaw = move_input.yaw,
+            direction = ?dir,
+            velocity = ?vel,
+            current_pos = ?transform.translation,
+            "pre-move diagnostics"
+        );
+    }
+    // --- END TEMPORARY DIAGNOSTICS ---
+
     let result = character_controller::character_move_step(
         transform.translation,
         vel_y.0,
@@ -306,14 +323,16 @@ pub fn predict_player_movement(
     transform.rotation = Quat::from_rotation_y(result.yaw);
     vel_y.0 = result.velocity_y;
 
+    // --- TEMPORARY DIAGNOSTICS ---
     if movement_value != Vec2::ZERO {
         tracing::info!(
-            position = ?result.position,
-            velocity_y = result.velocity_y,
-            grounded = result.grounded,
-            "movement step result"
+            result_pos = ?result.position,
+            result_grounded = result.grounded,
+            result_vy = result.velocity_y,
+            "post-move diagnostics"
         );
     }
+    // --- END TEMPORARY DIAGNOSTICS ---
 
     // Update grounded status.
     if result.grounded {

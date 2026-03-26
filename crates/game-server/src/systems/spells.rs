@@ -5,7 +5,6 @@ use crate::{
         ApplySpellEffectMessage, CastSpellActionMessage, OutgoingMessage, OutgoingMessageData,
     },
 };
-use avian3d::prelude::LinearVelocity;
 use bevy::prelude::*;
 use game_core::components::Vitals;
 
@@ -93,13 +92,16 @@ pub fn tick_casting(
     mut q_casting: Query<(
         Entity,
         &mut Casting,
-        &LinearVelocity,
+        Ref<Transform>,
         Option<&ClientIdComponent>,
     )>,
     mut writer: MessageWriter<ApplySpellEffectMessage>,
 ) {
-    for (entity, mut cast, velocity, client_id) in q_casting.iter_mut() {
-        if velocity.length_squared() > 0.1 && !cast.castable_while_moving {
+    for (entity, mut cast, transform, client_id) in q_casting.iter_mut() {
+        // Cancel non-movable casts if the caster's Transform changed this tick
+        // (i.e. they moved). With kinematic bodies we no longer have LinearVelocity,
+        // so change detection on Transform is the reliable signal.
+        if transform.is_changed() && !cast.castable_while_moving {
             commands.entity(entity).remove::<Casting>();
             tracing::debug!(?entity, "caster moved while casting stationary spell");
             continue;

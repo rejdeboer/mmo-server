@@ -1,5 +1,5 @@
 use avian3d::prelude::PhysicsDebugPlugin;
-use bevy::prelude::*;
+use bevy::{log::LogPlugin, prelude::*};
 use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 
 pub struct AppPlugin;

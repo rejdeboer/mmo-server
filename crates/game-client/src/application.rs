@@ -45,6 +45,16 @@ pub struct EnterGame(pub EnterGameResponse);
 #[derive(Component)]
 pub struct PlayerComponent;
 
+/// Shared capsule mesh handle used for debug placeholder rendering of all actors.
+#[derive(Resource)]
+pub struct DebugActorMesh(pub Handle<Mesh>);
+
+/// Inserted once the world GLTF's `ColliderConstructorHierarchy` has finished
+/// building trimesh colliders. Movement systems are gated on this resource so
+/// characters don't fall through a not-yet-loaded floor.
+#[derive(Resource)]
+pub struct WorldReady;
+
 #[derive(Component)]
 pub struct NameComponent(pub String);
 
@@ -129,13 +139,16 @@ pub fn create_authenticated_app(
 
     // Input processing and tick sync run in FixedPreUpdate, before physics,
     // mirroring the server's schedule.
+    // Tick sync always runs; movement prediction is gated on WorldReady so
+    // characters don't fall through the floor before colliders are built.
     app.add_systems(
         FixedPreUpdate,
-        (
-            (tick_sync::increment_tick, tick_sync::send_ping),
-            movement::predict_player_movement,
-        )
-            .chain()
+        (tick_sync::increment_tick, tick_sync::send_ping).run_if(in_state(AppState::InGame)),
+    );
+    app.add_systems(
+        FixedPreUpdate,
+        movement::predict_player_movement
+            .after(tick_sync::increment_tick)
             .run_if(in_state(AppState::InGame)),
     );
 
@@ -158,6 +171,9 @@ pub fn create_authenticated_app(
             receive_server_events,
             tick_sync::adjust_tick_rate,
             movement::interpolate_remote_actors,
+            handle_actor_spawn_messages,
+            handle_actor_despawn_messages,
+            debug_player_transform,
         )
             .run_if(in_state(AppState::InGame)),
     );
@@ -173,7 +189,10 @@ pub fn create_authenticated_app(
     );
 
     // app.add_systems(FixedPostUpdate, ().after(PhysicsSystems::Last));
-    app.add_systems(OnEnter(AppState::InGame), setup_world);
+
+    // Load the world scene early (during connection) so GLTF meshes and
+    // trimesh colliders are ready by the time the player enters the game.
+    app.add_systems(Startup, setup_world);
 
     app
 }
@@ -206,7 +225,12 @@ fn create_renet_transport(authentication: ClientAuthentication) -> NetcodeClient
     NetcodeClientTransport::new(current_time, authentication, socket).unwrap()
 }
 
-fn on_enter_game(event: On<EnterGame>, mut commands: Commands) {
+fn on_enter_game(
+    event: On<EnterGame>,
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
     tracing::info!("entering game");
     let response = &event.0;
     let player_actor = &response.player_actor;
@@ -219,6 +243,15 @@ fn on_enter_game(event: On<EnterGame>, mut commands: Commands) {
         "initial tick sync established"
     );
 
+    // Debug placeholder mesh: capsule matching Collider::capsule(1., 2.)
+    // Total height = 2 (cylinder) + 2*1 (hemispheres) = 4 units.
+    // Mesh is centered at origin, so it aligns with the collider.
+    let capsule_mesh = meshes.add(Capsule3d::new(1.0, 2.0));
+    let player_material = materials.add(StandardMaterial {
+        base_color: Color::srgb(0.2, 0.7, 0.2),
+        ..default()
+    });
+
     let player_entity = commands.spawn((
         PlayerComponent,
         PredictionHistory::default(),
@@ -229,6 +262,8 @@ fn on_enter_game(event: On<EnterGame>, mut commands: Commands) {
             Vitals::from(player_actor.vitals.clone()),
             player_actor.level as i32,
         ),
+        Mesh3d(capsule_mesh.clone()),
+        MeshMaterial3d(player_material),
         actions!(PlayerComponent[
             (
                 Action::<Movement>::new(),
@@ -240,6 +275,9 @@ fn on_enter_game(event: On<EnterGame>, mut commands: Commands) {
         ]),
     ));
     let player_entity_id = player_entity.id();
+
+    // Store the capsule mesh handle as a resource so remote actors can reuse it.
+    commands.insert_resource(DebugActorMesh(capsule_mesh));
 
     commands.spawn((
         Camera3d::default(),
@@ -263,7 +301,7 @@ fn setup_world(mut commands: Commands, assets: Res<AssetServer>) {
             }),
         ),
         // TODO: We are trying to match Godot here to make it work, but this is hacky
-        Transform::from_xyz(0., -2., 0.),
+        Transform::from_xyz(0., -4., 0.),
         RigidBody::Static,
         ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
     ));
@@ -277,6 +315,16 @@ fn setup_world(mut commands: Commands, assets: Res<AssetServer>) {
         },
         Transform::from_rotation(Quat::from_euler(EulerRot::XYZ, -0.8, 0.4, 0.0)),
     ));
+}
+
+fn debug_player_transform(q_player: Query<&Transform, With<PlayerComponent>>) {
+    let Ok(transform) = q_player.single() else {
+        return;
+    };
+    tracing::info!(
+        pos = ?transform.translation,
+        "render-frame player position"
+    );
 }
 
 fn receive_server_events(
@@ -317,12 +365,20 @@ fn receive_server_events(
 pub fn handle_actor_spawn_messages(
     mut reader: MessageReader<ActorSpawnMessage>,
     mut network_id_mapping: ResMut<NetworkIdMapping>,
+    debug_mesh: Res<DebugActorMesh>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
     mut commands: Commands,
 ) {
     for message in reader.read() {
         let actor = &message.0;
         let transform = Transform::from_translation(actor.transform.position)
             .with_rotation(actor.transform.get_quat());
+
+        let remote_material = materials.add(StandardMaterial {
+            base_color: Color::srgb(0.7, 0.2, 0.2),
+            ..default()
+        });
+
         let entity = commands.spawn((
             RemoteInterpolation::default(),
             // Disable avian's built-in transform easing for remote entities.
@@ -335,6 +391,8 @@ pub fn handle_actor_spawn_messages(
                 Vitals::from(actor.vitals.clone()),
                 actor.level as i32,
             ),
+            Mesh3d(debug_mesh.0.clone()),
+            MeshMaterial3d(remote_material),
         ));
         network_id_mapping
             .0
