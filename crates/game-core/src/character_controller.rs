@@ -201,11 +201,7 @@ pub fn character_move_step(
 /// Returns the new vertical velocity. Call this before `character_move_step`
 /// in the same tick to apply the jump on the same frame as the input.
 pub fn try_jump(velocity_y: f32, grounded: bool) -> f32 {
-    if grounded {
-        JUMP_VELOCITY
-    } else {
-        velocity_y
-    }
+    if grounded { JUMP_VELOCITY } else { velocity_y }
 }
 
 // ---------------------------------------------------------------------------
@@ -254,11 +250,9 @@ fn move_and_slide(
             // This removes the component that would push us into the surface.
             let normal = hit.normal1.normalize_or_zero();
             remaining -= normal * remaining.dot(normal);
-            // bevy::log::info!(?position, "collided");
         } else {
             // No collision — move the full remaining distance.
             position += remaining;
-            // bevy::log::info!(?position, "not collided");
             break;
         }
     }

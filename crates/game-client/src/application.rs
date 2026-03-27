@@ -173,7 +173,7 @@ pub fn create_authenticated_app(
             movement::interpolate_remote_actors,
             handle_actor_spawn_messages,
             handle_actor_despawn_messages,
-            debug_player_transform,
+            // debug_player_transform,
         )
             .run_if(in_state(AppState::InGame)),
     );

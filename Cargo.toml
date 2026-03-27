@@ -31,7 +31,7 @@ tracing = "0.1"
 tracing-opentelemetry = "0.32"
 
 [workspace.dependencies.avian3d]
-version = "0.5"
+version = "0.6"
 default-features = false
 features = ["3d", "bevy_scene", "collider-from-mesh", "parry-f32", "f32"]
 
