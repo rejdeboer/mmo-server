@@ -5,7 +5,7 @@ use crate::tick_sync::TickSync;
 use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_enhanced_input::prelude::*;
-use game_core::character_controller::{self, CharacterVelocityY, FIXED_DT};
+use game_core::character_controller::{self, CharacterVelocityY, FIXED_DT_SECS};
 use game_core::components::{GroundedComponent, MovementSpeedComponent, NetworkId};
 use game_core::movement::MoveInput;
 use protocol::{
@@ -14,20 +14,10 @@ use protocol::{
 use std::collections::VecDeque;
 use std::f32::consts::TAU;
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
 /// The distance threshold beyond which a server correction triggers reconciliation.
 /// Below this, the client's prediction is trusted entirely.
 const RECONCILIATION_THRESHOLD: f32 = 0.1;
-
-/// Number of server snapshots to buffer for remote entity interpolation.
 const REMOTE_SNAPSHOT_BUFFER_SIZE: usize = 8;
-
-// ---------------------------------------------------------------------------
-// Components — Local player prediction
-// ---------------------------------------------------------------------------
 
 /// Snapshot of a predicted position + rotation at a given tick.
 #[derive(Debug, Clone)]
@@ -116,7 +106,7 @@ impl PredictionHistory {
 
     /// Whether the most recent input in the buffer has movement.
     fn latest_has_movement(&self) -> bool {
-        self.input_buffer.back().map_or(false, |a| a.has_movement())
+        self.input_buffer.back().is_some_and(|a| a.has_movement())
     }
 
     /// Whether the second-to-last input in the buffer had movement.
@@ -126,7 +116,7 @@ impl PredictionHistory {
             .iter()
             .rev()
             .nth(1)
-            .map_or(false, |a| a.has_movement())
+            .is_some_and(|a| a.has_movement())
     }
 }
 
@@ -229,10 +219,6 @@ fn lerp_angle(from: f32, to: f32, t: f32) -> f32 {
     from + diff * t
 }
 
-// ---------------------------------------------------------------------------
-// Systems — Local player prediction (FixedPreUpdate, before physics)
-// ---------------------------------------------------------------------------
-
 /// System that performs one tick of predicted character movement.
 ///
 /// Runs in `FixedPreUpdate`. Uses the shared `character_move_step` function
@@ -255,7 +241,6 @@ pub fn predict_player_movement(
             &MovementSpeedComponent,
             &mut CharacterVelocityY,
             &mut PredictionHistory,
-            Has<GroundedComponent>,
         ),
         With<PlayerComponent>,
     >,
@@ -263,7 +248,7 @@ pub fn predict_player_movement(
 ) {
     let current_tick = tick_sync.tick;
 
-    let Ok((entity, mut transform, collider, speed, mut vel_y, mut history, grounded)) =
+    let Ok((entity, mut transform, collider, speed, mut vel_y, mut history)) =
         q_player.single_mut()
     else {
         return;
@@ -287,61 +272,26 @@ pub fn predict_player_movement(
     // Run the shared movement step with full collision detection.
     let move_input = MoveInput::from(action.clone());
 
-    // --- TEMPORARY DIAGNOSTICS ---
-    if movement_value != Vec2::ZERO {
-        let dir = move_input.direction();
-        let vel = move_input.target_velocity(speed.0);
-        tracing::info!(
-            raw_input = ?movement_value,
-            yaw_rad,
-            action_forward = action.forward,
-            action_sideways = action.sideways,
-            move_input_forward = move_input.forward,
-            move_input_sideways = move_input.sideways,
-            move_input_yaw = move_input.yaw,
-            direction = ?dir,
-            velocity = ?vel,
-            current_pos = ?transform.translation,
-            "pre-move diagnostics"
-        );
-    }
-    // --- END TEMPORARY DIAGNOSTICS ---
-
     let result = character_controller::character_move_step(
         transform.translation,
         vel_y.0,
         &move_input,
         speed.0,
-        grounded,
         collider,
         entity,
         &spatial_query,
     );
 
-    // Apply the result.
     transform.translation = result.position;
     transform.rotation = Quat::from_rotation_y(result.yaw);
     vel_y.0 = result.velocity_y;
 
-    // --- TEMPORARY DIAGNOSTICS ---
-    if movement_value != Vec2::ZERO {
-        tracing::info!(
-            result_pos = ?result.position,
-            result_grounded = result.grounded,
-            result_vy = result.velocity_y,
-            "post-move diagnostics"
-        );
-    }
-    // --- END TEMPORARY DIAGNOSTICS ---
-
-    // Update grounded status.
     if result.grounded {
         commands.entity(entity).insert(GroundedComponent);
     } else {
         commands.entity(entity).remove::<GroundedComponent>();
     }
 
-    // Record input and state for reconciliation.
     history.push_input(action);
     history.push_state(PredictedState {
         position: result.position,
@@ -445,7 +395,6 @@ pub fn reconcile_with_server(
             let server_yaw = (update.transform.yaw as f32 / YAW_QUANTIZATION_FACTOR) * TAU;
 
             if entity == player_entity {
-                // --- Local player reconciliation with full resimulation ---
                 let Ok((player_ent, mut transform, collider, mut history, speed, mut vel_y)) =
                     q_player.single_mut()
                 else {
@@ -462,6 +411,7 @@ pub fn reconcile_with_server(
                     .unwrap_or(true);
 
                 if needs_correction {
+                    tracing::info!("need correction");
                     // Start from the server's authoritative state.
                     let mut replay_pos = server_position;
                     let mut replay_yaw = server_yaw;
@@ -492,7 +442,6 @@ pub fn reconcile_with_server(
                             replay_vy,
                             &move_input,
                             speed.0,
-                            replay_grounded,
                             collider,
                             player_ent,
                             &spatial_query,
@@ -531,7 +480,6 @@ pub fn reconcile_with_server(
                     );
                 }
             } else {
-                // --- Remote entity: push into interpolation buffer ---
                 if let Ok((mut transform, mut remote_interp)) = q_remote.get_mut(entity) {
                     remote_interp.push(server_position, server_yaw, elapsed);
 
@@ -545,10 +493,6 @@ pub fn reconcile_with_server(
     }
 }
 
-// ---------------------------------------------------------------------------
-// Systems — Remote entity visual interpolation (Update)
-// ---------------------------------------------------------------------------
-
 /// System that interpolates remote entities between buffered server snapshots.
 ///
 /// Remote actors are rendered one tick behind the latest server update,
@@ -557,7 +501,7 @@ pub fn interpolate_remote_actors(
     time: Res<Time>,
     mut query: Query<(&mut Transform, &RemoteInterpolation), Without<PlayerComponent>>,
 ) {
-    let render_time = time.elapsed_secs_f64() - FIXED_DT as f64;
+    let render_time = time.elapsed_secs_f64() - FIXED_DT_SECS as f64;
 
     for (mut transform, remote_interp) in query.iter_mut() {
         if let Some((pos, yaw)) = remote_interp.sample(render_time) {

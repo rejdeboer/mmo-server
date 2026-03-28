@@ -7,7 +7,7 @@ use crate::{
     telemetry::Metrics,
 };
 use bevy::{platform::collections::HashMap, prelude::*};
-use bevy_renet::{renet::DefaultChannel, RenetServer};
+use bevy_renet::{RenetServer, renet::DefaultChannel};
 use game_core::components::{LevelComponent, MovementSpeedComponent, Vitals};
 use protocol::{
     models::Actor,
@@ -38,7 +38,7 @@ pub fn sync_movement(
     }
 
     for (entity, transform, interested, moved_client_id) in q_movement.iter() {
-        if interested.clients.is_empty() {
+        if interested.clients.is_empty() && moved_client_id.is_none() {
             continue;
         }
 
@@ -67,20 +67,20 @@ pub fn sync_movement(
     let client_tick_map: HashMap<u64, u32> =
         q_clients.iter().map(|(cid, lct)| (cid.0, lct.0)).collect();
 
-    for (client_id, updates) in updates_per_client.iter() {
+    for (&client_id, updates) in updates_per_client.into_iter() {
         if updates.is_empty() {
             continue;
         }
 
-        let last_client_tick = client_tick_map.get(client_id).copied().unwrap_or(0);
+        let last_client_tick = client_tick_map.get(&client_id).copied().unwrap_or(0);
 
         let payload = ServerMovementPayload {
             last_client_tick,
-            updates: updates.clone(),
+            updates: updates.to_vec(),
         };
 
         let data = encode_buffer.encode(&payload);
-        server.send_message(*client_id, DefaultChannel::Unreliable, data.to_vec());
+        server.send_message(client_id, DefaultChannel::Unreliable, data.to_vec());
     }
 }
 

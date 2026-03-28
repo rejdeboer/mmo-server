@@ -173,7 +173,6 @@ pub fn create_authenticated_app(
             movement::interpolate_remote_actors,
             handle_actor_spawn_messages,
             handle_actor_despawn_messages,
-            // debug_player_transform,
         )
             .run_if(in_state(AppState::InGame)),
     );
@@ -301,7 +300,7 @@ fn setup_world(mut commands: Commands, assets: Res<AssetServer>) {
             }),
         ),
         // TODO: We are trying to match Godot here to make it work, but this is hacky
-        Transform::from_xyz(0., -4., 0.),
+        Transform::from_xyz(0., -3., 0.),
         RigidBody::Static,
         ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
     ));
@@ -315,16 +314,6 @@ fn setup_world(mut commands: Commands, assets: Res<AssetServer>) {
         },
         Transform::from_rotation(Quat::from_euler(EulerRot::XYZ, -0.8, 0.4, 0.0)),
     ));
-}
-
-fn debug_player_transform(q_player: Query<&Transform, With<PlayerComponent>>) {
-    let Ok(transform) = q_player.single() else {
-        return;
-    };
-    tracing::info!(
-        pos = ?transform.translation,
-        "render-frame player position"
-    );
 }
 
 fn receive_server_events(

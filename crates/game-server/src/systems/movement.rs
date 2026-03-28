@@ -25,12 +25,11 @@ pub fn process_move_action_messages(
         &Collider,
         &MovementSpeedComponent,
         &mut CharacterVelocityY,
-        Has<GroundedComponent>,
     )>,
     mut commands: Commands,
 ) {
     reader.read().for_each(|msg| {
-        let Ok((entity, mut transform, collider, movement_speed, mut vel_y, grounded)) =
+        let Ok((entity, mut transform, collider, movement_speed, mut vel_y)) =
             q_player.get_mut(msg.entity)
         else {
             tracing::error!(entity = ?msg.entity, "could not find entity");
@@ -38,27 +37,14 @@ pub fn process_move_action_messages(
         };
 
         let input = MoveInput::from(msg.action.clone());
-
-        let before_pos = transform.translation;
         let result = character_controller::character_move_step(
             transform.translation,
             vel_y.0,
             &input,
             movement_speed.0,
-            grounded,
             collider,
             entity,
             &spatial_query,
-        );
-
-        tracing::info!(
-            ?before_pos,
-            result_pos = ?result.position,
-            result_grounded = result.grounded,
-            result_vy = result.velocity_y,
-            vel_x = input.target_velocity(movement_speed.0).x,
-            vel_z = input.target_velocity(movement_speed.0).z,
-            "server move_action result"
         );
 
         transform.translation = result.position;
@@ -84,6 +70,7 @@ pub fn process_jump_action_messages(
     })
 }
 
+// TODO: Do we still need this system?
 pub fn check_ground_status(
     mut commands: Commands,
     query: Query<(Entity, &ShapeHits), With<ClientIdComponent>>,

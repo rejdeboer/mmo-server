@@ -1,13 +1,8 @@
-use avian3d::prelude::*;
-use bevy::prelude::*;
-
 use crate::collision::GameLayer;
 use crate::constants::TICK_RATE_HZ;
 use crate::movement::MoveInput;
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
+use avian3d::prelude::*;
+use bevy::prelude::*;
 
 /// Gravitational acceleration applied each tick (units/s^2, downward).
 pub const GRAVITY: f32 = -19.6;
@@ -27,15 +22,10 @@ const SKIN_WIDTH: f32 = 0.01;
 /// Steeper surfaces are treated as walls (the character slides along them).
 pub const MAX_SLOPE_ANGLE: f32 = std::f32::consts::FRAC_PI_4; // 45 degrees
 
-/// Fixed timestep duration in seconds.
-pub const FIXED_DT: f32 = 1.0 / TICK_RATE_HZ as f32;
+pub const FIXED_DT_SECS: f32 = 1.0 / TICK_RATE_HZ as f32;
 
 /// Maximum downward cast distance for ground detection.
 const GROUND_CHECK_DISTANCE: f32 = 0.15;
-
-// ---------------------------------------------------------------------------
-// Components
-// ---------------------------------------------------------------------------
 
 /// The character's vertical velocity, managed manually since we use a
 /// kinematic rigid body (not affected by the physics solver's gravity).
@@ -47,10 +37,6 @@ impl Default for CharacterVelocityY {
         Self(0.0)
     }
 }
-
-// ---------------------------------------------------------------------------
-// Character movement step — the core shared function
-// ---------------------------------------------------------------------------
 
 /// Result of a single movement step.
 #[derive(Debug, Clone)]
@@ -88,7 +74,6 @@ pub struct MoveResult {
 /// - `velocity_y`: Current vertical velocity (positive = up).
 /// - `input`: The movement input for this tick.
 /// - `movement_speed`: The character's horizontal movement speed.
-/// - `grounded`: Whether the character was grounded last tick.
 /// - `shape`: The character's collision shape (capsule).
 /// - `entity`: The character's entity (excluded from spatial queries).
 /// - `spatial_query`: Avian3d's spatial query system parameter.
@@ -97,46 +82,30 @@ pub fn character_move_step(
     velocity_y: f32,
     input: &MoveInput,
     movement_speed: f32,
-    _grounded: bool,
     shape: &Collider,
     entity: Entity,
     spatial_query: &SpatialQuery,
 ) -> MoveResult {
-    let dt = FIXED_DT;
+    let dt = FIXED_DT_SECS;
     let filter = SpatialQueryFilter::from_excluded_entities([entity])
         .with_mask([GameLayer::Default, GameLayer::Ground]);
 
-    // --- 1. Horizontal movement (collide-and-slide) ---
     let horizontal_velocity = input.target_velocity(movement_speed);
     let horizontal_displacement =
         Vec3::new(horizontal_velocity.x * dt, 0.0, horizontal_velocity.z * dt);
 
     let after_horizontal = if horizontal_displacement.length_squared() > 0.0001 * 0.0001 {
-        let result = move_and_slide(
+        move_and_slide(
             position,
             horizontal_displacement,
             shape,
             &filter,
             spatial_query,
-        );
-        // --- TEMPORARY DIAGNOSTICS ---
-        if (result - position).length_squared() < 0.00001
-            && horizontal_displacement.length_squared() > 0.001
-        {
-            bevy::log::warn!(
-                ?position,
-                ?horizontal_displacement,
-                ?result,
-                "horizontal move_and_slide produced no movement!"
-            );
-        }
-        // --- END TEMPORARY DIAGNOSTICS ---
-        result
+        )
     } else {
         position
     };
 
-    // --- 2. Vertical movement (gravity / jump) ---
     let mut vy = velocity_y + GRAVITY * dt;
     let vertical_displacement = Vec3::new(0.0, vy * dt, 0.0);
 
@@ -152,7 +121,6 @@ pub fn character_move_step(
         after_horizontal
     };
 
-    // --- 3. Ground check ---
     let config = ShapeCastConfig::from_max_distance(GROUND_CHECK_DISTANCE);
     let is_grounded = spatial_query
         .cast_shape(
@@ -163,15 +131,10 @@ pub fn character_move_step(
             &config,
             &filter,
         )
-        .is_some_and(|hit| {
-            // Check slope angle — only count as grounded if the surface is walkable.
-            hit.normal1.angle_between(Vec3::Y) <= MAX_SLOPE_ANGLE
-        });
+        .is_some_and(|hit| hit.normal1.angle_between(Vec3::Y) <= MAX_SLOPE_ANGLE);
 
-    // --- 4. Snap to ground / zero vertical velocity ---
     let mut final_position = after_vertical;
     if is_grounded && vy <= 0.0 {
-        // Snap the character down to the ground surface to prevent floating.
         if let Some(hit) = spatial_query
             .cast_shape(
                 shape,
@@ -197,19 +160,13 @@ pub fn character_move_step(
 }
 
 /// Perform a jump if the character is grounded.
-///
 /// Returns the new vertical velocity. Call this before `character_move_step`
 /// in the same tick to apply the jump on the same frame as the input.
 pub fn try_jump(velocity_y: f32, grounded: bool) -> f32 {
     if grounded { JUMP_VELOCITY } else { velocity_y }
 }
 
-// ---------------------------------------------------------------------------
-// Collide-and-slide implementation
-// ---------------------------------------------------------------------------
-
 /// Move a shape through the world, sliding along surfaces on collision.
-///
 /// Uses iterative shape casts: sweep the shape along the remaining displacement,
 /// and on collision, remove the component of displacement along the hit normal.
 /// Repeats up to `MAX_SLIDE_ITERATIONS` times.
