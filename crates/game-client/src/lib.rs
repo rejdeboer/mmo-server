@@ -7,5 +7,4 @@ mod plugins;
 pub mod tick_sync;
 pub mod util;
 
-pub use protocol;
 pub use util::decode_token;

@@ -1,10 +1,10 @@
 use clap::Parser;
 use futures::future::join_all;
-use mmo_client::decode_token;
 use provisioner::{ProvisionParams, ProvisionResult};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
-use simulator::SimulatedClient;
+use renetcode::NetcodeError;
+use simulator::{ConnectToken, SimulatedClient};
 use std::time::Duration;
 
 /// A CLI to simulate MMO traffic
@@ -81,6 +81,16 @@ async fn main() -> anyhow::Result<()> {
     }
 
     Ok(())
+}
+
+fn decode_token(encoded: String) -> Result<ConnectToken, NetcodeError> {
+    // NOTE: Take the base64 padding into account
+    let mut decoded: [u8; 2048] = [0; 2048];
+    base64::decode_config_slice(encoded, base64::STANDARD, &mut decoded)
+        .map_err(|_| NetcodeError::PayloadAboveLimit)?;
+
+    let mut token = &decoded[..];
+    ConnectToken::read(&mut token)
 }
 
 async fn execute_provision(

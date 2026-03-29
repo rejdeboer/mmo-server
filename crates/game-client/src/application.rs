@@ -9,9 +9,9 @@ use avian3d::prelude::*;
 use bevy::{ecs::system::SystemParam, gltf::GltfLoaderSettings, prelude::*};
 use bevy_enhanced_input::prelude::*;
 use bevy_renet::{
-    RenetClient, RenetClientPlugin,
     netcode::{ClientAuthentication, ConnectToken, NetcodeClientPlugin, NetcodeClientTransport},
     renet::{ConnectionConfig, DefaultChannel},
+    RenetClient, RenetClientPlugin,
 };
 use game_core::{
     character_controller::CharacterVelocityY,
