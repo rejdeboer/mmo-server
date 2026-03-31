@@ -1,6 +1,7 @@
-use crate::application::{NetworkIdMapping, PlayerComponent};
+use crate::application::PlayerComponent;
 use crate::camera::ThirdPersonCamera;
 use crate::input::Movement;
+use crate::network::NetworkIdMapping;
 use crate::tick_sync::TickSync;
 use avian3d::prelude::*;
 use bevy::prelude::*;
@@ -327,10 +328,6 @@ pub fn send_player_input(
     client.send_message(bevy_renet::renet::DefaultChannel::Unreliable, encoded);
 }
 
-// ---------------------------------------------------------------------------
-// Systems — Server reconciliation with full resimulation (Update)
-// ---------------------------------------------------------------------------
-
 /// System that receives authoritative transform updates from the server
 /// and performs server reconciliation for the local player.
 ///
@@ -479,15 +476,13 @@ pub fn reconcile_with_server(
                         "server correction with resimulation"
                     );
                 }
-            } else {
-                if let Ok((mut transform, mut remote_interp)) = q_remote.get_mut(entity) {
-                    remote_interp.push(server_position, server_yaw, elapsed);
+            } else if let Ok((mut transform, mut remote_interp)) = q_remote.get_mut(entity) {
+                remote_interp.push(server_position, server_yaw, elapsed);
 
-                    // Also update the physics transform so collision queries
-                    // against remote entities have a reasonable position.
-                    transform.translation = server_position;
-                    transform.rotation = Quat::from_rotation_y(server_yaw);
-                }
+                // Also update the physics transform so collision queries
+                // against remote entities have a reasonable position.
+                transform.translation = server_position;
+                transform.rotation = Quat::from_rotation_y(server_yaw);
             }
         }
     }

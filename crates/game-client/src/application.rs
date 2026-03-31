@@ -3,15 +3,16 @@ use crate::{
     configuration::Settings,
     input::{Chatting, Movement},
     movement::{self, PredictionHistory, RemoteInterpolation},
+    network::{NetworkIdMapping, poll_connection, receive_server_events},
     tick_sync::{self, TickSync},
 };
 use avian3d::prelude::*;
-use bevy::{ecs::system::SystemParam, gltf::GltfLoaderSettings, prelude::*};
+use bevy::{gltf::GltfLoaderSettings, platform::collections::HashMap, prelude::*};
 use bevy_enhanced_input::prelude::*;
 use bevy_renet::{
-    netcode::{ClientAuthentication, ConnectToken, NetcodeClientPlugin, NetcodeClientTransport},
-    renet::{ConnectionConfig, DefaultChannel},
     RenetClient, RenetClientPlugin,
+    netcode::{ClientAuthentication, ConnectToken, NetcodeClientPlugin, NetcodeClientTransport},
+    renet::ConnectionConfig,
 };
 use game_core::{
     character_controller::CharacterVelocityY,
@@ -19,11 +20,8 @@ use game_core::{
     components::{LevelComponent, MovementSpeedComponent, NetworkId, Vitals},
     constants::BASE_MOVEMENT_SPEED,
 };
-use protocol::{
-    models::Actor,
-    server::{EnterGameResponse, ServerEvent},
-};
-use std::{collections::HashMap, net::UdpSocket, time::SystemTime};
+use protocol::{models::Actor, server::EnterGameResponse};
+use std::{net::UdpSocket, time::SystemTime};
 use web_client::WebClient;
 
 #[derive(States, Debug, Clone, PartialEq, Eq, Hash)]
@@ -35,9 +33,6 @@ pub enum AppState {
 
 #[derive(Resource)]
 pub struct WebApi(pub WebClient);
-
-#[derive(Resource)]
-pub struct NetworkIdMapping(pub HashMap<NetworkId, Entity>);
 
 #[derive(Event)]
 pub struct EnterGame(pub EnterGameResponse);
@@ -63,12 +58,6 @@ pub struct ActorSpawnMessage(pub Actor);
 
 #[derive(Message)]
 pub struct ActorDespawnMessage(pub NetworkId);
-
-#[derive(SystemParam)]
-pub struct NetworkMessageWriters<'w> {
-    pub spawns: MessageWriter<'w, ActorSpawnMessage>,
-    pub despawns: MessageWriter<'w, ActorDespawnMessage>,
-}
 
 #[derive(Bundle)]
 pub struct ActorBundle {
@@ -189,30 +178,9 @@ pub fn create_authenticated_app(
 
     // app.add_systems(FixedPostUpdate, ().after(PhysicsSystems::Last));
 
-    // Load the world scene early (during connection) so GLTF meshes and
-    // trimesh colliders are ready by the time the player enters the game.
     app.add_systems(Startup, setup_world);
 
     app
-}
-
-fn poll_connection(
-    mut commands: Commands,
-    mut next_state: ResMut<NextState<AppState>>,
-    mut client: ResMut<RenetClient>,
-) {
-    if let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
-        match bitcode::decode::<EnterGameResponse>(&message) {
-            Ok(response) => {
-                commands.trigger(EnterGame(response));
-                next_state.set(AppState::InGame);
-            }
-            Err(e) => {
-                tracing::error!("received invalid EnterGameResponse {}", e);
-                next_state.set(AppState::CharacterSelect);
-            }
-        }
-    }
 }
 
 fn create_renet_transport(authentication: ClientAuthentication) -> NetcodeClientTransport {
@@ -314,41 +282,6 @@ fn setup_world(mut commands: Commands, assets: Res<AssetServer>) {
         },
         Transform::from_rotation(Quat::from_euler(EulerRot::XYZ, -0.8, 0.4, 0.0)),
     ));
-}
-
-fn receive_server_events(
-    mut writers: NetworkMessageWriters,
-    mut client: ResMut<RenetClient>,
-    mut tick_sync: ResMut<TickSync>,
-) {
-    while let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
-        match bitcode::decode::<ServerEvent>(&message) {
-            Ok(event) => match event {
-                ServerEvent::ActorSpawn(actor) => {
-                    writers.spawns.write(ActorSpawnMessage(*actor));
-                }
-                ServerEvent::ActorDespawn(id) => {
-                    writers.despawns.write(ActorDespawnMessage(NetworkId(id)));
-                }
-                ServerEvent::Pong {
-                    client_tick,
-                    server_tick,
-                } => {
-                    tick_sync.observe_pong(server_tick, client_tick);
-                    tracing::debug!(
-                        server_tick,
-                        client_tick,
-                        current_tick = tick_sync.tick,
-                        "PONG"
-                    );
-                }
-                _ => todo!("Handle server event"),
-            },
-            Err(e) => {
-                tracing::error!("received invalid ServerEvent {}", e);
-            }
-        }
-    }
 }
 
 pub fn handle_actor_spawn_messages(
