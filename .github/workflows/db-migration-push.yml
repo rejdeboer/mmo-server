@@ -29,5 +29,5 @@ jobs:
         uses: ./.github/actions/push-image
         with:
           file: "db/migrations/Dockerfile"
-          image: rejdeboer/mmo-db-migration
+          image: rejdeboer/game-db-migration
 

@@ -29,5 +29,5 @@ jobs:
         uses: ./.github/actions/push-image
         with:
           file: "provisioner/Dockerfile"
-          image: rejdeboer/mmo-provisioner
+          image: rejdeboer/game-provisioner
 
