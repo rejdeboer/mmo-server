@@ -28,6 +28,6 @@ jobs:
       - name: Build and push
         uses: ./.github/actions/push-image
         with:
-          file: "provisioner/Dockerfile"
+          file: "crates/provisioner/Dockerfile"
           image: rejdeboer/game-provisioner
 
