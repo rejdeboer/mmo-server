@@ -91,7 +91,8 @@ impl TestApp {
 
     pub async fn login_character(&mut self) -> Result<(), WebClientError> {
         self.login_account().await?;
-        self.client.select_character(self.character.id).await
+        self.client.select_character(self.character.id).await?;
+        Ok(())
     }
 }
 

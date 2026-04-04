@@ -14,5 +14,6 @@ async fn game_entry_success() -> Result<(), WebClientError> {
         })
         .await?;
 
-    app.client.select_character(character.id).await
+    app.client.select_character(character.id).await?;
+    Ok(())
 }
