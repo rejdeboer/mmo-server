@@ -1,4 +1,4 @@
-use crate::net::{ConnectionEvent, ConnectToken, GameClient};
+use crate::net::{ConnectToken, ConnectionEvent, GameClient};
 use protocol::client::MoveAction;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;

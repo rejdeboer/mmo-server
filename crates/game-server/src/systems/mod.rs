@@ -21,4 +21,3 @@ pub use spells::*;
 pub use sync::*;
 pub use visibility::*;
 pub use vitals::*;
-

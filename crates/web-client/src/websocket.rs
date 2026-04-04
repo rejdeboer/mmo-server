@@ -1,3 +1,6 @@
+use crate::{
+    action::SocialAction, event::SocialEvent, reader::run_reader_task, writer::run_writer_task,
+};
 use futures_util::StreamExt;
 use http::{
     Request, StatusCode,
@@ -5,9 +8,6 @@ use http::{
 };
 use tokio::sync::{mpsc, watch};
 use url::Url;
-use crate::{
-    action::SocialAction, event::SocialEvent, reader::run_reader_task, writer::run_writer_task,
-};
 
 pub type ConnectionResult =
     Result<(mpsc::Sender<SocialAction>, mpsc::Receiver<SocialEvent>), ConnectionError>;

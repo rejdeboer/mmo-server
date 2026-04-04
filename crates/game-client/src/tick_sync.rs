@@ -1,6 +1,6 @@
 use bevy::prelude::*;
-use bevy_renet::renet::DefaultChannel;
 use bevy_renet::RenetClient;
+use bevy_renet::renet::DefaultChannel;
 use game_core::constants::TICK_RATE_HZ;
 use protocol::client::PlayerAction;
 

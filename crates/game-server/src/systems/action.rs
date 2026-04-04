@@ -4,7 +4,7 @@ use crate::{
     telemetry::Metrics,
 };
 use bevy::prelude::*;
-use bevy_renet::{renet::DefaultChannel, RenetServer};
+use bevy_renet::{RenetServer, renet::DefaultChannel};
 use protocol::client::{MoveAction, PlayerAction};
 use protocol::server::ServerEvent;
 
