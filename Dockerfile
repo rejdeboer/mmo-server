@@ -23,14 +23,14 @@ RUN apt-get update -y \
 
 FROM runtime-base AS web-server
 COPY --from=builder /app/target/release/web-server web-server
-COPY web-server/configuration configuration
+COPY crates/web-server/configuration configuration
 CMD ["./web-server"]
 LABEL service=web-server
 
 FROM runtime-base AS game-server
 COPY --from=builder /app/target/release/game-server game-server
-COPY game-server/configuration configuration
+COPY crates/game-server/configuration configuration
 # TODO: Probably we want to improve the way we handle assets in prod
-COPY game-server/assets assets
+COPY crates/game-server/assets assets
 CMD ["./game-server"]
 LABEL service=game-server
