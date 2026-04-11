@@ -98,7 +98,6 @@ services:
   #     - ./mmo-server/assets:/app/assets
   #   environment:
   #     - APP_SERVER__HOST=0.0.0.0
-  #     - APP_SERVER__METRICS_PATH=/app/game-metrics.prom
   #     - APP_DATABASE__PORT=5432
   #     - APP_TRACING__OTEL_EXPORTER_ENDPOINT=http://tempo:4317
   #     - SQLX_OFFLINE=true

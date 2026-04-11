@@ -1,7 +1,7 @@
 use crate::{
     components::{ClientIdComponent, LastClientTick, ServerTick},
     messages::{CastSpellActionMessage, IncomingChatMessage, JumpActionMessage, MoveActionMessage},
-    telemetry::Metrics,
+    telemetry::{NETWORK_BYTES_TOTAL_METRIC, NETWORK_PACKETS_TOTAL_METRIC},
 };
 use bevy::prelude::*;
 use bevy_renet::{RenetServer, renet::DefaultChannel};
@@ -13,21 +13,24 @@ pub fn process_client_actions(
     server_tick: Res<ServerTick>,
     clients: Query<(Entity, &ClientIdComponent)>,
     mut commands: Commands,
-    metrics: Res<Metrics>,
     mut encode_buffer: Local<bitcode::Buffer>,
 ) {
     for (entity, client_id) in clients.iter() {
         while let Some(message) =
             server.receive_message(client_id.0, DefaultChannel::ReliableOrdered)
         {
-            metrics
-                .network_packets_total
-                .with_label_values(&["incoming", "reliable"])
-                .inc();
-            metrics
-                .network_bytes_total
-                .with_label_values(&["incoming", "reliable"])
-                .inc_by(message.len() as u64);
+            metrics::counter!(
+                NETWORK_PACKETS_TOTAL_METRIC,
+                "direction" => "incoming",
+                "channel" => "reliable"
+            )
+            .increment(1);
+            metrics::counter!(
+                NETWORK_BYTES_TOTAL_METRIC,
+                "direction" => "incoming",
+                "channel" => "reliable"
+            )
+            .increment(message.len() as u64);
 
             match bitcode::decode::<PlayerAction>(&message) {
                 Ok(action) => {
@@ -52,21 +55,24 @@ pub fn process_client_actions(
 pub fn process_client_movements(
     mut server: ResMut<RenetServer>,
     mut clients: Query<(Entity, &ClientIdComponent, &mut LastClientTick)>,
-    metrics: Res<Metrics>,
     mut writer: MessageWriter<MoveActionMessage>,
 ) {
     for (entity, client_id, mut last_client_tick) in clients.iter_mut() {
         let mut latest_action: Option<MoveAction> = None;
 
         while let Some(message) = server.receive_message(client_id.0, DefaultChannel::Unreliable) {
-            metrics
-                .network_packets_total
-                .with_label_values(&["incoming", "unreliable"])
-                .inc();
-            metrics
-                .network_bytes_total
-                .with_label_values(&["incoming", "unreliable"])
-                .inc_by(message.len() as u64);
+            metrics::counter!(
+                NETWORK_PACKETS_TOTAL_METRIC,
+                "direction" => "incoming",
+                "channel" => "unreliable"
+            )
+            .increment(1);
+            metrics::counter!(
+                NETWORK_BYTES_TOTAL_METRIC,
+                "direction" => "incoming",
+                "channel" => "unreliable"
+            )
+            .increment(message.len() as u64);
 
             match bitcode::decode::<MoveAction>(&message) {
                 Ok(action) => {

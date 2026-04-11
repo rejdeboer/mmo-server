@@ -1,134 +1,56 @@
 use crate::configuration::{TracingFormat, TracingSettings};
-use bevy::prelude::*;
-use bevy_tokio_tasks::TaskContext;
+use metrics::{Unit, describe_counter, describe_gauge, describe_histogram};
+use metrics_exporter_prometheus::PrometheusBuilder;
+use metrics_util::MetricKindMask;
+use metrics_util::layers::{Layer, PrefixLayer};
 use opentelemetry::global;
 use opentelemetry_otlp::{Protocol, WithExportConfig};
 use opentelemetry_sdk::propagation::TraceContextPropagator;
-use prometheus::{Encoder, Gauge, IntCounterVec, Opts, Registry, TextEncoder};
-use prometheus::{Histogram, HistogramOpts, IntGauge};
-use std::fs::File;
-use std::io::Write;
-use std::sync::Arc;
-use tokio::sync::Mutex;
-use tokio::time::{Duration, Instant, interval};
+use tokio::time::Duration;
 use tracing_log::LogTracer;
 use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt};
 
-const EXPORT_INTERVAL_SECS: f32 = 5.;
+pub const SERVER_SIMULATION_TICK_METRIC: &str = "server_simulation_tick";
+pub const SERVER_FIXED_TICK_METRIC: &str = "server_fixed_tick";
+pub const CONNECTED_PLAYERS_METRIC: &str = "connected_players_count";
+pub const NETWORK_PACKETS_TOTAL_METRIC: &str = "network_packets_total";
+pub const NETWORK_BYTES_TOTAL_METRIC: &str = "network_bytes_total";
+pub const SERVER_RTT_METRIC: &str = "server_rtt";
 
-#[derive(Resource, Clone)]
-pub struct Metrics {
-    pub registry: Arc<Mutex<Registry>>,
-    pub connected_players: IntGauge,
-    pub tick_rate: Gauge,
-    pub network_packets_total: IntCounterVec,
-    pub network_bytes_total: IntCounterVec,
-    pub server_rtt: Histogram,
-}
-
-impl Default for Metrics {
-    fn default() -> Self {
-        let registry = Registry::new_custom(Some("game".to_string()), None).unwrap();
-
-        let connected_players = IntGauge::new(
-            "connected_players_count",
-            "Current number of connected players",
+pub async fn init_prometheus_exporter() {
+    tracing::info!("starting prometheus exporter");
+    let (recorder, exporter) = PrometheusBuilder::new()
+        .idle_timeout(
+            MetricKindMask::COUNTER | MetricKindMask::HISTOGRAM,
+            Some(Duration::from_secs(10)),
         )
-        .unwrap();
-        registry
-            .register(Box::new(connected_players.clone()))
-            .unwrap();
+        .build()
+        .expect("failed to build prometheus exporter");
+    let prefixed_recorder = PrefixLayer::new("game").layer(recorder);
+    metrics::set_global_recorder(prefixed_recorder).expect("failed to set global recorder");
 
-        let tick_rate = Gauge::new(
-            "server_tick_rate_hz",
-            "The server's current tick rate in Hz",
-        )
-        .unwrap();
-        registry.register(Box::new(tick_rate.clone())).unwrap();
+    describe_histogram!(SERVER_RTT_METRIC, Unit::Seconds, "Packet round trip time");
+    describe_counter!(
+        NETWORK_BYTES_TOTAL_METRIC,
+        Unit::Bytes,
+        "The total number of bytes sent / received"
+    );
+    describe_counter!(
+        NETWORK_PACKETS_TOTAL_METRIC,
+        "The total number of packets sent / received"
+    );
+    describe_gauge!(
+        CONNECTED_PLAYERS_METRIC,
+        "Current number of connected players"
+    );
+    describe_counter!(SERVER_FIXED_TICK_METRIC, "The current fixed server tick");
+    describe_counter!(
+        SERVER_SIMULATION_TICK_METRIC,
+        "The current simulation server tick"
+    );
 
-        let network_packets_total = IntCounterVec::new(
-            Opts::new(
-                "network_packets_total",
-                "The total number of packets sent / received",
-            ),
-            &["direction", "channel"],
-        )
-        .unwrap();
-        registry
-            .register(Box::new(network_packets_total.clone()))
-            .unwrap();
-
-        let network_bytes_total = IntCounterVec::new(
-            Opts::new(
-                "network_bytes_total",
-                "The total number of bytes sent / received",
-            ),
-            &["direction", "channel"],
-        )
-        .unwrap();
-        registry
-            .register(Box::new(network_bytes_total.clone()))
-            .unwrap();
-
-        let server_rtt =
-            Histogram::with_opts(HistogramOpts::new("server_rtt", "Packet round trip time"))
-                .unwrap();
-        registry.register(Box::new(server_rtt.clone())).unwrap();
-
-        #[cfg(target_os = "linux")]
-        {
-            use prometheus::process_collector::ProcessCollector;
-
-            let process_collector = ProcessCollector::for_self();
-            registry.register(Box::new(process_collector)).unwrap();
-        }
-
-        Self {
-            registry: Arc::new(Mutex::new(registry)),
-            connected_players,
-            tick_rate,
-            network_packets_total,
-            network_bytes_total,
-            server_rtt,
-        }
-    }
-}
-
-pub async fn run_metrics_exporter(ctx: TaskContext, metrics: Metrics, path: String) {
-    let mut interval = interval(Duration::from_secs_f32(EXPORT_INTERVAL_SECS));
-    let mut last_tick = ctx.current_tick();
-    let mut last_instant = Instant::now();
-
-    loop {
-        let now = interval.tick().await;
-        let dt = now.duration_since(last_instant).as_secs_f64();
-        last_instant = now;
-
-        let current_tick = ctx.current_tick();
-        let elapsed_ticks = (current_tick - last_tick) as f64;
-        last_tick = current_tick;
-
-        metrics.tick_rate.set(elapsed_ticks / dt);
-
-        let registry = metrics.registry.lock().await;
-        let encoder = TextEncoder::new();
-        let mut buffer = Vec::new();
-
-        if let Err(err) = encoder.encode(&registry.gather(), &mut buffer) {
-            error!(?err, "failed to encode metrics");
-            continue;
-        }
-
-        let task_path = path.clone();
-        tokio::task::spawn_blocking(move || match File::create(&task_path) {
-            Ok(mut file) => {
-                if let Err(err) = file.write_all(&buffer) {
-                    error!(?err, "failed to write metrics to file");
-                }
-            }
-            Err(err) => error!(?err, "failed to create metrics file"),
-        });
-    }
+    tracing::info!("serving metrics on port 9000");
+    exporter.await.expect("failed to start exporter");
 }
 
 pub fn init_subscriber(settings: &TracingSettings) {

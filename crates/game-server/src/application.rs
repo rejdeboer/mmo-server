@@ -7,7 +7,6 @@ use crate::messages::{
 use crate::observers::{on_entity_death, reward_kill};
 use crate::plugins::{AppPlugin, AssetsPlugin};
 use crate::systems::{on_connection_event, setup_spawners, update_server_metrics};
-use crate::telemetry::{Metrics, run_metrics_exporter};
 use avian3d::prelude::*;
 use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
@@ -98,7 +97,6 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     app.insert_resource(netcode_transport);
     app.insert_resource(settings);
     app.insert_resource(SpatialGrid::default());
-    app.insert_resource(Metrics::default());
     app.insert_resource(ServerTick::default());
 
     app.add_message::<ApplySpellEffectMessage>();
@@ -109,10 +107,7 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     app.add_message::<OutgoingMessage>();
     app.add_message::<VisibilityChangedMessage>();
 
-    app.add_systems(
-        Startup,
-        (setup_database_pool, setup_metrics_exporter, setup_spawners),
-    );
+    app.add_systems(Startup, (setup_database_pool, setup_spawners));
     app.add_systems(
         FixedPreUpdate,
         (
@@ -129,6 +124,7 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
         )
             .chain(),
     );
+    app.add_systems(Update, crate::systems::increment_simulation_tick);
     app.add_systems(
         PostUpdate,
         update_server_metrics.run_if(on_timer(Duration::from_secs(5))),
@@ -178,18 +174,4 @@ fn setup_database_pool(
         .runtime()
         .block_on(async move { get_connection_pool(&settings) });
     commands.insert_resource(DatabasePool(pool));
-}
-
-fn setup_metrics_exporter(
-    runtime: Res<TokioTasksRuntime>,
-    metrics: Res<Metrics>,
-    settings: Res<Settings>,
-) {
-    info!("starting metrics exporter");
-    let metrics_clone = metrics.clone();
-    let path = settings.server.metrics_path.clone();
-
-    runtime.spawn_background_task(async move |ctx| {
-        run_metrics_exporter(ctx, metrics_clone, path).await;
-    });
 }

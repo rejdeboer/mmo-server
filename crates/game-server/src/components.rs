@@ -1,9 +1,8 @@
+use crate::{assets::ContentId, telemetry::SERVER_FIXED_TICK_METRIC};
 use bevy::{platform::collections::HashSet, prelude::*};
 use bevy_renet::renet::ClientId;
 use protocol::models::ItemDrop;
 use std::sync::Arc;
-
-use crate::assets::ContentId;
 
 #[derive(Resource, Debug, Default)]
 pub struct ServerTick(pub u32);
@@ -11,6 +10,7 @@ pub struct ServerTick(pub u32);
 impl ServerTick {
     pub fn next(&mut self) -> u32 {
         let tick = self.0;
+        metrics::counter!(SERVER_FIXED_TICK_METRIC).increment(1);
         self.0 = self.0.wrapping_add(1);
         tick
     }

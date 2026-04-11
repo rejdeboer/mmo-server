@@ -1,4 +1,8 @@
-use game_server::{agones::agones_connect, application, configuration, telemetry::init_subscriber};
+use game_server::{
+    agones::agones_connect,
+    application, configuration,
+    telemetry::{init_prometheus_exporter, init_subscriber},
+};
 
 fn main() -> anyhow::Result<()> {
     let mut settings = configuration::get_configuration().expect("config fetched");
@@ -6,6 +10,9 @@ fn main() -> anyhow::Result<()> {
     let rt = tokio::runtime::Runtime::new()?;
     rt.block_on(async {
         init_subscriber(&settings.tracing);
+    });
+    rt.spawn(async {
+        init_prometheus_exporter().await;
     });
 
     if settings.server.enable_agones {

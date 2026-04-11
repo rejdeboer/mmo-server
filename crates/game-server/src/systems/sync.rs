@@ -4,7 +4,7 @@ use crate::{
         LastClientTick, NameComponent,
     },
     messages::{OutgoingMessage, VisibilityChangedMessage},
-    telemetry::Metrics,
+    telemetry::{NETWORK_BYTES_TOTAL_METRIC, NETWORK_PACKETS_TOTAL_METRIC},
 };
 use bevy::{platform::collections::HashMap, prelude::*};
 use bevy_renet::{RenetServer, renet::DefaultChannel};
@@ -88,22 +88,23 @@ pub fn sync_server_events(
     mut server: ResMut<RenetServer>,
     mut encode_buffer: Local<bitcode::Buffer>,
     mut reader: MessageReader<OutgoingMessage>,
-    metrics: Res<Metrics>,
 ) {
-    let metric_labels = &["outgoing", "reliable"];
-
     for msg in reader.read() {
         let event: ServerEvent = msg.data.clone().into();
         let event_data = encode_buffer.encode(&event);
 
-        metrics
-            .network_packets_total
-            .with_label_values(metric_labels)
-            .inc();
-        metrics
-            .network_bytes_total
-            .with_label_values(metric_labels)
-            .inc_by(event_data.len() as u64);
+        metrics::counter!(
+            NETWORK_PACKETS_TOTAL_METRIC,
+            "direction" => "outgoing",
+            "channel" => "reliable"
+        )
+        .increment(1);
+        metrics::counter!(
+            NETWORK_BYTES_TOTAL_METRIC,
+            "direction" => "outgoing",
+            "channel" => "reliable"
+        )
+        .increment(event_data.len() as u64);
 
         for &client_id in &msg.recipients {
             server.send_message(

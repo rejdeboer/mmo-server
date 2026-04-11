@@ -36,7 +36,6 @@ pub struct ServerSettings {
     pub public_port: Option<u16>,
     #[serde(default, deserialize_with = "deserialize_netcode_key")]
     pub netcode_private_key: Option<[u8; NETCODE_KEY_BYTES]>,
-    pub metrics_path: String,
     pub enable_agones: bool,
 }
 
