@@ -5,6 +5,7 @@ on:
     paths:
       - ".github/workflows/server-push.yml"
       - "crates/web-server/**"
+      - "crates/web-types/**"
       - "crates/game-server/**"
       - "Dockerfile"
       - "Cargo.toml"
