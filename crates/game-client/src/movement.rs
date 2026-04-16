@@ -18,6 +18,10 @@ use std::f32::consts::TAU;
 /// The distance threshold beyond which a server correction triggers reconciliation.
 /// Below this, the client's prediction is trusted entirely.
 const RECONCILIATION_THRESHOLD: f32 = 0.1;
+
+/// How fast the character visually rotates toward the movement direction (per second).
+/// This is purely cosmetic — the network yaw sent to the server is still instant.
+const VISUAL_ROTATION_SPEED: f32 = 12.0;
 const REMOTE_SNAPSHOT_BUFFER_SIZE: usize = 8;
 
 /// Snapshot of a predicted position + rotation at a given tick.
@@ -257,17 +261,22 @@ pub fn predict_player_movement(
 
     // Read current input. Zero when not fired.
     let (action_value, trigger_state) = *movement_action;
-    let movement_value = match trigger_state {
+    let mut movement_value = match trigger_state {
         TriggerState::Fired => **action_value,
         _ => Vec2::ZERO,
     };
 
+    // Both-buttons-held injects forward movement (WoW-style mouse steering).
+    let cam = q_camera.single().ok();
+    if cam.is_some_and(|c| c.both_buttons_move) {
+        movement_value.y = movement_value.y.max(1.0);
+    }
+
     // Use the camera's yaw as the movement direction reference.
     // WASD moves relative to where the camera is facing.
-    let yaw_rad = q_camera
-        .single()
-        .map(|cam| cam.yaw)
-        .unwrap_or_else(|_| transform.rotation.to_euler(EulerRot::YXZ).1);
+    let yaw_rad = cam
+        .map(|c| c.yaw)
+        .unwrap_or_else(|| transform.rotation.to_euler(EulerRot::YXZ).1);
     let action = MoveAction::from_f32(yaw_rad, movement_value.y, movement_value.x, current_tick);
 
     // Run the shared movement step with full collision detection.
@@ -284,7 +293,24 @@ pub fn predict_player_movement(
     );
 
     transform.translation = result.position;
-    transform.rotation = Quat::from_rotation_y(result.yaw);
+
+    // Character rotation (WoW-style):
+    // - Left-click drag (turn_character): snap character to face camera yaw.
+    // - WASD movement: slerp toward movement direction.
+    // - Idle with no left-click: hold last facing direction.
+    let turn_character = cam.is_some_and(|c| c.turn_character);
+    let is_moving = move_input.forward.abs() > 0.001 || move_input.sideways.abs() > 0.001;
+
+    if turn_character {
+        // Left-click drag: character immediately faces camera direction.
+        transform.rotation = Quat::from_rotation_y(yaw_rad);
+    } else if is_moving {
+        // WASD movement: smooth rotation toward movement direction.
+        let target_rot = Quat::from_rotation_y(result.yaw);
+        let t = (VISUAL_ROTATION_SPEED * FIXED_DT_SECS).min(1.0);
+        transform.rotation = transform.rotation.slerp(target_rot, t);
+    }
+
     vel_y.0 = result.velocity_y;
 
     if result.grounded {

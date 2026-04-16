@@ -39,14 +39,16 @@ const CAMERA_TARGET_OFFSET: Vec3 = Vec3::new(0.0, 2.0, 0.0);
 // Components
 // ---------------------------------------------------------------------------
 
-/// Third-person orbit camera state.
+/// Third-person orbit camera state (WoW-style).
 ///
-/// The camera orbits around the player character at a configurable distance.
-/// Yaw and pitch are controlled by mouse movement (right-click held).
-/// Scroll wheel controls zoom distance.
-///
-/// The camera's yaw is also used as the movement direction reference —
-/// WASD moves relative to where the camera is facing.
+/// - **Right-click drag**: orbits the camera around the character without
+///   turning the character.
+/// - **Left-click drag**: orbits the camera AND turns the character to face
+///   the camera's forward direction.
+/// - **Both buttons held**: character moves forward (like auto-run) while
+///   the mouse steers.
+/// - **Scroll wheel**: zoom in/out.
+/// - Cursor is free when no mouse button is held.
 #[derive(Component, Debug)]
 pub struct ThirdPersonCamera {
     /// Horizontal orbit angle in radians.
@@ -55,6 +57,11 @@ pub struct ThirdPersonCamera {
     pub pitch: f32,
     /// Distance from the camera to the player.
     pub distance: f32,
+    /// Whether the character should turn to face the camera yaw this frame.
+    /// Set by left-click drag or both-buttons-held.
+    pub turn_character: bool,
+    /// Whether both mouse buttons are held (triggers forward movement).
+    pub both_buttons_move: bool,
 }
 
 impl Default for ThirdPersonCamera {
@@ -63,6 +70,8 @@ impl Default for ThirdPersonCamera {
             yaw: 0.0,
             pitch: -0.3, // Slightly looking down at the character
             distance: DEFAULT_DISTANCE,
+            turn_character: false,
+            both_buttons_move: false,
         }
     }
 }
@@ -71,10 +80,12 @@ impl Default for ThirdPersonCamera {
 // Systems
 // ---------------------------------------------------------------------------
 
-/// Handles mouse input for camera rotation and scroll for zoom.
+/// Handles WoW-style mouse input for the third-person camera.
 ///
-/// Camera rotation is active when right mouse button is held.
-/// Scroll wheel adjusts zoom distance.
+/// - Right-click drag: orbit camera only.
+/// - Left-click drag: orbit camera + turn character to face camera direction.
+/// - Both buttons held: orbit + turn character + inject forward movement.
+/// - Scroll wheel: zoom.
 pub fn camera_input(
     mouse_motion: Res<AccumulatedMouseMotion>,
     mouse_scroll: Res<AccumulatedMouseScroll>,
@@ -85,12 +96,22 @@ pub fn camera_input(
         return;
     };
 
-    // Rotate camera on right-mouse-button drag.
-    if mouse_button.pressed(MouseButton::Right) {
+    let left = mouse_button.pressed(MouseButton::Left);
+    let right = mouse_button.pressed(MouseButton::Right);
+    let either = left || right;
+
+    // Rotate camera when any mouse button is held.
+    if either {
         cam.yaw -= mouse_motion.delta.x * MOUSE_SENSITIVITY;
         cam.pitch -= mouse_motion.delta.y * MOUSE_SENSITIVITY;
         cam.pitch = cam.pitch.clamp(MIN_PITCH, MAX_PITCH);
     }
+
+    // Left-click (with or without right) turns the character to face camera yaw.
+    cam.turn_character = left;
+
+    // Both buttons held = move forward.
+    cam.both_buttons_move = left && right;
 
     // Zoom with scroll wheel.
     if mouse_scroll.delta.y.abs() > 0.0 {
@@ -124,8 +145,10 @@ pub fn update_camera_transform(
     camera_transform.look_at(target, Vec3::Y);
 }
 
-/// Grabs the cursor when right mouse button is pressed, releases it when
-/// released. This provides a standard MMO camera feel.
+/// Grabs/releases the cursor based on mouse button state.
+///
+/// Cursor is locked and hidden while either mouse button is held,
+/// free otherwise.
 pub fn manage_cursor_grab(
     mouse_button: Res<ButtonInput<MouseButton>>,
     mut q_cursor: Query<&mut CursorOptions>,
@@ -134,12 +157,13 @@ pub fn manage_cursor_grab(
         return;
     };
 
-    if mouse_button.just_pressed(MouseButton::Right) {
+    let any_pressed =
+        mouse_button.pressed(MouseButton::Left) || mouse_button.pressed(MouseButton::Right);
+
+    if any_pressed && cursor.grab_mode != CursorGrabMode::Locked {
         cursor.grab_mode = CursorGrabMode::Locked;
         cursor.visible = false;
-    }
-
-    if mouse_button.just_released(MouseButton::Right) {
+    } else if !any_pressed && cursor.grab_mode != CursorGrabMode::None {
         cursor.grab_mode = CursorGrabMode::None;
         cursor.visible = true;
     }
