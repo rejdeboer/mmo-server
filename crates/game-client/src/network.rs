@@ -1,5 +1,6 @@
 use crate::{
     application::{ActorDespawnMessage, ActorSpawnMessage, AppState, EnterGame},
+    chat::{ChatLog, ChatMessage, ChatMessageChannel},
     tick_sync::TickSync,
 };
 use bevy::{ecs::system::SystemParam, platform::collections::HashMap, prelude::*};
@@ -39,6 +40,7 @@ pub fn receive_server_events(
     mut writers: NetworkMessageWriters,
     mut client: ResMut<RenetClient>,
     mut tick_sync: ResMut<TickSync>,
+    mut chat_log: ResMut<ChatLog>,
 ) {
     while let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
         match bitcode::decode::<ServerEvent>(&message) {
@@ -61,7 +63,25 @@ pub fn receive_server_events(
                         "PONG"
                     );
                 }
-                _ => todo!("Handle server event"),
+                ServerEvent::Chat {
+                    channel,
+                    sender_name,
+                    text,
+                } => {
+                    let ch = match channel {
+                        protocol::models::ChatChannel::Say => ChatMessageChannel::Say,
+                        protocol::models::ChatChannel::Yell => ChatMessageChannel::Yell,
+                        protocol::models::ChatChannel::Zone => ChatMessageChannel::Zone,
+                    };
+                    chat_log.push(ChatMessage {
+                        channel: ch,
+                        sender: sender_name,
+                        text,
+                    });
+                }
+                _ => {
+                    tracing::warn!("unhandled server event");
+                }
             },
             Err(e) => {
                 tracing::error!("received invalid ServerEvent {}", e);

@@ -1,5 +1,6 @@
 use crate::{
     camera::{self, ThirdPersonCamera},
+    chat::{self, ChatInputState, ChatLog, OpenChat, SocialReceiver, SocialSender},
     configuration::Settings,
     input::{Chatting, Movement},
     movement::{self, PredictionHistory, RemoteInterpolation},
@@ -112,6 +113,10 @@ pub fn create_authenticated_app(
     app.insert_resource(RenetClient::new(ConnectionConfig::default()));
     let transport = create_renet_transport(ClientAuthentication::Secure { connect_token });
     app.insert_resource(transport);
+    app.insert_resource(ChatLog::default());
+    app.insert_resource(ChatInputState::default());
+    app.insert_resource(SocialSender(None));
+    app.insert_resource(SocialReceiver(None));
 
     app.add_message::<ActorSpawnMessage>();
     app.add_message::<ActorDespawnMessage>();
@@ -173,6 +178,18 @@ pub fn create_authenticated_app(
             camera::update_camera_transform,
         )
             .chain()
+            .run_if(in_state(AppState::InGame)),
+    );
+    app.add_systems(
+        Update,
+        (
+            chat::handle_open_chat,
+            chat::handle_send_chat,
+            chat::handle_cancel_chat,
+            chat::handle_chat_text_input,
+            chat::poll_social_events,
+            chat::update_chat_ui,
+        )
             .run_if(in_state(AppState::InGame)),
     );
 
@@ -239,6 +256,10 @@ fn on_enter_game(
                 Scale::splat(10.0),
                 Bindings::spawn((Cardinal::wasd_keys(), Axial::left_stick())),
             ),
+            (
+                Action::<OpenChat>::new(),
+                Bindings::spawn(Spawn(Binding::from(KeyCode::Enter))),
+            ),
         ]),
     ));
     let player_entity_id = player_entity.id();
@@ -256,6 +277,9 @@ fn on_enter_game(
     let network_id_mapping = HashMap::from([(network_id, player_entity_id)]);
     commands.insert_resource(NetworkIdMapping(network_id_mapping));
     tracing::info!("spawned player");
+
+    // Spawn the chat UI panel
+    chat::spawn_chat_ui(&mut commands);
 }
 
 fn setup_world(mut commands: Commands, assets: Res<AssetServer>) {
