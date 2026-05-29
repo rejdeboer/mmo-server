@@ -10,8 +10,7 @@ use tokio::time::Duration;
 use tracing_log::LogTracer;
 use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt};
 
-pub const SERVER_SIMULATION_TICK_METRIC: &str = "server_simulation_tick";
-pub const SERVER_FIXED_TICK_METRIC: &str = "server_fixed_tick";
+pub const SERVER_TICK_METRIC: &str = "server_tick";
 pub const CONNECTED_PLAYERS_METRIC: &str = "connected_players_count";
 pub const NETWORK_PACKETS_TOTAL_METRIC: &str = "network_packets_total";
 pub const NETWORK_BYTES_TOTAL_METRIC: &str = "network_bytes_total";
@@ -43,11 +42,7 @@ pub async fn init_prometheus_exporter() {
         CONNECTED_PLAYERS_METRIC,
         "Current number of connected players"
     );
-    describe_counter!(SERVER_FIXED_TICK_METRIC, "The current fixed server tick");
-    describe_counter!(
-        SERVER_SIMULATION_TICK_METRIC,
-        "The current simulation server tick"
-    );
+    describe_counter!(SERVER_TICK_METRIC, "The current server tick");
 
     tracing::info!("serving metrics on port 9000");
     exporter.await.expect("failed to start exporter");

@@ -124,7 +124,6 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
         )
             .chain(),
     );
-    app.add_systems(Update, crate::systems::increment_simulation_tick);
     app.add_systems(
         PostUpdate,
         update_server_metrics.run_if(on_timer(Duration::from_secs(5))),

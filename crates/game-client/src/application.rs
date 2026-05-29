@@ -9,7 +9,7 @@ use crate::{
 };
 use avian3d::prelude::*;
 use bevy::{gltf::GltfLoaderSettings, platform::collections::HashMap, prelude::*};
-use bevy_enhanced_input::prelude::*;
+use bevy_enhanced_input::prelude::{Press, *};
 use bevy_renet::{
     RenetClient, RenetClientPlugin,
     netcode::{ClientAuthentication, ConnectToken, NetcodeClientPlugin, NetcodeClientTransport},
@@ -258,6 +258,7 @@ fn on_enter_game(
             ),
             (
                 Action::<OpenChat>::new(),
+                Press::default(),
                 Bindings::spawn(Spawn(Binding::from(KeyCode::Enter))),
             ),
         ]),

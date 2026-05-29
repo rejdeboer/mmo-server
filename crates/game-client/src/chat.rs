@@ -50,7 +50,7 @@
 
 use bevy::input::keyboard::{Key, KeyboardInput};
 use bevy::prelude::*;
-use bevy_enhanced_input::prelude::*;
+use bevy_enhanced_input::prelude::{*, Press};
 use bevy_renet::{RenetClient, renet::DefaultChannel};
 use protocol::models::ChatChannel;
 use std::collections::VecDeque;
@@ -343,10 +343,12 @@ pub fn handle_open_chat(
         .insert(actions!(Chatting[
             (
                 Action::<SendChat>::new(),
+                Press::default(),
                 Bindings::spawn(Spawn(Binding::from(KeyCode::Enter))),
             ),
             (
                 Action::<CancelChat>::new(),
+                Press::default(),
                 Bindings::spawn(Spawn(Binding::from(KeyCode::Escape))),
             ),
         ]));
@@ -484,6 +486,7 @@ pub fn handle_send_chat(
             ),
             (
                 Action::<OpenChat>::new(),
+                Press::default(),
                 Bindings::spawn(Spawn(Binding::from(KeyCode::Enter))),
             ),
         ]));
@@ -521,6 +524,7 @@ pub fn handle_cancel_chat(
             ),
             (
                 Action::<OpenChat>::new(),
+                Press::default(),
                 Bindings::spawn(Spawn(Binding::from(KeyCode::Enter))),
             ),
         ]));
