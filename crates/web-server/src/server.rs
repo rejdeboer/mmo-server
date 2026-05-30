@@ -5,7 +5,7 @@ use crate::{
     routes::{
         account_create, character_create, character_list, game_entry, login, metrics_get, social,
     },
-    social::{Hub, HubMessage},
+    social::{Hub, HubMessage, NatsBridge},
 };
 use axum::{
     Router, middleware,
@@ -33,6 +33,7 @@ pub struct Application {
     port: u16,
     hub_rx: Receiver<HubMessage>,
     pool: PgPool,
+    nats: Option<NatsBridge>,
 }
 
 #[derive(Clone)]
@@ -59,6 +60,17 @@ impl Application {
         let app_listener = TcpListener::bind(app_adderess).await.unwrap();
         let port = app_listener.local_addr().unwrap().port();
         let pool = get_connection_pool(&settings.database);
+
+        let nats = if let Some(nats_settings) = &settings.nats {
+            Some(
+                NatsBridge::connect(&nats_settings.url)
+                    .await
+                    .expect("failed to connect to NATS"),
+            )
+        } else {
+            tracing::warn!("NATS not configured, cross-instance messaging disabled");
+            None
+        };
 
         let (hub_tx, hub_rx) = channel::<HubMessage>(128);
 
@@ -124,6 +136,7 @@ impl Application {
             port,
             hub_rx,
             pool,
+            nats,
         })
     }
 
@@ -133,7 +146,7 @@ impl Application {
             self.app_server.listener.local_addr().unwrap()
         );
 
-        start_social_hub(self.pool, self.hub_rx);
+        start_social_hub(self.pool, self.hub_rx, self.nats);
 
         let app_server = {
             let listener = self.app_server.listener;
@@ -184,10 +197,10 @@ pub fn get_connection_pool(settings: &DatabaseSettings) -> PgPool {
     PgPoolOptions::new().connect_lazy_with(settings.with_db())
 }
 
-fn start_social_hub(db_pool: PgPool, receiver: Receiver<HubMessage>) {
+fn start_social_hub(db_pool: PgPool, receiver: Receiver<HubMessage>, nats: Option<NatsBridge>) {
     tokio::spawn(async move {
         tracing::info!("starting hub");
-        let hub = Hub::new(db_pool, receiver);
+        let hub = Hub::new(db_pool, receiver, nats);
         hub.run().await;
     });
 }

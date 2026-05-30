@@ -2,11 +2,13 @@ use flatbuffers::FlatBufferBuilder;
 use schemas::social::{self as schema, ChannelType};
 use sqlx::PgPool;
 use std::{collections::HashMap, sync::Arc};
-use tokio::sync::mpsc::{Receiver, Sender};
+use tokio::sync::mpsc::{Receiver, Sender, channel};
+use futures_util::StreamExt;
 
 use crate::social::{
     command::{HubMessage, Recipient},
     error::HubError,
+    nats::{NatsBridge, NatsEnvelope, guild_subject, whisper_subject},
 };
 
 use super::command::HubCommand;
@@ -17,26 +19,94 @@ struct ConnectedClient {
     pub tx: Sender<Arc<[u8]>>,
 }
 
+/// Internal messages from NATS subscription tasks to the Hub.
+enum NatsEvent {
+    Guild { guild_id: i32, envelope: NatsEnvelope },
+    Whisper { character_id: i32, envelope: NatsEnvelope },
+}
+
 pub struct Hub {
     clients: HashMap<i32, ConnectedClient>,
     rx: Receiver<HubMessage>,
+    nats_rx: Receiver<NatsEvent>,
+    nats_tx: Sender<NatsEvent>,
     guilds: HashMap<i32, Vec<i32>>,
     db_pool: PgPool,
+    nats: Option<NatsBridge>,
+    /// Track active guild subscriptions so we can unsubscribe
+    guild_sub_handles: HashMap<i32, tokio::task::JoinHandle<()>>,
+    /// Track active whisper subscriptions
+    whisper_sub_handles: HashMap<i32, tokio::task::JoinHandle<()>>,
 }
 
 impl Hub {
-    pub fn new(db_pool: PgPool, receiver: Receiver<HubMessage>) -> Self {
+    pub fn new(db_pool: PgPool, receiver: Receiver<HubMessage>, nats: Option<NatsBridge>) -> Self {
+        let (nats_tx, nats_rx) = channel::<NatsEvent>(256);
         Self {
             clients: HashMap::new(),
             rx: receiver,
+            nats_rx,
+            nats_tx,
             guilds: HashMap::new(),
             db_pool,
+            nats,
+            guild_sub_handles: HashMap::new(),
+            whisper_sub_handles: HashMap::new(),
         }
     }
 
     pub async fn run(mut self) {
-        while let Some(message) = self.rx.recv().await {
-            self.process_message(message).await;
+        loop {
+            tokio::select! {
+                biased;
+
+                Some(message) = self.rx.recv() => {
+                    self.process_message(message).await;
+                }
+
+                Some(event) = self.nats_rx.recv() => {
+                    match event {
+                        NatsEvent::Guild { guild_id, envelope } => {
+                            self.handle_remote_guild(guild_id, envelope).await;
+                        }
+                        NatsEvent::Whisper { character_id, envelope } => {
+                            self.handle_remote_whisper(character_id, envelope).await;
+                        }
+                    }
+                }
+
+                else => break,
+            }
+        }
+    }
+
+    /// Handle a guild message arriving from NATS (sent by another instance).
+    async fn handle_remote_guild(&self, guild_id: i32, envelope: NatsEnvelope) {
+        let Some(members) = self.guilds.get(&guild_id) else {
+            return;
+        };
+
+        let msg: Arc<[u8]> = Arc::from(envelope.payload);
+        for &member_id in members {
+            // Skip the original sender - they already got the message locally
+            if member_id == envelope.origin_sender_id {
+                continue;
+            }
+            if let Some(client) = self.clients.get(&member_id) {
+                if let Err(err) = client.tx.send(msg.clone()).await {
+                    tracing::error!(?err, member_id, "failed to deliver remote guild message");
+                }
+            }
+        }
+    }
+
+    /// Handle a whisper arriving from NATS (sent by another instance).
+    async fn handle_remote_whisper(&self, character_id: i32, envelope: NatsEnvelope) {
+        if let Some(client) = self.clients.get(&character_id) {
+            let msg: Arc<[u8]> = Arc::from(envelope.payload);
+            if let Err(err) = client.tx.send(msg).await {
+                tracing::error!(?err, character_id, "failed to deliver remote whisper");
+            }
         }
     }
 
@@ -47,6 +117,9 @@ impl Hub {
                 guild_id,
                 tx,
             } => {
+                // Spawn a whisper subscription task for this character
+                self.spawn_whisper_sub(msg.sender_id);
+
                 self.clients.insert(
                     msg.sender_id,
                     ConnectedClient {
@@ -57,10 +130,21 @@ impl Hub {
                 );
 
                 if let Some(guild_id) = guild_id {
-                    self.guilds.entry(guild_id).or_default().push(msg.sender_id);
+                    let members = self.guilds.entry(guild_id).or_default();
+                    let is_first = members.is_empty();
+                    members.push(msg.sender_id);
+
+                    if is_first {
+                        self.spawn_guild_sub(guild_id);
+                    }
                 }
             }
             HubCommand::Disconnect => {
+                // Cancel whisper subscription
+                if let Some(handle) = self.whisper_sub_handles.remove(&msg.sender_id) {
+                    handle.abort();
+                }
+
                 if let Some(client) = self.clients.remove(&msg.sender_id)
                     && let Some(gid) = client.guild_id
                     && let Some(members) = self.guilds.get_mut(&gid)
@@ -68,6 +152,9 @@ impl Hub {
                     members.retain(|&id| id != msg.sender_id);
                     if members.is_empty() {
                         self.guilds.remove(&gid);
+                        if let Some(handle) = self.guild_sub_handles.remove(&gid) {
+                            handle.abort();
+                        }
                     }
                 }
             }
@@ -78,6 +165,62 @@ impl Hub {
                 self.handle_whisper(msg.sender_id, recipient, &text).await;
             }
         };
+    }
+
+    fn spawn_whisper_sub(&mut self, character_id: i32) {
+        let Some(nats) = self.nats.clone() else {
+            return;
+        };
+        let nats_tx = self.nats_tx.clone();
+        let subject = whisper_subject(character_id);
+
+        let handle = tokio::spawn(async move {
+            let mut sub = match nats.subscribe(&subject).await {
+                Ok(s) => s,
+                Err(err) => {
+                    tracing::error!(?err, %subject, "failed to subscribe");
+                    return;
+                }
+            };
+
+            while let Some(msg) = sub.next().await {
+                if let Some(envelope) = NatsBridge::deserialize_envelope(&msg.payload) {
+                    if nats_tx.send(NatsEvent::Whisper { character_id, envelope }).await.is_err() {
+                        break;
+                    }
+                }
+            }
+        });
+
+        self.whisper_sub_handles.insert(character_id, handle);
+    }
+
+    fn spawn_guild_sub(&mut self, guild_id: i32) {
+        let Some(nats) = self.nats.clone() else {
+            return;
+        };
+        let nats_tx = self.nats_tx.clone();
+        let subject = guild_subject(guild_id);
+
+        let handle = tokio::spawn(async move {
+            let mut sub = match nats.subscribe(&subject).await {
+                Ok(s) => s,
+                Err(err) => {
+                    tracing::error!(?err, %subject, "failed to subscribe");
+                    return;
+                }
+            };
+
+            while let Some(msg) = sub.next().await {
+                if let Some(envelope) = NatsBridge::deserialize_envelope(&msg.payload) {
+                    if nats_tx.send(NatsEvent::Guild { guild_id, envelope }).await.is_err() {
+                        break;
+                    }
+                }
+            }
+        });
+
+        self.guild_sub_handles.insert(guild_id, handle);
     }
 
     async fn handle_chat(&self, sender_id: i32, channel: ChannelType, text: &str) {
@@ -130,6 +273,7 @@ impl Hub {
         builder.finish_minimal(fb_event);
         let msg: Arc<[u8]> = Arc::from(builder.finished_data());
 
+        // Deliver locally to all guild members on this instance
         let members = self.get_guild_members_unchecked(&gid);
         for member in members {
             let Some(member_client) = self.clients.get(member) else {
@@ -141,6 +285,15 @@ impl Hub {
                 tracing::error!(?err, ?member, "failed to send message to guild member");
             }
         }
+
+        // Publish to NATS for other instances
+        if let Some(nats) = &self.nats {
+            let envelope = NatsEnvelope {
+                origin_sender_id: sender_id,
+                payload: msg.to_vec(),
+            };
+            nats.publish(&guild_subject(gid), &envelope).await;
+        }
     }
 
     async fn handle_whisper(&self, sender_id: i32, recipient: Recipient, text: &str) {
@@ -150,12 +303,7 @@ impl Hub {
             Err(err) => return self.write_error(err, sender_client.tx.clone()).await,
         };
 
-        let Some(recipient_client) = self.clients.get(&recipient_id) else {
-            return self
-                .write_error(HubError::RecipientNotFound, sender_client.tx.clone())
-                .await;
-        };
-
+        // Build the whisper message
         let mut builder = FlatBufferBuilder::new();
         let fb_sender = builder.create_string(&sender_client.character_name);
         let fb_text = builder.create_string(text);
@@ -177,16 +325,43 @@ impl Hub {
         );
         builder.finish_minimal(fb_event);
         let whisper: Arc<[u8]> = Arc::from(builder.finished_data());
-        builder.reset();
 
-        if let Err(err) = recipient_client.tx.send(whisper.clone()).await {
-            tracing::error!(?err, "failed to send whisper to recipient");
-            return self
-                .write_error(HubError::Unexpected, sender_client.tx.clone())
-                .await;
+        // Try local delivery first
+        if let Some(recipient_client) = self.clients.get(&recipient_id) {
+            if let Err(err) = recipient_client.tx.send(whisper.clone()).await {
+                tracing::error!(?err, "failed to send whisper to recipient");
+                return self
+                    .write_error(HubError::Unexpected, sender_client.tx.clone())
+                    .await;
+            }
+        } else {
+            // Recipient not on this instance - publish via NATS if available
+            if let Some(nats) = &self.nats {
+                let envelope = NatsEnvelope {
+                    origin_sender_id: sender_id,
+                    payload: whisper.to_vec(),
+                };
+                nats.publish(&whisper_subject(recipient_id), &envelope).await;
+            } else {
+                tracing::warn!(recipient_id, "recipient not connected and NATS unavailable");
+            }
         }
 
-        let fb_recipient = builder.create_string(&recipient_client.character_name);
+        // Send receipt to sender (always local since sender is on this instance)
+        builder.reset();
+        let recipient_name = if let Some(rc) = self.clients.get(&recipient_id) {
+            rc.character_name.clone()
+        } else {
+            match sqlx::query!("SELECT name FROM characters WHERE id = $1", recipient_id)
+                .fetch_one(&self.db_pool)
+                .await
+            {
+                Ok(row) => row.name,
+                Err(_) => String::from("Unknown"),
+            }
+        };
+
+        let fb_recipient = builder.create_string(&recipient_name);
         let fb_text = builder.create_string(text);
         let fb_receipt = schema::ServerWhisperReceipt::create(
             &mut builder,
@@ -261,7 +436,6 @@ impl Hub {
         }
     }
 
-    // WARNING: Utitlity function to grab the sender client from the hashmap
     #[inline]
     fn get_client_unchecked(&self, client_id: &i32) -> &ConnectedClient {
         self.clients.get(client_id).expect("failed to fetch client")

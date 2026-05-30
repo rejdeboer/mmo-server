@@ -19,6 +19,12 @@ pub struct Settings {
     pub realm_resolver: RealmResolverSettings,
     pub telemetry: TelemetrySettings,
     pub metrics: Option<MetricsSettings>,
+    pub nats: Option<NatsSettings>,
+}
+
+#[derive(serde::Deserialize, Clone)]
+pub struct NatsSettings {
+    pub url: String,
 }
 
 #[derive(serde::Deserialize, Clone)]

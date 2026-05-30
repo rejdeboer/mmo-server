@@ -87,6 +87,13 @@ services:
       - "9357:9357"
     command: ["--local", "--address", "0.0.0.0"]
 
+  nats:
+    image: nats:2-alpine
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    command: ["--http_port", "8222"]
+
   # NOTE: We use the direct application binary to save recompilation time for local dev
   # mmo-server:
   #   build: 
