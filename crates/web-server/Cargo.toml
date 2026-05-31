@@ -13,7 +13,7 @@ name = "web-server"
 
 [dependencies]
 argon2 = "0.5.3"
-async-nats = "0.39"
+async-nats = "0.49"
 async-trait = "0.1.88"
 axum-extra = { version = "0.10", features = ["typed-header"] }
 base64 = "0.12"

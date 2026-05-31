@@ -35,10 +35,6 @@ jobs:
           POSTGRES_DB: postgres
         ports:
           - 5432:5432
-      redis:
-        image: redis:7
-        ports:
-          - 6379:6379
     steps:
       - uses: actions/checkout@v3
       - name: Install Protoc
@@ -88,60 +84,6 @@ jobs:
           components: clippy
       - name: Linting
         run: cargo clippy -- -D warnings
-
-  coverage:
-    name: Code coverage
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: password
-          POSTGRES_DB: postgres
-        ports:
-          - 5432:5432
-      redis:
-        image: redis:7
-        ports:
-          - 6379:6379
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v3
-      - name: Install the Rust toolchain
-        uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          components: llvm-tools-preview
-      - name: Install sqlx-cli
-        run: cargo install sqlx-cli
-          --version=${{ env.SQLX_VERSION }}
-          --features ${{ env.SQLX_FEATURES }}
-          --no-default-features
-          --locked
-      - name: Create app user in Postgres
-        run: |
-          sudo apt-get install postgresql-client
-
-          # Create the application user
-          CREATE_QUERY="CREATE USER ${APP_USER} WITH PASSWORD '${APP_USER_PWD}';"
-          PGPASSWORD="password" psql -U "postgres" -h "localhost" -c "${CREATE_QUERY}"
-
-          # Grant create db privileges to the app user
-          GRANT_QUERY="ALTER USER ${APP_USER} CREATEDB;"
-          PGPASSWORD="password" psql -U "postgres" -h "localhost" -c "${GRANT_QUERY}"
-      - name: Migrate database
-        run: SKIP_DOCKER=true SEED=false ./scripts/init_db.sh
-      - name: Install cargo-llvm-cov
-        uses: taiki-e/install-action@cargo-llvm-cov
-      - name: Generate code coverage
-        run: cargo llvm-cov --workspace --lcov --output-path lcov.info --exclude game-client
-      - name: Generate report
-        run: cargo llvm-cov report --html --output-dir coverage
-      - uses: actions/upload-artifact@v4
-        with:
-          name: "Coverage report"
-          path: coverage/
 
   docker:
     name: Publish Docker images
