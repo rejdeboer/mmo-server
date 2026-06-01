@@ -3,7 +3,8 @@ use crate::{
     configuration::{DatabaseSettings, NetcodePrivateKey, Settings},
     realm_resolution::{RealmResolver, create_realm_resolver},
     routes::{
-        account_create, character_create, character_list, game_entry, login, metrics_get, social,
+        account_create, character_create, character_list, game_entry, health, login, metrics_get,
+        social,
     },
     social::{Hub, HubMessage, NatsBridge},
 };
@@ -102,6 +103,7 @@ impl Application {
             .merge(account_routes)
             .route("/account", post(account_create))
             .route("/token", post(login))
+            .route("/health", get(health))
             .layer(
                 TraceLayer::new_for_http()
                     .make_span_with(
