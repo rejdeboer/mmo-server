@@ -94,10 +94,10 @@ impl Hub {
 
         let msg: Arc<[u8]> = Arc::from(envelope.payload);
         for &member_id in members {
-            if let Some(client) = self.clients.get(&member_id) {
-                if let Err(err) = client.tx.send(msg.clone()).await {
-                    tracing::error!(?err, member_id, "failed to deliver guild message");
-                }
+            if let Some(client) = self.clients.get(&member_id)
+                && let Err(err) = client.tx.send(msg.clone()).await
+            {
+                tracing::error!(?err, member_id, "failed to deliver guild message");
             }
         }
     }
@@ -185,18 +185,18 @@ impl Hub {
                 }
             };
 
-            while let Some(msg) = sub.next().await {
-                if let Some(envelope) = NatsBridge::deserialize_envelope(&msg.payload) {
-                    if nats_tx
-                        .send(NatsEvent::Whisper {
-                            character_id,
-                            envelope,
-                        })
-                        .await
-                        .is_err()
-                    {
-                        break;
-                    }
+            while let Some(msg) = sub.next().await
+                && let Some(envelope) = NatsBridge::deserialize_envelope(&msg.payload)
+            {
+                if nats_tx
+                    .send(NatsEvent::Whisper {
+                        character_id,
+                        envelope,
+                    })
+                    .await
+                    .is_err()
+                {
+                    break;
                 }
             }
         });
@@ -221,14 +221,13 @@ impl Hub {
             };
 
             while let Some(msg) = sub.next().await {
-                if let Some(envelope) = NatsBridge::deserialize_envelope(&msg.payload) {
-                    if nats_tx
+                if let Some(envelope) = NatsBridge::deserialize_envelope(&msg.payload)
+                    && nats_tx
                         .send(NatsEvent::Guild { guild_id, envelope })
                         .await
                         .is_err()
-                    {
-                        break;
-                    }
+                {
+                    break;
                 }
             }
         });
