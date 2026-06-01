@@ -6,5 +6,3 @@ database:
   username: "postgres"
   password: "password"
   name: "mmo"
-# nats:
-#   url: "nats://localhost:4222"

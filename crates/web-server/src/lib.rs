@@ -6,7 +6,7 @@ pub mod protocol;
 mod realm_resolution;
 pub mod routes;
 pub mod server;
-mod social;
+pub mod social;
 pub mod telemetry;
 
 pub use server::ApplicationState;

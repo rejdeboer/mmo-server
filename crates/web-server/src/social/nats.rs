@@ -6,8 +6,6 @@ use serde::{Deserialize, Serialize};
 /// can forward them directly to client writers without re-serialization.
 #[derive(Serialize, Deserialize)]
 pub struct NatsEnvelope {
-    /// The character_id of the original sender (used to skip self-delivery)
-    pub origin_sender_id: i32,
     /// The pre-built FlatBuffer event bytes
     pub payload: Vec<u8>,
 }

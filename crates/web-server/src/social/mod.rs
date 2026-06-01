@@ -5,7 +5,7 @@ pub mod nats;
 mod reader;
 mod writer;
 
-pub use command::{HubCommand, HubMessage};
+pub use command::{HubCommand, HubMessage, Recipient};
 pub use hub::Hub;
 pub use nats::NatsBridge;
 pub use reader::SocketReader;

@@ -1,9 +1,9 @@
 use flatbuffers::FlatBufferBuilder;
+use futures_util::StreamExt;
 use schemas::social::{self as schema, ChannelType};
 use sqlx::PgPool;
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::mpsc::{Receiver, Sender, channel};
-use futures_util::StreamExt;
 
 use crate::social::{
     command::{HubMessage, Recipient},
@@ -21,8 +21,14 @@ struct ConnectedClient {
 
 /// Internal messages from NATS subscription tasks to the Hub.
 enum NatsEvent {
-    Guild { guild_id: i32, envelope: NatsEnvelope },
-    Whisper { character_id: i32, envelope: NatsEnvelope },
+    Guild {
+        guild_id: i32,
+        envelope: NatsEnvelope,
+    },
+    Whisper {
+        character_id: i32,
+        envelope: NatsEnvelope,
+    },
 }
 
 pub struct Hub {
@@ -40,11 +46,11 @@ pub struct Hub {
 }
 
 impl Hub {
-    pub fn new(db_pool: PgPool, receiver: Receiver<HubMessage>, nats: Option<NatsBridge>) -> Self {
+    pub fn new(db_pool: PgPool, rx: Receiver<HubMessage>, nats: Option<NatsBridge>) -> Self {
         let (nats_tx, nats_rx) = channel::<NatsEvent>(256);
         Self {
             clients: HashMap::new(),
-            rx: receiver,
+            rx,
             nats_rx,
             nats_tx,
             guilds: HashMap::new(),
@@ -80,7 +86,7 @@ impl Hub {
         }
     }
 
-    /// Handle a guild message arriving from NATS (sent by another instance).
+    /// Handle a guild message arriving from NATS.
     async fn handle_remote_guild(&self, guild_id: i32, envelope: NatsEnvelope) {
         let Some(members) = self.guilds.get(&guild_id) else {
             return;
@@ -88,24 +94,20 @@ impl Hub {
 
         let msg: Arc<[u8]> = Arc::from(envelope.payload);
         for &member_id in members {
-            // Skip the original sender - they already got the message locally
-            if member_id == envelope.origin_sender_id {
-                continue;
-            }
             if let Some(client) = self.clients.get(&member_id) {
                 if let Err(err) = client.tx.send(msg.clone()).await {
-                    tracing::error!(?err, member_id, "failed to deliver remote guild message");
+                    tracing::error!(?err, member_id, "failed to deliver guild message");
                 }
             }
         }
     }
 
-    /// Handle a whisper arriving from NATS (sent by another instance).
+    /// Handle a whisper arriving from NATS.
     async fn handle_remote_whisper(&self, character_id: i32, envelope: NatsEnvelope) {
         if let Some(client) = self.clients.get(&character_id) {
             let msg: Arc<[u8]> = Arc::from(envelope.payload);
             if let Err(err) = client.tx.send(msg).await {
-                tracing::error!(?err, character_id, "failed to deliver remote whisper");
+                tracing::error!(?err, character_id, "failed to deliver whisper");
             }
         }
     }
@@ -185,7 +187,14 @@ impl Hub {
 
             while let Some(msg) = sub.next().await {
                 if let Some(envelope) = NatsBridge::deserialize_envelope(&msg.payload) {
-                    if nats_tx.send(NatsEvent::Whisper { character_id, envelope }).await.is_err() {
+                    if nats_tx
+                        .send(NatsEvent::Whisper {
+                            character_id,
+                            envelope,
+                        })
+                        .await
+                        .is_err()
+                    {
                         break;
                     }
                 }
@@ -213,7 +222,11 @@ impl Hub {
 
             while let Some(msg) = sub.next().await {
                 if let Some(envelope) = NatsBridge::deserialize_envelope(&msg.payload) {
-                    if nats_tx.send(NatsEvent::Guild { guild_id, envelope }).await.is_err() {
+                    if nats_tx
+                        .send(NatsEvent::Guild { guild_id, envelope })
+                        .await
+                        .is_err()
+                    {
                         break;
                     }
                 }
@@ -273,23 +286,9 @@ impl Hub {
         builder.finish_minimal(fb_event);
         let msg: Arc<[u8]> = Arc::from(builder.finished_data());
 
-        // Deliver locally to all guild members on this instance
-        let members = self.get_guild_members_unchecked(&gid);
-        for member in members {
-            let Some(member_client) = self.clients.get(member) else {
-                tracing::warn!(?member, ?gid, "member not found in guild");
-                continue;
-            };
-
-            if let Err(err) = member_client.tx.send(msg.clone()).await {
-                tracing::error!(?err, ?member, "failed to send message to guild member");
-            }
-        }
-
-        // Publish to NATS for other instances
+        // Publish to NATS — delivery happens when we receive our own message back
         if let Some(nats) = &self.nats {
             let envelope = NatsEnvelope {
-                origin_sender_id: sender_id,
                 payload: msg.to_vec(),
             };
             nats.publish(&guild_subject(gid), &envelope).await;
@@ -338,10 +337,10 @@ impl Hub {
             // Recipient not on this instance - publish via NATS if available
             if let Some(nats) = &self.nats {
                 let envelope = NatsEnvelope {
-                    origin_sender_id: sender_id,
                     payload: whisper.to_vec(),
                 };
-                nats.publish(&whisper_subject(recipient_id), &envelope).await;
+                nats.publish(&whisper_subject(recipient_id), &envelope)
+                    .await;
             } else {
                 tracing::warn!(recipient_id, "recipient not connected and NATS unavailable");
             }
@@ -439,10 +438,5 @@ impl Hub {
     #[inline]
     fn get_client_unchecked(&self, client_id: &i32) -> &ConnectedClient {
         self.clients.get(client_id).expect("failed to fetch client")
-    }
-
-    #[inline]
-    fn get_guild_members_unchecked(&self, gid: &i32) -> &Vec<i32> {
-        self.guilds.get(gid).expect("failed to fetch guild members")
     }
 }

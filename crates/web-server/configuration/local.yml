@@ -11,3 +11,5 @@ realm_resolver:
 telemetry:
   tracing_format: pretty
   otel_exporter_endpoint: http://localhost:4317
+nats:
+  url: "nats://localhost:4222"

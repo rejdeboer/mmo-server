@@ -77,6 +77,7 @@ pub struct TestApp {
     pub client: WebClient,
     pub account: TestAccount,
     pub character: TestCharacter,
+    pub nats_url: String,
 }
 
 impl TestApp {
@@ -121,12 +122,18 @@ pub async fn spawn_app() -> TestApp {
     let account_id = account.store(&pool).await;
     let character = TestCharacter::create(&pool, account_id).await;
 
+    let nats_url = settings
+        .nats
+        .expect("integration tests require NATS config to be present")
+        .url;
+
     TestApp {
         // db_pool: pool,
         // jwt_signing_key: settings.application.jwt_signing_key,
         client: WebClient::new(format!("http://localhost:{application_port}")),
         account,
         character,
+        nats_url,
     }
 }
 
