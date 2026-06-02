@@ -758,14 +758,13 @@ impl Hub {
             };
 
             while let Some(msg) = sub.next().await {
-                if let Some(envelope) = NatsBridge::deserialize_envelope(&msg.payload) {
-                    if nats_tx
+                if let Some(envelope) = NatsBridge::deserialize_envelope(&msg.payload)
+                    && nats_tx
                         .send(NatsEvent::Party { party_id, envelope })
                         .await
                         .is_err()
-                    {
-                        break;
-                    }
+                {
+                    break;
                 }
             }
         });
