@@ -11,12 +11,18 @@ use crate::social::{
     nats::{NatsBridge, NatsEnvelope, guild_subject, whisper_subject},
 };
 
-use super::command::HubCommand;
+use super::{command::HubCommand, rate_limit::TokenBucket};
+
+/// Max burst of messages a client can send at once.
+const RATE_LIMIT_BURST: f64 = 5.0;
+/// Messages allowed per second (sustained rate).
+const RATE_LIMIT_PER_SECOND: f64 = 2.0;
 
 struct ConnectedClient {
     pub character_name: String,
     pub guild_id: Option<i32>,
     pub tx: Sender<Arc<[u8]>>,
+    pub rate_limiter: TokenBucket,
 }
 
 /// Internal messages from NATS subscription tasks to the Hub.
@@ -128,6 +134,7 @@ impl Hub {
                         character_name,
                         guild_id,
                         tx,
+                        rate_limiter: TokenBucket::new(RATE_LIMIT_BURST, RATE_LIMIT_PER_SECOND),
                     },
                 );
 
@@ -161,9 +168,15 @@ impl Hub {
                 }
             }
             HubCommand::ChatMessage { channel, text } => {
+                if !self.check_rate_limit(msg.sender_id).await {
+                    return;
+                }
                 self.handle_chat(msg.sender_id, channel, &text).await;
             }
             HubCommand::Whisper { recipient, text } => {
+                if !self.check_rate_limit(msg.sender_id).await {
+                    return;
+                }
                 self.handle_whisper(msg.sender_id, recipient, &text).await;
             }
         };
@@ -389,6 +402,7 @@ impl Hub {
         let text = match error {
             HubError::SenderNotInGuild => "You are not in a guild",
             HubError::RecipientNotFound => "Player not found",
+            HubError::RateLimited => "You are sending messages too fast",
             HubError::Unexpected => "An unexpected error occured, please try re-logging",
         };
 
@@ -437,5 +451,21 @@ impl Hub {
     #[inline]
     fn get_client_unchecked(&self, client_id: &i32) -> &ConnectedClient {
         self.clients.get(client_id).expect("failed to fetch client")
+    }
+
+    /// Check rate limit for a client. Returns `true` if allowed, `false` if rate limited.
+    /// Sends a system error message to the client if denied.
+    async fn check_rate_limit(&mut self, sender_id: i32) -> bool {
+        let Some(client) = self.clients.get_mut(&sender_id) else {
+            return false;
+        };
+
+        if client.rate_limiter.allow() {
+            return true;
+        }
+
+        let tx = client.tx.clone();
+        self.write_error(HubError::RateLimited, tx).await;
+        false
     }
 }

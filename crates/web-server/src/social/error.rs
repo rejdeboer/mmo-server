@@ -16,5 +16,6 @@ pub enum ReaderError {
 pub enum HubError {
     RecipientNotFound,
     SenderNotInGuild,
+    RateLimited,
     Unexpected,
 }
