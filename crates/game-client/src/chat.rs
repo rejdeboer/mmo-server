@@ -51,7 +51,7 @@
 use bevy::input::keyboard::{Key, KeyboardInput};
 use bevy::prelude::*;
 use bevy_enhanced_input::prelude::{Press, *};
-use bevy_renet::{renet::DefaultChannel, RenetClient};
+use bevy_renet::{RenetClient, renet::DefaultChannel};
 use protocol::models::ChatChannel;
 use std::collections::VecDeque;
 use tokio::sync::mpsc;

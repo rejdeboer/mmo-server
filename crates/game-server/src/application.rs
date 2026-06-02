@@ -185,18 +185,17 @@ fn setup_database_pool(
     commands.insert_resource(DatabasePool(pool));
 }
 
-fn setup_nats(
-    mut commands: Commands,
-    runtime: Res<TokioTasksRuntime>,
-    settings: Res<Settings>,
-) {
+fn setup_nats(mut commands: Commands, runtime: Res<TokioTasksRuntime>, settings: Res<Settings>) {
     let Some(url) = &settings.nats_url else {
         info!("NATS URL not configured, party updates disabled");
         return;
     };
 
     let url = url.clone();
-    match runtime.runtime().block_on(async { async_nats::connect(&url).await }) {
+    match runtime
+        .runtime()
+        .block_on(async { async_nats::connect(&url).await })
+    {
         Ok(client) => {
             info!(%url, "connected to NATS");
             commands.insert_resource(NatsClient(client));

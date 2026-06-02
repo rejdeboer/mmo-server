@@ -7,8 +7,8 @@ use serde_aux::field_attributes::{
     deserialize_number_from_string, deserialize_option_number_from_string,
 };
 use sqlx::{
-    postgres::{PgConnectOptions, PgSslMode},
     ConnectOptions,
+    postgres::{PgConnectOptions, PgSslMode},
 };
 
 pub enum Environment {

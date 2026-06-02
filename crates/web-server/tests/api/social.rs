@@ -115,8 +115,10 @@ async fn guild_message_relayed_with_sender_confirmation() {
     let sender_id: i32 = 3000;
     let member_id: i32 = 4000;
 
-    let mut member_rx = connect_character(&hub_b_tx, member_id, "GuildMember", Some(guild_id)).await;
-    let mut sender_rx = connect_character(&hub_a_tx, sender_id, "GuildSender", Some(guild_id)).await;
+    let mut member_rx =
+        connect_character(&hub_b_tx, member_id, "GuildMember", Some(guild_id)).await;
+    let mut sender_rx =
+        connect_character(&hub_a_tx, sender_id, "GuildSender", Some(guild_id)).await;
 
     tokio::time::sleep(SETTLE_DURATION).await;
 
@@ -137,7 +139,13 @@ async fn guild_message_relayed_with_sender_confirmation() {
         .expect("channel closed");
 
     let event = decode_event(&msg);
-    assert!(matches!(event, SocialEvent::Chat { channel: ChannelType::Guild, .. }));
+    assert!(matches!(
+        event,
+        SocialEvent::Chat {
+            channel: ChannelType::Guild,
+            ..
+        }
+    ));
 
     let confirmation = timeout(TIMEOUT_DURATION, sender_rx.recv())
         .await
@@ -145,7 +153,13 @@ async fn guild_message_relayed_with_sender_confirmation() {
         .expect("channel closed");
 
     let event = decode_event(&confirmation);
-    assert!(matches!(event, SocialEvent::Chat { channel: ChannelType::Guild, .. }));
+    assert!(matches!(
+        event,
+        SocialEvent::Chat {
+            channel: ChannelType::Guild,
+            ..
+        }
+    ));
 }
 
 // ─── Party Tests ─────────────────────────────────────────────────────────────
@@ -232,14 +246,26 @@ async fn party_invite_accept_and_chat() {
         .expect("timed out waiting for party chat (leader)")
         .expect("channel closed");
     let event = decode_event(&msg);
-    assert!(matches!(event, SocialEvent::Chat { channel: ChannelType::Party, .. }));
+    assert!(matches!(
+        event,
+        SocialEvent::Chat {
+            channel: ChannelType::Party,
+            ..
+        }
+    ));
 
     let msg = timeout(TIMEOUT_DURATION, member_rx.recv())
         .await
         .expect("timed out waiting for party chat (member)")
         .expect("channel closed");
     let event = decode_event(&msg);
-    assert!(matches!(event, SocialEvent::Chat { channel: ChannelType::Party, .. }));
+    assert!(matches!(
+        event,
+        SocialEvent::Chat {
+            channel: ChannelType::Party,
+            ..
+        }
+    ));
 }
 
 #[tokio::test]
@@ -315,7 +341,9 @@ async fn party_leave() {
     hub_tx
         .send(HubMessage::new(
             leader_id,
-            HubCommand::PartyInvite { target: Recipient::Id(member_id) },
+            HubCommand::PartyInvite {
+                target: Recipient::Id(member_id),
+            },
         ))
         .await
         .unwrap();
@@ -367,7 +395,9 @@ async fn party_kick_requires_leader() {
     hub_tx
         .send(HubMessage::new(
             leader_id,
-            HubCommand::PartyInvite { target: Recipient::Id(member_id) },
+            HubCommand::PartyInvite {
+                target: Recipient::Id(member_id),
+            },
         ))
         .await
         .unwrap();
@@ -383,7 +413,9 @@ async fn party_kick_requires_leader() {
     hub_tx
         .send(HubMessage::new(
             member_id,
-            HubCommand::PartyKick { target_id: leader_id },
+            HubCommand::PartyKick {
+                target_id: leader_id,
+            },
         ))
         .await
         .unwrap();
@@ -399,7 +431,9 @@ async fn party_kick_requires_leader() {
     hub_tx
         .send(HubMessage::new(
             leader_id,
-            HubCommand::PartyKick { target_id: member_id },
+            HubCommand::PartyKick {
+                target_id: member_id,
+            },
         ))
         .await
         .unwrap();
@@ -439,7 +473,9 @@ async fn party_invite_target_already_in_party() {
     hub_tx
         .send(HubMessage::new(
             leader_id,
-            HubCommand::PartyInvite { target: Recipient::Id(member_id) },
+            HubCommand::PartyInvite {
+                target: Recipient::Id(member_id),
+            },
         ))
         .await
         .unwrap();
@@ -455,7 +491,9 @@ async fn party_invite_target_already_in_party() {
     hub_tx
         .send(HubMessage::new(
             outsider_id,
-            HubCommand::PartyInvite { target: Recipient::Id(member_id) },
+            HubCommand::PartyInvite {
+                target: Recipient::Id(member_id),
+            },
         ))
         .await
         .unwrap();
@@ -554,7 +592,9 @@ async fn disconnect_removes_from_party() {
     hub_tx
         .send(HubMessage::new(
             leader_id,
-            HubCommand::PartyInvite { target: Recipient::Id(member_id) },
+            HubCommand::PartyInvite {
+                target: Recipient::Id(member_id),
+            },
         ))
         .await
         .unwrap();
