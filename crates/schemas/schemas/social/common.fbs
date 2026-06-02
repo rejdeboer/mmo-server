@@ -1,8 +1,0 @@
-namespace social;
-
-enum ChannelType: ubyte {
-  Guild,
-  Party,
-  Trade,
-}
-

@@ -5,6 +5,7 @@ use crate::messages::{
     MoveActionMessage, OutgoingMessage, VisibilityChangedMessage,
 };
 use crate::observers::{on_entity_death, reward_kill};
+use crate::party;
 use crate::plugins::{AppPlugin, AssetsPlugin};
 use crate::systems::{on_connection_event, setup_spawners, update_server_metrics};
 use avian3d::prelude::*;
@@ -23,6 +24,10 @@ use std::time::{Duration, SystemTime};
 
 #[derive(Resource, Clone)]
 pub struct DatabasePool(pub PgPool);
+
+/// Optional NATS client for receiving cross-service messages (party updates, etc.)
+#[derive(Resource, Clone)]
+pub struct NatsClient(pub async_nats::Client);
 
 #[derive(Debug, Resource, Default)]
 pub struct SpatialGrid {
@@ -99,6 +104,10 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     app.insert_resource(SpatialGrid::default());
     app.insert_resource(ServerTick::default());
 
+    let (party_receiver, party_sender) = party::new_party_channel();
+    app.insert_resource(party_receiver);
+    app.insert_resource(party_sender);
+
     app.add_message::<ApplySpellEffectMessage>();
     app.add_message::<CastSpellActionMessage>();
     app.add_message::<IncomingChatMessage>();
@@ -107,10 +116,11 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     app.add_message::<OutgoingMessage>();
     app.add_message::<VisibilityChangedMessage>();
 
-    app.add_systems(Startup, (setup_database_pool, setup_spawners));
+    app.add_systems(Startup, (setup_database_pool, setup_nats, setup_spawners));
     app.add_systems(
         FixedPreUpdate,
         (
+            party::process_party_updates,
             crate::systems::increment_server_tick,
             crate::systems::process_client_actions,
             crate::systems::process_client_movements,
@@ -173,4 +183,26 @@ fn setup_database_pool(
         .runtime()
         .block_on(async move { get_connection_pool(&settings) });
     commands.insert_resource(DatabasePool(pool));
+}
+
+fn setup_nats(
+    mut commands: Commands,
+    runtime: Res<TokioTasksRuntime>,
+    settings: Res<Settings>,
+) {
+    let Some(url) = &settings.nats_url else {
+        info!("NATS URL not configured, party updates disabled");
+        return;
+    };
+
+    let url = url.clone();
+    match runtime.runtime().block_on(async { async_nats::connect(&url).await }) {
+        Ok(client) => {
+            info!(%url, "connected to NATS");
+            commands.insert_resource(NatsClient(client));
+        }
+        Err(err) => {
+            error!(?err, "failed to connect to NATS, party updates disabled");
+        }
+    }
 }

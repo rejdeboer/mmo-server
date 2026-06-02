@@ -4,9 +4,8 @@ use crate::social::{
     error::ReaderError,
 };
 use axum::extract::ws::{Message, WebSocket};
-use flatbuffers::root;
 use futures::{StreamExt, stream::SplitStream};
-use schemas::social as schema;
+use protocol::social::SocialAction;
 use std::ops::ControlFlow;
 use tokio::sync::mpsc::Sender;
 
@@ -66,32 +65,33 @@ impl SocketReader {
     }
 
     async fn read_binary_message(&mut self, bytes: Vec<u8>) -> Result<(), ReaderError> {
-        let fb_action = root::<schema::Action>(&bytes).map_err(ReaderError::InvalidSchema)?;
+        let action: SocialAction =
+            bitcode::decode(&bytes).map_err(|e| ReaderError::InvalidPayload(e.to_string()))?;
 
-        let cmd = match fb_action.data_type() {
-            schema::ActionData::ClientChatMessage => {
-                let data = fb_action.data_as_client_chat_message().unwrap();
-                Ok(HubCommand::ChatMessage {
-                    channel: data.channel(),
-                    text: data.text().to_string(),
-                })
-            }
-            schema::ActionData::ClientWhisperById => {
-                let data = fb_action.data_as_client_whisper_by_id().unwrap();
-                Ok(HubCommand::Whisper {
-                    text: data.text().to_string(),
-                    recipient: Recipient::Id(data.recipient_id()),
-                })
-            }
-            schema::ActionData::ClientWhisperByName => {
-                let data = fb_action.data_as_client_whisper_by_name().unwrap();
-                Ok(HubCommand::Whisper {
-                    text: data.text().to_string(),
-                    recipient: Recipient::Name(data.recipient_name().to_string()),
-                })
-            }
-            action_type => Err(ReaderError::InvalidActionType(action_type)),
-        }?;
+        let cmd = match action {
+            SocialAction::Chat { channel, text } => HubCommand::ChatMessage { channel, text },
+            SocialAction::WhisperByName {
+                recipient_name,
+                text,
+            } => HubCommand::Whisper {
+                recipient: Recipient::Name(recipient_name),
+                text,
+            },
+            SocialAction::WhisperById { recipient_id, text } => HubCommand::Whisper {
+                recipient: Recipient::Id(recipient_id),
+                text,
+            },
+            SocialAction::PartyInviteById { target_id } => HubCommand::PartyInvite {
+                target: Recipient::Id(target_id),
+            },
+            SocialAction::PartyInviteByName { target_name } => HubCommand::PartyInvite {
+                target: Recipient::Name(target_name),
+            },
+            SocialAction::PartyAccept => HubCommand::PartyAccept,
+            SocialAction::PartyDecline => HubCommand::PartyDecline,
+            SocialAction::PartyLeave => HubCommand::PartyLeave,
+            SocialAction::PartyKick { target_id } => HubCommand::PartyKick { target_id },
+        };
 
         self.hub_tx
             .send(HubMessage::new(self.character_id, cmd))

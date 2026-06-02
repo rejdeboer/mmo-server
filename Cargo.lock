@@ -3396,25 +3396,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1d674e81391d1e1ab681a28d99df07927c6d4aa5b027d7da16ba32d1d21ecd99"
 
 [[package]]
-name = "flatbuffers"
-version = "25.9.23"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09b6620799e7340ebd9968d2e0708eb82cf1971e9a16821e2091b6d6e475eed5"
-dependencies = [
- "bitflags 2.10.0",
- "rustc_version",
-]
-
-[[package]]
-name = "flatc-rust"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "57e61227926ef5b237af48bee74394cc4a5a221ebd10c5147a98e612f207851d"
-dependencies = [
- "log",
-]
-
-[[package]]
 name = "flate2"
 version = "1.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3668,7 +3649,6 @@ dependencies = [
  "bitcode",
  "clap",
  "config",
- "flatbuffers",
  "game-core",
  "protocol",
  "serde 1.0.228",
@@ -3694,6 +3674,7 @@ version = "0.1.0"
 dependencies = [
  "agones",
  "anyhow",
+ "async-nats",
  "avian3d",
  "base64 0.12.3",
  "bevy",
@@ -3704,6 +3685,7 @@ dependencies = [
  "bitcode",
  "config",
  "fake 4.4.0",
+ "futures-util",
  "game-core",
  "metrics",
  "metrics-exporter-prometheus",
@@ -3718,6 +3700,7 @@ dependencies = [
  "secrecy",
  "serde 1.0.228",
  "serde-aux 4.7.0",
+ "serde_json",
  "sqlx",
  "tokio",
  "tracing",
@@ -7414,14 +7397,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "schemas"
-version = "0.1.0"
-dependencies = [
- "flatbuffers",
- "flatc-rust",
-]
-
-[[package]]
 name = "scoped-tls"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7992,7 +7967,6 @@ dependencies = [
  "tokio-stream",
  "tracing",
  "url",
- "uuid",
 ]
 
 [[package]]
@@ -8073,7 +8047,6 @@ dependencies = [
  "stringprep",
  "thiserror 2.0.18",
  "tracing",
- "uuid",
  "whoami",
 ]
 
@@ -8112,7 +8085,6 @@ dependencies = [
  "stringprep",
  "thiserror 2.0.18",
  "tracing",
- "uuid",
  "whoami",
 ]
 
@@ -8139,7 +8111,6 @@ dependencies = [
  "thiserror 2.0.18",
  "tracing",
  "url",
- "uuid",
 ]
 
 [[package]]
@@ -9524,11 +9495,11 @@ dependencies = [
 name = "web-client"
 version = "0.1.0"
 dependencies = [
- "flatbuffers",
+ "bitcode",
  "futures-util",
  "http",
+ "protocol",
  "reqwest",
- "schemas",
  "thiserror 2.0.18",
  "tokio",
  "tokio-tungstenite 0.29.0",
@@ -9550,7 +9521,6 @@ dependencies = [
  "bitcode",
  "config",
  "fake 2.3.0",
- "flatbuffers",
  "futures",
  "futures-util",
  "headers",
@@ -9570,7 +9540,6 @@ dependencies = [
  "reqwest",
  "rustls",
  "schemars",
- "schemas",
  "secrecy",
  "serde 1.0.228",
  "serde-aux 3.1.0",

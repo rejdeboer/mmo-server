@@ -6,6 +6,7 @@ server:
   public_port: 7777
   # netcode_private_key: Z8ocDNthwK2cWI0XMIOVsEsKErlxSjuw7k0YibAucSk=
   enable_agones: true
+nats_url: nats://localhost:4222
 tracing:
   format: pretty
   # otel_exporter_endpoint: http://localhost:4317

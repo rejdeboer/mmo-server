@@ -16,7 +16,6 @@ bevy_renet = { version = "4.0" }
 bitcode.workspace = true
 clap.workspace = true
 config = "0.11"
-flatbuffers = { workspace = true }
 game-core = { path = "../game-core" }
 protocol = { path = "../protocol" }
 serde = { version = "1", features = ["derive"] }

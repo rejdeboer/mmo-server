@@ -26,7 +26,6 @@ features = [
 	"runtime-tokio-native-tls",
 	"macros",
 	"postgres",
-	"uuid",
 	"chrono",
 	"migrate",
 ]

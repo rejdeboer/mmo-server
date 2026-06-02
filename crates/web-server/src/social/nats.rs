@@ -2,11 +2,11 @@ use async_nats::{Client, Subscriber};
 use serde::{Deserialize, Serialize};
 
 /// Messages published over NATS between web-server instances.
-/// These carry pre-serialized FlatBuffer payloads so the receiving hub
+/// These carry pre-serialized payloads so the receiving hub
 /// can forward them directly to client writers without re-serialization.
 #[derive(Serialize, Deserialize)]
 pub struct NatsEnvelope {
-    /// The pre-built FlatBuffer event bytes
+    /// The pre-built Bitcode event bytes
     pub payload: Vec<u8>,
 }
 
@@ -17,6 +17,22 @@ pub fn guild_subject(guild_id: i32) -> String {
 
 pub fn whisper_subject(character_id: i32) -> String {
     format!("social.whisper.{character_id}")
+}
+
+pub fn party_chat_subject(party_id: i32) -> String {
+    format!("social.party.{party_id}")
+}
+
+/// Subject for party membership updates (consumed by game server).
+pub fn party_update_subject(character_id: i32) -> String {
+    format!("party.update.{character_id}")
+}
+
+/// Party membership update published to NATS for game server consumption.
+#[derive(Serialize, Deserialize)]
+pub struct PartyUpdate {
+    pub party_id: Option<i32>,
+    pub members: Vec<i32>,
 }
 
 /// Thin wrapper around the async-nats client for social messaging.
@@ -41,6 +57,20 @@ impl NatsBridge {
             Ok(b) => b,
             Err(err) => {
                 tracing::error!(?err, "failed to serialize NATS envelope");
+                return;
+            }
+        };
+
+        if let Err(err) = self.client.publish(subject.to_owned(), bytes.into()).await {
+            tracing::error!(?err, %subject, "failed to publish to NATS");
+        }
+    }
+
+    pub async fn publish_json<T: Serialize>(&self, subject: &str, msg: &T) {
+        let bytes = match serde_json::to_vec(msg) {
+            Ok(b) => b,
+            Err(err) => {
+                tracing::error!(?err, "failed to serialize NATS message");
                 return;
             }
         };

@@ -30,6 +30,10 @@ The `crates/` directory contains the following crates:
 - Keep imports clean. Group Bevy imports together (`use bevy::prelude::*;`).
 - Use `clippy` to ensure idiomatic Rust. Handle all `Result` types properly; do not use `.unwrap()` in production server code unless absolute certainty exists.
 
+## TODO
+
+For an overview of current todos check out `TODO.md`
+
 ## Deployment
 
-This project is deployed using another repo containing Kubernetes manifests, Flux CD, Proxmox. This can be found at `../mmo-deployment`
+This project is deployed using another repo containing Kubernetes manifests, Flux CD, Proxmox, LGTM. This can be found at `../mmo-deployment`

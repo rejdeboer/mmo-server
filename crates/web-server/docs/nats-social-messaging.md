@@ -62,12 +62,12 @@ Each Hub instance:
 
 ## Envelope Format
 
-Messages on the NATS bus use a JSON envelope wrapping the pre-serialized FlatBuffer payload:
+Messages on the NATS bus use a JSON envelope wrapping the pre-serialized Bitcode payload:
 
 ```json
 {
   "origin_sender_id": 42,
-  "payload": [/* FlatBuffer bytes */]
+  "payload": [/* Bitcode bytes */]
 }
 ```
 

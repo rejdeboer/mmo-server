@@ -50,8 +50,8 @@
 
 use bevy::input::keyboard::{Key, KeyboardInput};
 use bevy::prelude::*;
-use bevy_enhanced_input::prelude::{*, Press};
-use bevy_renet::{RenetClient, renet::DefaultChannel};
+use bevy_enhanced_input::prelude::{Press, *};
+use bevy_renet::{renet::DefaultChannel, RenetClient};
 use protocol::models::ChatChannel;
 use std::collections::VecDeque;
 use tokio::sync::mpsc;
@@ -551,7 +551,6 @@ pub fn poll_social_events(
                     ChannelType::Guild => ChatMessageChannel::Guild,
                     ChannelType::Party => ChatMessageChannel::Party,
                     ChannelType::Trade => ChatMessageChannel::Trade,
-                    _ => ChatMessageChannel::System,
                 };
                 chat_log.push(ChatMessage {
                     channel: ch,
@@ -584,6 +583,30 @@ pub fn poll_social_events(
                     channel: ChatMessageChannel::System,
                     sender: String::new(),
                     text,
+                });
+            }
+            web_client::SocialEvent::Error { message } => {
+                chat_log.push(ChatMessage {
+                    channel: ChatMessageChannel::System,
+                    sender: String::new(),
+                    text: message,
+                });
+            }
+            web_client::SocialEvent::PartyInvite { from_name, .. } => {
+                chat_log.push(ChatMessage {
+                    channel: ChatMessageChannel::System,
+                    sender: String::new(),
+                    text: format!("{from_name} has invited you to a party"),
+                });
+            }
+            web_client::SocialEvent::PartyUpdate { .. } => {
+                // TODO: Update party UI
+            }
+            web_client::SocialEvent::PartyDisbanded => {
+                chat_log.push(ChatMessage {
+                    channel: ChatMessageChannel::System,
+                    sender: String::new(),
+                    text: "Your party has been disbanded".to_string(),
                 });
             }
         }

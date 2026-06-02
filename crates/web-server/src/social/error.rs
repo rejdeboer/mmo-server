@@ -1,5 +1,3 @@
-use flatbuffers::InvalidFlatbuffer;
-use schemas::social::ActionData;
 use tokio::sync::mpsc::error::SendError;
 
 use crate::social::HubMessage;
@@ -7,8 +5,7 @@ use crate::social::HubMessage;
 #[derive(Debug)]
 #[allow(dead_code)]
 pub enum ReaderError {
-    InvalidSchema(InvalidFlatbuffer),
-    InvalidActionType(ActionData),
+    InvalidPayload(String),
     HubSendFailure(SendError<HubMessage>),
 }
 
@@ -17,5 +14,9 @@ pub enum HubError {
     RecipientNotFound,
     SenderNotInGuild,
     RateLimited,
+    TargetAlreadyInParty,
+    NoPendingInvite,
+    NotInParty,
+    NotPartyLeader,
     Unexpected,
 }

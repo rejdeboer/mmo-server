@@ -7,8 +7,8 @@ use serde_aux::field_attributes::{
     deserialize_number_from_string, deserialize_option_number_from_string,
 };
 use sqlx::{
-    ConnectOptions,
     postgres::{PgConnectOptions, PgSslMode},
+    ConnectOptions,
 };
 
 pub enum Environment {
@@ -22,6 +22,7 @@ pub struct Settings {
     pub server: ServerSettings,
     pub database: DatabaseSettings,
     pub tracing: TracingSettings,
+    pub nats_url: Option<String>,
 }
 
 #[derive(serde::Deserialize, Clone)]

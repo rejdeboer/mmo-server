@@ -5,7 +5,6 @@
 - [ ] Replace `entity.to_bits()` with a proper network ID system (game-server, game-core)
 - [ ] Add protocol serialization roundtrip tests using quickcheck (protocol crate)
 - [ ] Replace `.unwrap()` on untrusted FlatBuffer input in `web-server/src/social/reader.rs`
-- [ ] Add `/health` endpoint that verifies NATS + DB connectivity (K8s liveness/readiness probes)
 - [ ] Fix `resolve_recipient_id` — handle `RowNotFound` separately from DB errors
 - [ ] Remove `get_client_unchecked` / `get_guild_members_unchecked` panics in hub.rs
 - [ ] Add underflow guard for `target_vitals.hp -= spell.damage`
@@ -15,13 +14,12 @@
 ## Platform Engineering
 
 - [ ] Graceful shutdown with WebSocket connection draining on SIGTERM
-- [ ] Per-character message rate limiting (token bucket) on the social hub
 - [ ] Distributed tracing — propagate trace IDs through NATS messages (OpenTelemetry)
 - [ ] Blue/green game server deploys — migrate players between instances without disconnect
 
 ## Distributed Systems
 
-- [ ] Persistent chat history — async writes to Postgres, handle ordering with NATS delivery
+- [ ] Persistent chat history — async writes to Postgres, handle ordering with NATS delivery (should probably be done with analytics database)
 - [ ] Presence system — track online players across web-server instances (NATS KV or Redis)
 - [ ] Party system — ephemeral groups with distributed state and disconnect cleanup
 - [ ] Message ordering guarantees — sequence numbers and client-side reordering

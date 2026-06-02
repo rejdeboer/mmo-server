@@ -5,7 +5,6 @@ members = [
 	"crates/game-server",
 	"crates/protocol",
 	"crates/provisioner",
-	"crates/schemas",
 	"crates/simulator",
 	"crates/web-client",
 	"crates/web-server",
@@ -18,7 +17,6 @@ resolver = "3"
 bevy = { version = "0.18.1", default-features = false }
 bitcode = { version = "0.6.9", features = ["glam"] }
 clap = { version = "4.5.50", features = ["derive"] }
-flatbuffers = "25.2.10"
 opentelemetry = { version = "0.31" }
 opentelemetry_sdk = { version = "0.31", default-features = false, features = [
 	"internal-logs",

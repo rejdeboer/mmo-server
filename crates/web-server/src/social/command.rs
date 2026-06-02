@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use schemas::social::ChannelType;
+use protocol::social::ChannelType;
 use tokio::sync::mpsc::Sender;
 
 pub enum Recipient {
@@ -32,6 +32,15 @@ pub enum HubCommand {
     ChatMessage {
         channel: ChannelType,
         text: String,
+    },
+    PartyInvite {
+        target: Recipient,
+    },
+    PartyAccept,
+    PartyDecline,
+    PartyLeave,
+    PartyKick {
+        target_id: i32,
     },
     Disconnect,
 }

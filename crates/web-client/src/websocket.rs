@@ -1,11 +1,10 @@
-use crate::{
-    action::SocialAction, event::SocialEvent, reader::run_reader_task, writer::run_writer_task,
-};
+use crate::{reader::run_reader_task, writer::run_writer_task};
 use futures_util::StreamExt;
 use http::{
     Request, StatusCode,
     header::{self, HeaderValue},
 };
+use protocol::social::{SocialAction, SocialEvent};
 use tokio::sync::{mpsc, watch};
 use url::Url;
 
