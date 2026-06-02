@@ -23,7 +23,7 @@ profiling = ["dep:tracing-tracy", "bevy/trace"]
 [dependencies]
 agones = { version = "1.53" }
 anyhow = "1.0"
-async-nats = "0.49"
+async-nats.workspace = true
 avian3d.workspace = true
 base64 = "0.12.0"
 bevy_common_assets = { version = "0.15", default-features = false, features = [
