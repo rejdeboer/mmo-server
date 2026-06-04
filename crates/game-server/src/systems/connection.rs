@@ -1,11 +1,10 @@
 use crate::{
-    application::{DatabasePool, NatsClient},
+    application::DatabasePool,
     components::{
         CharacterIdComponent, ClientIdComponent, InterestedClients, LastClientTick, NameComponent,
         ServerTick, VisibleEntities,
     },
     database::load_character_data,
-    party::{PartyUpdateSender, subscribe_character_party},
 };
 use avian3d::prelude::*;
 use bevy::prelude::*;
@@ -234,14 +233,6 @@ async fn handle_enter_game_task(
             DefaultChannel::ReliableOrdered,
             bitcode::encode(&response),
         );
-
-        // Subscribe to party updates for this character via NATS
-        if let (Some(nats), Some(sender)) = (
-            ctx.world.get_resource::<NatsClient>(),
-            ctx.world.get_resource::<PartyUpdateSender>(),
-        ) {
-            subscribe_character_party(character_id, &nats.0, sender);
-        }
     })
     .await;
     tracing::info!("successfully sent EnterGameResponse");

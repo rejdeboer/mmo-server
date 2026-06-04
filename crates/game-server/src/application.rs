@@ -104,10 +104,6 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
     app.insert_resource(SpatialGrid::default());
     app.insert_resource(ServerTick::default());
 
-    let (party_receiver, party_sender) = party::new_party_channel();
-    app.insert_resource(party_receiver);
-    app.insert_resource(party_sender);
-
     app.add_message::<ApplySpellEffectMessage>();
     app.add_message::<CastSpellActionMessage>();
     app.add_message::<IncomingChatMessage>();
@@ -198,6 +194,17 @@ fn setup_nats(mut commands: Commands, runtime: Res<TokioTasksRuntime>, settings:
     {
         Ok(client) => {
             info!(%url, "connected to NATS");
+            match runtime
+                .runtime()
+                .block_on(async { client.subscribe("party.update.*").await })
+            {
+                Ok(subscriber) => {
+                    commands.insert_resource(party::PartySubscription(subscriber));
+                }
+                Err(err) => {
+                    error!(?err, "failed to subscribe to party updates");
+                }
+            }
             commands.insert_resource(NatsClient(client));
         }
         Err(err) => {

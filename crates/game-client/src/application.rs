@@ -5,6 +5,7 @@ use crate::{
     input::{Chatting, Movement},
     movement::{self, PredictionHistory, RemoteInterpolation},
     network::{NetworkIdMapping, poll_connection, receive_server_events},
+    target::{self, SelectedTarget},
     tick_sync::{self, TickSync},
 };
 use avian3d::prelude::*;
@@ -117,6 +118,8 @@ pub fn create_authenticated_app(
     app.insert_resource(ChatInputState::default());
     app.insert_resource(SocialSender(None));
     app.insert_resource(SocialReceiver(None));
+    app.insert_resource(SelectedTarget::default());
+    app.insert_resource(target::ClickTracker::default());
 
     app.add_message::<ActorSpawnMessage>();
     app.add_message::<ActorDespawnMessage>();
@@ -191,6 +194,20 @@ pub fn create_authenticated_app(
             chat::update_chat_ui,
         )
             .run_if(in_state(AppState::InGame)),
+    );
+    app.add_systems(
+        Update,
+        (
+            target::handle_target_selection,
+            target::update_unit_frame,
+            target::handle_unit_frame_context_menu,
+            target::handle_context_menu_interactions,
+        )
+            .run_if(in_state(AppState::InGame)),
+    );
+    app.add_systems(
+        Update,
+        target::clear_despawned_target.run_if(in_state(AppState::InGame)),
     );
 
     // app.add_systems(FixedPostUpdate, ().after(PhysicsSystems::Last));

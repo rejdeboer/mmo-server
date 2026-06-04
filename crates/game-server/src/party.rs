@@ -1,6 +1,6 @@
 use bevy::prelude::*;
+use futures_util::{FutureExt, StreamExt};
 use serde::Deserialize;
-use tokio::sync::mpsc;
 
 use crate::components::CharacterIdComponent;
 
@@ -15,28 +15,39 @@ pub struct PartyUpdate {
 #[derive(Component, Debug)]
 pub struct PartyId(pub i32);
 
-/// Resource that receives party updates from NATS subscription tasks.
+/// Resource holding the NATS wildcard subscription for all party updates.
 #[derive(Resource)]
-pub struct PartyUpdateReceiver {
-    rx: mpsc::UnboundedReceiver<(i32, PartyUpdate)>,
-}
+pub struct PartySubscription(pub async_nats::Subscriber);
 
-/// Sender half, held by the NATS subscription tasks.
-#[derive(Resource, Clone)]
-pub struct PartyUpdateSender(pub mpsc::UnboundedSender<(i32, PartyUpdate)>);
-
-pub fn new_party_channel() -> (PartyUpdateReceiver, PartyUpdateSender) {
-    let (tx, rx) = mpsc::unbounded_channel();
-    (PartyUpdateReceiver { rx }, PartyUpdateSender(tx))
-}
-
-/// System that drains incoming party updates from NATS and applies them as components.
+/// System that polls the NATS party subscription and applies updates as components.
 pub fn process_party_updates(
-    mut receiver: ResMut<PartyUpdateReceiver>,
+    subscription: Option<ResMut<PartySubscription>>,
     mut commands: Commands,
     characters: Query<(Entity, &CharacterIdComponent)>,
 ) {
-    while let Ok((character_id, update)) = receiver.rx.try_recv() {
+    let Some(mut subscription) = subscription else {
+        return;
+    };
+
+    while let Some(msg) = subscription.0.next().now_or_never().flatten() {
+        let subject = msg.subject.as_str();
+        let Some(character_id_str) = subject.strip_prefix("party.update.") else {
+            tracing::warn!(%subject, "unexpected party update subject");
+            continue;
+        };
+        let Ok(character_id) = character_id_str.parse::<i32>() else {
+            tracing::warn!(%character_id_str, "invalid character_id in party update subject");
+            continue;
+        };
+
+        let update = match serde_json::from_slice::<PartyUpdate>(&msg.payload) {
+            Ok(u) => u,
+            Err(err) => {
+                tracing::warn!(?err, "invalid party update payload");
+                continue;
+            }
+        };
+
         let Some((entity, _)) = characters.iter().find(|(_, id)| id.0 == character_id) else {
             continue;
         };
@@ -50,41 +61,4 @@ pub fn process_party_updates(
             }
         }
     }
-}
-
-/// Spawns a NATS subscription for a specific character's party updates.
-/// Call this when a character connects to the game server.
-pub fn subscribe_character_party(
-    character_id: i32,
-    nats_client: &async_nats::Client,
-    sender: &PartyUpdateSender,
-) {
-    let client = nats_client.clone();
-    let tx = sender.0.clone();
-    let subject = format!("party.update.{character_id}");
-
-    tokio::spawn(async move {
-        use futures_util::StreamExt;
-
-        let mut sub = match client.subscribe(subject.clone()).await {
-            Ok(s) => s,
-            Err(err) => {
-                tracing::error!(?err, %subject, "failed to subscribe to party updates");
-                return;
-            }
-        };
-
-        while let Some(msg) = sub.next().await {
-            match serde_json::from_slice::<PartyUpdate>(&msg.payload) {
-                Ok(update) => {
-                    if tx.send((character_id, update)).is_err() {
-                        break; // Receiver dropped
-                    }
-                }
-                Err(err) => {
-                    tracing::warn!(?err, "invalid party update payload");
-                }
-            }
-        }
-    });
 }

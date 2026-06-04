@@ -6,6 +6,7 @@ mod input;
 pub mod movement;
 mod network;
 mod plugins;
+pub mod target;
 pub mod tick_sync;
 pub mod util;
 
