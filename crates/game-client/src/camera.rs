@@ -5,6 +5,7 @@ use bevy::window::CursorGrabMode;
 use bevy::window::CursorOptions;
 
 use crate::application::PlayerComponent;
+use crate::target::CursorOverUi;
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -91,13 +92,14 @@ pub fn camera_input(
     mouse_scroll: Res<AccumulatedMouseScroll>,
     mouse_button: Res<ButtonInput<MouseButton>>,
     mut q_camera: Query<&mut ThirdPersonCamera>,
+    cursor_over_ui: Res<CursorOverUi>,
 ) {
     let Ok(mut cam) = q_camera.single_mut() else {
         return;
     };
 
-    let left = mouse_button.pressed(MouseButton::Left);
-    let right = mouse_button.pressed(MouseButton::Right);
+    let left = mouse_button.pressed(MouseButton::Left) && !cursor_over_ui.0;
+    let right = mouse_button.pressed(MouseButton::Right) && !cursor_over_ui.0;
     let either = left || right;
 
     // Rotate camera when any mouse button is held.
@@ -152,13 +154,14 @@ pub fn update_camera_transform(
 pub fn manage_cursor_grab(
     mouse_button: Res<ButtonInput<MouseButton>>,
     mut q_cursor: Query<&mut CursorOptions>,
+    cursor_over_ui: Res<CursorOverUi>,
 ) {
     let Ok(mut cursor) = q_cursor.single_mut() else {
         return;
     };
 
-    let any_pressed =
-        mouse_button.pressed(MouseButton::Left) || mouse_button.pressed(MouseButton::Right);
+    let any_pressed = !cursor_over_ui.0
+        && (mouse_button.pressed(MouseButton::Left) || mouse_button.pressed(MouseButton::Right));
 
     if any_pressed && cursor.grab_mode != CursorGrabMode::Locked {
         cursor.grab_mode = CursorGrabMode::Locked;

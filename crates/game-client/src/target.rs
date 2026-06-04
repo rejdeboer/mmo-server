@@ -1,4 +1,5 @@
 use avian3d::prelude::SpatialQuery;
+use bevy::picking::events::{Click, Out, Over, Pointer};
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 
@@ -40,6 +41,11 @@ pub(crate) enum ContextMenuAction {
     InviteToParty,
 }
 
+/// Whether the cursor is currently over a game UI element.
+/// Camera input should be suppressed when this is true.
+#[derive(Resource, Default)]
+pub struct CursorOverUi(pub bool);
+
 /// Tracks whether the left mouse button was a click (not a drag).
 #[derive(Resource, Default)]
 pub struct ClickTracker {
@@ -50,6 +56,17 @@ pub struct ClickTracker {
 
 const DRAG_THRESHOLD: f32 = 5.0;
 
+/// Updates the CursorOverUi resource based on UI interaction state.
+pub(crate) fn update_cursor_over_ui(
+    unit_frame: Query<&Interaction, With<UnitFrame>>,
+    menu_buttons: Query<&Interaction, With<ContextMenuButton>>,
+    mut cursor_over_ui: ResMut<CursorOverUi>,
+) {
+    let over_frame = unit_frame.iter().any(|i| *i != Interaction::None);
+    let over_menu = menu_buttons.iter().any(|i| *i != Interaction::None);
+    cursor_over_ui.0 = over_frame || over_menu;
+}
+
 /// Detects left-click (non-drag) on remote actors to select them as target.
 pub(crate) fn handle_target_selection(
     mouse_button: Res<ButtonInput<MouseButton>>,
@@ -59,6 +76,7 @@ pub(crate) fn handle_target_selection(
     remote_actors: Query<Entity, With<RemoteInterpolation>>,
     mut selected: ResMut<SelectedTarget>,
     mut click_tracker: ResMut<ClickTracker>,
+    cursor_over_ui: Res<CursorOverUi>,
 ) {
     let Ok(window) = windows.single() else {
         return;
@@ -84,7 +102,7 @@ pub(crate) fn handle_target_selection(
         let was_click = click_tracker.pressed && !click_tracker.dragged;
         click_tracker.pressed = false;
 
-        if !was_click {
+        if !was_click || cursor_over_ui.0 {
             return;
         }
 
@@ -166,6 +184,7 @@ fn spawn_unit_frame(commands: &mut Commands, name: &str, level: i32, health_pct:
     commands
         .spawn((
             UnitFrame,
+            Interaction::None,
             Node {
                 position_type: PositionType::Absolute,
                 top: Val::Px(20.0),
@@ -241,23 +260,15 @@ fn spawn_unit_frame(commands: &mut Commands, name: &str, level: i32, health_pct:
 }
 
 /// Shows a context menu on right-click of the unit frame.
+/// Shows a context menu on right-click of the unit frame.
 pub(crate) fn handle_unit_frame_context_menu(
     mouse_button: Res<ButtonInput<MouseButton>>,
     windows: Query<&Window, With<PrimaryWindow>>,
     selected: Res<SelectedTarget>,
-    unit_frame: Query<(&Node, &GlobalTransform), With<UnitFrame>>,
+    unit_frame_interaction: Query<&Interaction, With<UnitFrame>>,
     existing_menu: Query<Entity, With<ContextMenu>>,
     mut commands: Commands,
-    computed_node: Query<&ComputedNode, With<UnitFrame>>,
 ) {
-    // Close context menu on left-click anywhere
-    if mouse_button.just_pressed(MouseButton::Left) {
-        for entity in existing_menu.iter() {
-            commands.entity(entity).despawn();
-        }
-        return;
-    }
-
     if !mouse_button.just_pressed(MouseButton::Right) {
         return;
     }
@@ -271,28 +282,20 @@ pub(crate) fn handle_unit_frame_context_menu(
         return;
     }
 
+    // Check if cursor is hovering over the unit frame
+    let is_hovering = unit_frame_interaction
+        .iter()
+        .any(|i| *i != Interaction::None);
+    if !is_hovering {
+        return;
+    }
+
     let Ok(window) = windows.single() else {
         return;
     };
     let Some(cursor_pos) = window.cursor_position() else {
         return;
     };
-
-    // Check if cursor is over the unit frame
-    let Ok((_, frame_global)) = unit_frame.single() else {
-        return;
-    };
-    let Ok(computed) = computed_node.single() else {
-        return;
-    };
-
-    let frame_pos = frame_global.translation().truncate();
-    let frame_size = computed.size();
-    let frame_rect = Rect::from_center_size(frame_pos, frame_size);
-
-    if !frame_rect.contains(cursor_pos) {
-        return;
-    }
 
     // Spawn context menu at cursor position
     spawn_context_menu(&mut commands, cursor_pos);
@@ -313,8 +316,8 @@ fn spawn_context_menu(commands: &mut Commands, position: Vec2) {
                 ..default()
             },
             BackgroundColor(Color::srgba(0.15, 0.15, 0.15, 0.95)),
-            // High z-index so it renders on top
             ZIndex(100),
+            Pickable::IGNORE,
         ))
         .with_children(|parent| {
             // Invite to Party button
@@ -337,68 +340,69 @@ fn spawn_context_menu(commands: &mut Commands, position: Vec2) {
                             font_size: 13.0,
                             ..default()
                         },
+                        Pickable::IGNORE,
                     ));
-                });
+                })
+                .observe(on_button_click)
+                .observe(on_button_hover_start)
+                .observe(on_button_hover_end);
         });
 }
 
-/// Handles context menu button interactions.
-pub(crate) fn handle_context_menu_interactions(
-    interactions: Query<(&Interaction, &ContextMenuButton), (Changed<Interaction>, With<Button>)>,
-    mut bg_query: Query<&mut BackgroundColor, With<ContextMenuButton>>,
-    all_interactions: Query<(&Interaction, Entity), With<ContextMenuButton>>,
+fn on_button_click(
+    event: On<Pointer<Click>>,
+    buttons: Query<&ContextMenuButton>,
     selected: Res<SelectedTarget>,
     targets: Query<&NameComponent>,
     social_sender: Res<SocialSender>,
     context_menu: Query<Entity, With<ContextMenu>>,
     mut commands: Commands,
 ) {
-    // Handle hover highlighting
-    for (interaction, entity) in all_interactions.iter() {
-        if let Ok(mut bg) = bg_query.get_mut(entity) {
-            match interaction {
-                Interaction::Hovered => {
-                    *bg = BackgroundColor(Color::srgba(0.3, 0.3, 0.5, 0.5));
+    let Ok(button) = buttons.get(event.event_target()) else {
+        return;
+    };
+    tracing::info!("button clicked");
+
+    match button.0 {
+        ContextMenuAction::InviteToParty => {
+            let Some(target_entity) = selected.0 else {
+                tracing::info!("target not found");
+                return;
+            };
+            let Ok(name) = targets.get(target_entity) else {
+                tracing::info!("entity not found");
+                return;
+            };
+            if let Some(ref sender) = social_sender.0 {
+                let action = web_client::SocialAction::PartyInviteByName {
+                    target_name: name.0.clone(),
+                };
+                if let Err(e) = sender.try_send(action) {
+                    tracing::error!("failed to send party invite: {}", e);
+                } else {
+                    tracing::info!("sent party invite to {}", name.0);
                 }
-                Interaction::None => {
-                    *bg = BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.0));
-                }
-                _ => {}
+            } else {
+                tracing::info!("social sender is none");
             }
         }
     }
 
-    // Handle clicks
-    for (interaction, button) in interactions.iter() {
-        if *interaction != Interaction::Pressed {
-            continue;
-        }
+    // Close the context menu
+    for entity in context_menu.iter() {
+        commands.entity(entity).despawn();
+    }
+}
 
-        match button.0 {
-            ContextMenuAction::InviteToParty => {
-                let Some(target_entity) = selected.0 else {
-                    continue;
-                };
-                let Ok(name) = targets.get(target_entity) else {
-                    continue;
-                };
-                if let Some(ref sender) = social_sender.0 {
-                    let action = web_client::SocialAction::PartyInviteByName {
-                        target_name: name.0.clone(),
-                    };
-                    if let Err(e) = sender.try_send(action) {
-                        tracing::error!("failed to send party invite: {}", e);
-                    } else {
-                        tracing::info!("sent party invite to {}", name.0);
-                    }
-                }
-            }
-        }
+fn on_button_hover_start(event: On<Pointer<Over>>, mut bg_query: Query<&mut BackgroundColor>) {
+    if let Ok(mut bg) = bg_query.get_mut(event.event_target()) {
+        *bg = BackgroundColor(Color::srgba(0.3, 0.3, 0.5, 0.5));
+    }
+}
 
-        // Close the context menu
-        for entity in context_menu.iter() {
-            commands.entity(entity).despawn();
-        }
+fn on_button_hover_end(event: On<Pointer<Out>>, mut bg_query: Query<&mut BackgroundColor>) {
+    if let Ok(mut bg) = bg_query.get_mut(event.event_target()) {
+        *bg = BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.0));
     }
 }
 

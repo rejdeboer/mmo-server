@@ -13,6 +13,7 @@ base64 = "0.12"
 bevy = { workspace = true, default-features = true }
 bevy_enhanced_input = { version = "0.24.1", features = ["serialize"] }
 bevy_renet = { version = "4.0" }
+bevy-tokio-tasks = { version = "0.18", default-features = false }
 bitcode.workspace = true
 clap.workspace = true
 config = "0.11"

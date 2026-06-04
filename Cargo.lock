@@ -3644,6 +3644,7 @@ dependencies = [
  "avian3d",
  "base64 0.12.3",
  "bevy",
+ "bevy-tokio-tasks",
  "bevy_enhanced_input",
  "bevy_renet",
  "bitcode",

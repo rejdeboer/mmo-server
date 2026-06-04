@@ -21,6 +21,11 @@ pub struct WebClient {
 }
 
 impl WebClient {
+    /// Returns the current JWT token, if authenticated.
+    pub fn jwt(&self) -> Option<&str> {
+        self.jwt.as_deref()
+    }
+
     pub fn new(base_url: String) -> Self {
         let api = reqwest::Client::builder()
             .redirect(reqwest::redirect::Policy::none())

@@ -101,6 +101,7 @@ pub fn create_authenticated_app(
 
     app.add_plugins(DefaultPlugins);
     app.add_plugins((RenetClientPlugin, NetcodeClientPlugin));
+    app.add_plugins(bevy_tokio_tasks::TokioTasksPlugin::default());
     app.add_plugins(
         PhysicsPlugins::new(FixedPostUpdate).set(PhysicsInterpolationPlugin::interpolate_all()),
     );
@@ -120,6 +121,7 @@ pub fn create_authenticated_app(
     app.insert_resource(SocialReceiver(None));
     app.insert_resource(SelectedTarget::default());
     app.insert_resource(target::ClickTracker::default());
+    app.insert_resource(target::CursorOverUi::default());
 
     app.add_message::<ActorSpawnMessage>();
     app.add_message::<ActorDespawnMessage>();
@@ -128,6 +130,8 @@ pub fn create_authenticated_app(
 
     app.insert_state(AppState::Connecting);
     app.insert_resource(Time::<Fixed>::from_hz(game_core::constants::TICK_RATE_HZ));
+
+    app.add_systems(Startup, chat::connect_social);
 
     app.add_systems(
         Update,
@@ -176,6 +180,7 @@ pub fn create_authenticated_app(
     app.add_systems(
         Update,
         (
+            target::update_cursor_over_ui,
             camera::camera_input,
             camera::manage_cursor_grab,
             camera::update_camera_transform,
@@ -201,7 +206,6 @@ pub fn create_authenticated_app(
             target::handle_target_selection,
             target::update_unit_frame,
             target::handle_unit_frame_context_menu,
-            target::handle_context_menu_interactions,
         )
             .run_if(in_state(AppState::InGame)),
     );
@@ -338,8 +342,12 @@ pub fn handle_actor_spawn_messages(
         let transform = Transform::from_translation(actor.transform.position)
             .with_rotation(actor.transform.get_quat());
 
+        let base_color = match &actor.attributes {
+            protocol::models::ActorAttributes::Player { .. } => Color::srgb(0.2, 0.4, 0.8),
+            protocol::models::ActorAttributes::Npc { .. } => Color::srgb(0.7, 0.2, 0.2),
+        };
         let remote_material = materials.add(StandardMaterial {
-            base_color: Color::srgb(0.7, 0.2, 0.2),
+            base_color,
             ..default()
         });
 
