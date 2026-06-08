@@ -1,6 +1,9 @@
 use crate::{
     camera::{self, ThirdPersonCamera},
-    chat::{self, ChatInputState, ChatLog, OpenChat, SocialReceiver, SocialSender},
+    chat::{
+        self, CancelChat, ChatInputState, ChatLog, OpenChat, SendChat, SocialReceiver,
+        SocialSender, on_open_chat, on_send_chat,
+    },
     configuration::Settings,
     input::{Chatting, Movement},
     movement::{self, PredictionHistory, RemoteInterpolation},
@@ -126,7 +129,9 @@ pub fn create_authenticated_app(
     app.add_message::<ActorSpawnMessage>();
     app.add_message::<ActorDespawnMessage>();
 
-    app.add_observer(on_enter_game);
+    app.add_observer(on_enter_game)
+        .add_observer(on_send_chat)
+        .add_observer(on_open_chat);
 
     app.insert_state(AppState::Connecting);
     app.insert_resource(Time::<Fixed>::from_hz(game_core::constants::TICK_RATE_HZ));
@@ -191,8 +196,6 @@ pub fn create_authenticated_app(
     app.add_systems(
         Update,
         (
-            chat::handle_open_chat,
-            chat::handle_send_chat,
             chat::handle_cancel_chat,
             chat::handle_chat_text_input,
             chat::poll_social_events,
@@ -281,6 +284,19 @@ fn on_enter_game(
                 Action::<OpenChat>::new(),
                 Press::default(),
                 Bindings::spawn(Spawn(Binding::from(KeyCode::Enter))),
+            ),
+        ]),
+        Chatting,
+        actions!(Chatting[
+            (
+                Action::<SendChat>::new(),
+                Press::default(),
+                Bindings::spawn(Spawn(Binding::from(KeyCode::Enter))),
+            ),
+            (
+                Action::<CancelChat>::new(),
+                Press::default(),
+                Bindings::spawn(Spawn(Binding::from(KeyCode::Escape))),
             ),
         ]),
     ));

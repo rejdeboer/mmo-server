@@ -198,6 +198,10 @@ pub struct ChatInputState {
     pub active: bool,
     pub text: String,
     pub channel: ActiveChannel,
+    /// Cooldown frames after closing chat to prevent Enter from immediately
+    /// re-triggering OpenChat (the same keypress that sent/cancelled the message
+    /// can fire the freshly-inserted PlayerComponent context on the next frame).
+    pub reopen_cooldown: u8,
 }
 
 /// Sender half of the social WebSocket connection. `None` until connected.
@@ -341,24 +345,20 @@ pub fn spawn_chat_ui(commands: &mut Commands) {
 }
 
 /// Handles the Enter key while in gameplay mode — opens the chat input.
-pub fn handle_open_chat(
-    open_action: Single<&TriggerState, With<Action<OpenChat>>>,
+pub fn on_open_chat(
+    open: On<Start<OpenChat>>,
     mut chat_input: ResMut<ChatInputState>,
     mut q_input_container: Query<&mut Visibility, With<ChatInputContainer>>,
     mut q_input_text: Query<&mut Text, With<ChatInputField>>,
-    mut q_player: Query<Entity, With<PlayerComponent>>,
     mut commands: Commands,
 ) {
-    if *open_action != &TriggerState::Fired {
-        return;
-    }
-
-    let Ok(player_entity) = q_player.single_mut() else {
-        return;
-    };
+    commands.entity(open.context).insert((
+        ContextActivity::<PlayerComponent>::INACTIVE,
+        ContextActivity::<Chatting>::ACTIVE,
+    ));
 
     chat_input.active = true;
-    chat_input.text.clear();
+    chat_input.text = chat_input.channel.prefix();
 
     // Show the input container
     if let Ok(mut vis) = q_input_container.single_mut() {
@@ -367,25 +367,8 @@ pub fn handle_open_chat(
 
     // Show channel prefix
     if let Ok(mut text) = q_input_text.single_mut() {
-        **text = chat_input.channel.prefix();
+        **text = chat_input.text.clone();
     }
-
-    // Swap input contexts: remove gameplay, add chatting
-    commands
-        .entity(player_entity)
-        .remove::<Actions<PlayerComponent>>()
-        .insert(actions!(Chatting[
-            (
-                Action::<SendChat>::new(),
-                Press::default(),
-                Bindings::spawn(Spawn(Binding::from(KeyCode::Enter))),
-            ),
-            (
-                Action::<CancelChat>::new(),
-                Press::default(),
-                Bindings::spawn(Spawn(Binding::from(KeyCode::Escape))),
-            ),
-        ]));
 }
 
 /// Handles keyboard text input while the chat input field is active.
@@ -433,28 +416,14 @@ pub fn handle_chat_text_input(
 }
 
 /// Handles Enter while in chat mode — sends the message and returns to gameplay.
-pub fn handle_send_chat(
-    send_action: Single<&TriggerState, With<Action<SendChat>>>,
+pub fn on_send_chat(
+    send: On<Start<SendChat>>,
     mut chat_input: ResMut<ChatInputState>,
-    _chat_log: ResMut<ChatLog>,
     mut renet_client: ResMut<RenetClient>,
     social_sender: Res<SocialSender>,
     mut q_input_container: Query<&mut Visibility, With<ChatInputContainer>>,
-    mut q_player: Query<Entity, With<PlayerComponent>>,
     mut commands: Commands,
 ) {
-    if *send_action != &TriggerState::Fired {
-        return;
-    }
-
-    let Ok(player_entity) = q_player.single_mut() else {
-        return;
-    };
-
-    // Extract the message text (everything after the channel prefix)
-    let prefix_len = chat_input.channel.prefix().len();
-    let _raw_text = chat_input.text[prefix_len..].trim().to_string();
-
     // Parse channel prefix changes — the user might have typed a new prefix
     let (channel, message_text) = parse_chat_input(&chat_input.text);
 
@@ -506,24 +475,10 @@ pub fn handle_send_chat(
     // Close the input
     close_chat_input(&mut chat_input, &mut q_input_container);
 
-    // Swap back to gameplay input context
-    commands
-        .entity(player_entity)
-        .remove::<Actions<Chatting>>()
-        .insert(actions!(PlayerComponent[
-            (
-                Action::<crate::input::Movement>::new(),
-                DeadZone::default(),
-                DeltaScale::default(),
-                Scale::splat(10.0),
-                Bindings::spawn((Cardinal::wasd_keys(), Axial::left_stick())),
-            ),
-            (
-                Action::<OpenChat>::new(),
-                Press::default(),
-                Bindings::spawn(Spawn(Binding::from(KeyCode::Enter))),
-            ),
-        ]));
+    commands.entity(send.context).insert((
+        ContextActivity::<PlayerComponent>::ACTIVE,
+        ContextActivity::<Chatting>::INACTIVE,
+    ));
 }
 
 /// Handles Escape while in chat mode — cancels input and returns to gameplay.
@@ -697,6 +652,9 @@ fn close_chat_input(
 ) {
     chat_input.active = false;
     chat_input.text.clear();
+    // Prevent Enter from immediately re-opening chat on the next frame
+    // when the freshly-inserted PlayerComponent context sees the key as pressed.
+    chat_input.reopen_cooldown = 2;
 
     if let Ok(mut vis) = q_input_container.single_mut() {
         *vis = Visibility::Hidden;

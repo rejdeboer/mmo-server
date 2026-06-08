@@ -8,6 +8,7 @@ mod network;
 mod plugins;
 pub mod target;
 pub mod tick_sync;
+mod ui;
 pub mod util;
 
 pub use util::decode_token;
