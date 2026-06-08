@@ -2,7 +2,7 @@ use crate::{
     camera::{self, ThirdPersonCamera},
     chat::{
         self, CancelChat, ChatInputState, ChatLog, OpenChat, SendChat, SocialReceiver,
-        SocialSender, on_open_chat, on_send_chat,
+        SocialSender, on_cancel_chat, on_open_chat, on_send_chat,
     },
     configuration::Settings,
     input::{Chatting, Movement},
@@ -131,6 +131,7 @@ pub fn create_authenticated_app(
 
     app.add_observer(on_enter_game)
         .add_observer(on_send_chat)
+        .add_observer(on_cancel_chat)
         .add_observer(on_open_chat);
 
     app.insert_state(AppState::Connecting);
@@ -196,7 +197,6 @@ pub fn create_authenticated_app(
     app.add_systems(
         Update,
         (
-            chat::handle_cancel_chat,
             chat::handle_chat_text_input,
             chat::poll_social_events,
             chat::update_chat_ui,

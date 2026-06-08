@@ -482,41 +482,18 @@ pub fn on_send_chat(
 }
 
 /// Handles Escape while in chat mode — cancels input and returns to gameplay.
-pub fn handle_cancel_chat(
-    cancel_action: Single<&TriggerState, With<Action<CancelChat>>>,
+pub fn on_cancel_chat(
+    cancel: On<Start<CancelChat>>,
     mut chat_input: ResMut<ChatInputState>,
     mut q_input_container: Query<&mut Visibility, With<ChatInputContainer>>,
-    mut q_player: Query<Entity, With<PlayerComponent>>,
     mut commands: Commands,
 ) {
-    if *cancel_action != &TriggerState::Fired {
-        return;
-    }
-
-    let Ok(player_entity) = q_player.single_mut() else {
-        return;
-    };
-
     close_chat_input(&mut chat_input, &mut q_input_container);
 
-    // Swap back to gameplay input context
-    commands
-        .entity(player_entity)
-        .remove::<Actions<Chatting>>()
-        .insert(actions!(PlayerComponent[
-            (
-                Action::<crate::input::Movement>::new(),
-                DeadZone::default(),
-                DeltaScale::default(),
-                Scale::splat(10.0),
-                Bindings::spawn((Cardinal::wasd_keys(), Axial::left_stick())),
-            ),
-            (
-                Action::<OpenChat>::new(),
-                Press::default(),
-                Bindings::spawn(Spawn(Binding::from(KeyCode::Enter))),
-            ),
-        ]));
+    commands.entity(cancel.context).insert((
+        ContextActivity::<PlayerComponent>::ACTIVE,
+        ContextActivity::<Chatting>::INACTIVE,
+    ));
 }
 
 /// Polls the social WebSocket receiver and pushes incoming messages into the chat log.
