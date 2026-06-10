@@ -1,4 +1,5 @@
 use futures_util::StreamExt;
+use metrics::{counter, gauge};
 use protocol::social::{ChannelType, SocialEvent};
 use sqlx::PgPool;
 use std::{collections::HashMap, sync::Arc};
@@ -98,6 +99,7 @@ impl Hub {
         }
     }
 
+    #[tracing::instrument(name = "social_hub", skip_all)]
     pub async fn run(mut self) {
         loop {
             tokio::select! {
@@ -110,12 +112,15 @@ impl Hub {
                 Some(event) = self.nats_rx.recv() => {
                     match event {
                         NatsEvent::Guild { guild_id, envelope } => {
+                            counter!("nats_messages_received_total", "subject_prefix" => "social.guild").increment(1);
                             self.handle_remote_guild(guild_id, envelope).await;
                         }
                         NatsEvent::Whisper { character_id, envelope } => {
+                            counter!("nats_messages_received_total", "subject_prefix" => "social.whisper").increment(1);
                             self.handle_remote_whisper(character_id, envelope).await;
                         }
                         NatsEvent::Party { party_id, envelope } => {
+                            counter!("nats_messages_received_total", "subject_prefix" => "social.party").increment(1);
                             self.handle_remote_party(party_id, envelope).await;
                         }
                     }
@@ -179,6 +184,7 @@ impl Hub {
                     members.push(msg.sender_id);
 
                     if is_first {
+                        gauge!("social_guilds_active").increment(1.0);
                         self.spawn_guild_sub(guild_id);
                     }
                 }
@@ -205,6 +211,7 @@ impl Hub {
                     members.retain(|&id| id != msg.sender_id);
                     if members.is_empty() {
                         self.guilds.remove(&gid);
+                        gauge!("social_guilds_active").decrement(1.0);
                         if let Some(handle) = self.guild_sub_handles.remove(&gid) {
                             handle.abort();
                         }
@@ -215,27 +222,39 @@ impl Hub {
                 if !self.check_rate_limit(msg.sender_id).await {
                     return;
                 }
+                let channel_label = match channel {
+                    ChannelType::Guild => "guild",
+                    ChannelType::Party => "party",
+                    _ => "unknown",
+                };
+                counter!("social_messages_total", "channel" => channel_label).increment(1);
                 self.handle_chat(msg.sender_id, channel, &text).await;
             }
             HubCommand::Whisper { recipient, text } => {
                 if !self.check_rate_limit(msg.sender_id).await {
                     return;
                 }
+                counter!("social_messages_total", "channel" => "whisper").increment(1);
                 self.handle_whisper(msg.sender_id, recipient, &text).await;
             }
             HubCommand::PartyInvite { target } => {
+                counter!("social_party_actions_total", "action" => "invite").increment(1);
                 self.handle_party_invite(msg.sender_id, target).await;
             }
             HubCommand::PartyAccept => {
+                counter!("social_party_actions_total", "action" => "accept").increment(1);
                 self.handle_party_accept(msg.sender_id).await;
             }
             HubCommand::PartyDecline => {
+                counter!("social_party_actions_total", "action" => "decline").increment(1);
                 self.handle_party_decline(msg.sender_id).await;
             }
             HubCommand::PartyLeave => {
+                counter!("social_party_actions_total", "action" => "leave").increment(1);
                 self.handle_party_leave(msg.sender_id).await;
             }
             HubCommand::PartyKick { target_id } => {
+                counter!("social_party_actions_total", "action" => "kick").increment(1);
                 self.handle_party_kick(msg.sender_id, target_id).await;
             }
         };
@@ -352,6 +371,7 @@ impl Hub {
                 payload: msg.to_vec(),
             };
             nats.publish(&guild_subject(gid), &envelope).await;
+            counter!("social_messages_delivered_total", "channel" => "guild", "delivery" => "nats").increment(1);
         }
     }
 
@@ -381,6 +401,7 @@ impl Hub {
                 payload: msg.to_vec(),
             };
             nats.publish(&party_chat_subject(party_id), &envelope).await;
+            counter!("social_messages_delivered_total", "channel" => "party", "delivery" => "nats").increment(1);
         }
     }
 
@@ -407,6 +428,7 @@ impl Hub {
                     .write_error(HubError::Unexpected, sender_client.tx.clone())
                     .await;
             }
+            counter!("social_messages_delivered_total", "channel" => "whisper", "delivery" => "local").increment(1);
         } else {
             // Recipient not on this instance - publish via NATS if available
             if let Some(nats) = &self.nats {
@@ -415,6 +437,7 @@ impl Hub {
                 };
                 nats.publish(&whisper_subject(recipient_id), &envelope)
                     .await;
+                counter!("social_messages_delivered_total", "channel" => "whisper", "delivery" => "nats").increment(1);
             } else {
                 tracing::warn!(recipient_id, "recipient not connected and NATS unavailable");
             }
@@ -446,6 +469,18 @@ impl Hub {
     }
 
     async fn write_error(&self, error: HubError, tx: Sender<Arc<[u8]>>) {
+        let error_label = match &error {
+            HubError::SenderNotInGuild => "not_in_guild",
+            HubError::RecipientNotFound => "recipient_not_found",
+            HubError::RateLimited => "rate_limited",
+            HubError::TargetAlreadyInParty => "target_already_in_party",
+            HubError::NoPendingInvite => "no_pending_invite",
+            HubError::NotInParty => "not_in_party",
+            HubError::NotPartyLeader => "not_party_leader",
+            HubError::Unexpected => "unexpected",
+        };
+        counter!("social_errors_total", "error" => error_label).increment(1);
+
         let text = match error {
             HubError::SenderNotInGuild => "You are not in a guild",
             HubError::RecipientNotFound => "Player not found",
@@ -572,6 +607,7 @@ impl Hub {
                     members: vec![invite.from_id],
                 },
             );
+            gauge!("social_parties_active").increment(1.0);
             self.spawn_party_sub(pid);
 
             pid
@@ -663,6 +699,7 @@ impl Hub {
 
             if party.members.is_empty() {
                 self.parties.remove(&party_id);
+                gauge!("social_parties_active").decrement(1.0);
                 if let Some(handle) = self.party_sub_handles.remove(&party_id) {
                     handle.abort();
                 }
@@ -790,6 +827,8 @@ impl Hub {
             return true;
         }
 
+        counter!("social_rate_limit_denied_total").increment(1);
+        tracing::warn!(sender_id, "rate limit denied");
         let tx = client.tx.clone();
         self.write_error(HubError::RateLimited, tx).await;
         false

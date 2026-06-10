@@ -10,8 +10,11 @@ use axum::{
     response::{Response, Result},
 };
 use futures::StreamExt;
+use metrics::{gauge, histogram};
 use std::sync::Arc;
+use std::time::Instant;
 use tokio::sync::mpsc::{Sender, channel};
+use tracing::Instrument;
 
 pub async fn social(
     ws: WebSocketUpgrade,
@@ -33,8 +36,14 @@ pub async fn social(
         ApiError::UnexpectedError
     })?;
 
-    Ok(ws
-        .on_upgrade(move |socket| handle_socket(socket, ctx, row.name, row.guild_id, state.hub_tx)))
+    Ok(ws.on_upgrade(move |socket| {
+        let span = tracing::info_span!(
+            "websocket_connection",
+            character_id = ctx.character_id,
+            character_name = %row.name,
+        );
+        handle_socket(socket, ctx, row.name, row.guild_id, state.hub_tx).instrument(span)
+    }))
 }
 
 async fn handle_socket(
@@ -70,17 +79,23 @@ async fn handle_socket(
     reader.run().await;
 }
 
-struct ConnectionGuard;
+struct ConnectionGuard {
+    connected_at: Instant,
+}
 
 impl ConnectionGuard {
     fn new() -> Self {
-        metrics::gauge!("social_connections_active").increment(1.0);
-        Self
+        gauge!("social_connections_active").increment(1.0);
+        Self {
+            connected_at: Instant::now(),
+        }
     }
 }
 
 impl Drop for ConnectionGuard {
     fn drop(&mut self) {
-        metrics::gauge!("social_connections_active").decrement(1.0);
+        gauge!("social_connections_active").decrement(1.0);
+        let duration = self.connected_at.elapsed().as_secs_f64();
+        histogram!("social_connection_duration_seconds").record(duration);
     }
 }

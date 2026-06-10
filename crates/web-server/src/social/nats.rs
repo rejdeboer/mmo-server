@@ -1,4 +1,5 @@
 use async_nats::{Client, Subscriber};
+use metrics::counter;
 use serde::{Deserialize, Serialize};
 
 /// Messages published over NATS between web-server instances.
@@ -35,6 +36,15 @@ pub struct PartyUpdate {
     pub members: Vec<i32>,
 }
 
+/// Extract the subject prefix (e.g. "social.guild.123" → "social.guild").
+fn subject_prefix(subject: &str) -> &str {
+    // Find the second-to-last dot or return the whole subject
+    match subject.rmatch_indices('.').nth(0) {
+        Some((idx, _)) => &subject[..idx],
+        None => subject,
+    }
+}
+
 /// Thin wrapper around the async-nats client for social messaging.
 #[derive(Clone)]
 pub struct NatsBridge {
@@ -52,7 +62,9 @@ impl NatsBridge {
         self.client.subscribe(subject.to_owned()).await
     }
 
+    #[tracing::instrument(name = "nats.publish", skip(self, envelope), fields(%subject))]
     pub async fn publish(&self, subject: &str, envelope: &NatsEnvelope) {
+        let prefix = subject_prefix(subject).to_owned();
         let bytes = match serde_json::to_vec(envelope) {
             Ok(b) => b,
             Err(err) => {
@@ -62,11 +74,15 @@ impl NatsBridge {
         };
 
         if let Err(err) = self.client.publish(subject.to_owned(), bytes.into()).await {
+            counter!("nats_publish_failures_total", "subject_prefix" => prefix.clone()).increment(1);
             tracing::error!(?err, %subject, "failed to publish to NATS");
         }
+        counter!("nats_publishes_total", "subject_prefix" => prefix).increment(1);
     }
 
+    #[tracing::instrument(name = "nats.publish", skip(self, msg), fields(%subject))]
     pub async fn publish_json<T: Serialize>(&self, subject: &str, msg: &T) {
+        let prefix = subject_prefix(subject).to_owned();
         let bytes = match serde_json::to_vec(msg) {
             Ok(b) => b,
             Err(err) => {
@@ -76,8 +92,10 @@ impl NatsBridge {
         };
 
         if let Err(err) = self.client.publish(subject.to_owned(), bytes.into()).await {
+            counter!("nats_publish_failures_total", "subject_prefix" => prefix.clone()).increment(1);
             tracing::error!(?err, %subject, "failed to publish to NATS");
         }
+        counter!("nats_publishes_total", "subject_prefix" => prefix).increment(1);
     }
 
     pub fn deserialize_envelope(data: &[u8]) -> Option<NatsEnvelope> {

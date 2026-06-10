@@ -11,12 +11,15 @@ use crate::{
 };
 use axum::{
     Router, middleware,
+    extract::{MatchedPath, Request},
+    response::Response,
     routing::{get, post},
 };
+use metrics::{counter, histogram};
 use secrecy::SecretString;
 use serde::Deserialize;
 use sqlx::{PgPool, postgres::PgPoolOptions};
-use std::{net::SocketAddr, sync::Arc};
+use std::{net::SocketAddr, sync::Arc, time::Instant};
 use tokio::{
     net::TcpListener,
     sync::mpsc::{Receiver, Sender, channel},
@@ -121,6 +124,7 @@ impl Application {
                             .latency_unit(tower_http::LatencyUnit::Millis),
                     ),
             )
+            .layer(middleware::from_fn(http_metrics_middleware))
             .with_state(application_state);
         let app_server = Server {
             listener: app_listener,
@@ -170,4 +174,27 @@ fn start_social_hub(db_pool: PgPool, receiver: Receiver<HubMessage>, nats: Optio
         let hub = Hub::new(db_pool, receiver, nats);
         hub.run().await;
     });
+}
+
+async fn http_metrics_middleware(
+    request: Request,
+    next: middleware::Next,
+) -> Response {
+    let method = request.method().to_string();
+    let route = request
+        .extensions()
+        .get::<MatchedPath>()
+        .map(|p| p.as_str().to_owned())
+        .unwrap_or_else(|| "unknown".to_owned());
+
+    let start = Instant::now();
+    let response = next.run(request).await;
+    let elapsed = start.elapsed().as_secs_f64();
+
+    let status = response.status().as_u16().to_string();
+
+    counter!("http_requests_total", "method" => method.clone(), "route" => route.clone(), "status" => status).increment(1);
+    histogram!("http_request_duration_seconds", "method" => method, "route" => route).record(elapsed);
+
+    response
 }

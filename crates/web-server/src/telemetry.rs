@@ -1,5 +1,5 @@
 use crate::configuration::{MetricsSettings, TelemetrySettings, TracingFormat};
-use metrics::describe_gauge;
+use metrics::{Unit, describe_counter, describe_gauge, describe_histogram};
 use metrics_exporter_prometheus::PrometheusBuilder;
 use metrics_util::MetricKindMask;
 use metrics_util::layers::{Layer, PrefixLayer};
@@ -29,10 +29,84 @@ pub fn init_metrics(settings: &MetricsSettings) {
     let prefixed_recorder = PrefixLayer::new("web").layer(recorder);
     metrics::set_global_recorder(prefixed_recorder).expect("failed to set global recorder");
 
+    // -- Connection metrics --
     describe_gauge!(
         "social_connections_active",
         "Current number of active WebSocket connections"
     );
+    describe_histogram!(
+        "social_connection_duration_seconds",
+        Unit::Seconds,
+        "WebSocket session lifetimes"
+    );
+
+    // -- Chat metrics --
+    describe_counter!(
+        "social_messages_total",
+        "Total chat messages sent by channel type"
+    );
+    describe_counter!(
+        "social_messages_delivered_total",
+        "Messages delivered by channel and delivery method"
+    );
+
+    // -- Party metrics --
+    describe_counter!(
+        "social_party_actions_total",
+        "Party actions performed by action type"
+    );
+    describe_gauge!(
+        "social_parties_active",
+        "Current number of active parties"
+    );
+
+    // -- Rate limiting --
+    describe_counter!(
+        "social_rate_limit_denied_total",
+        "Messages denied by rate limiter"
+    );
+
+    // -- Errors --
+    describe_counter!(
+        "social_errors_total",
+        "Social hub errors by error type"
+    );
+
+    // -- NATS metrics --
+    describe_counter!(
+        "nats_publishes_total",
+        "NATS messages published by subject prefix"
+    );
+    describe_counter!(
+        "nats_publish_failures_total",
+        "Failed NATS publishes by subject prefix"
+    );
+    describe_counter!(
+        "nats_messages_received_total",
+        "NATS messages received by subject prefix"
+    );
+
+    // -- Hub internals --
+    describe_gauge!(
+        "social_guilds_active",
+        "Guilds with at least one connected member"
+    );
+
+    // -- HTTP layer metrics --
+    describe_counter!(
+        "http_requests_total",
+        "Total HTTP requests by method, route, and status"
+    );
+    describe_histogram!(
+        "http_request_duration_seconds",
+        Unit::Seconds,
+        "HTTP request latency by method and route"
+    );
+
+    // Initialize gauges to 0
+    metrics::gauge!("social_connections_active").set(0.0);
+    metrics::gauge!("social_parties_active").set(0.0);
+    metrics::gauge!("social_guilds_active").set(0.0);
 
     tokio::spawn(async move {
         tracing::info!("serving metrics on {}", addr);
