@@ -209,8 +209,10 @@ pub fn create_authenticated_app(
         Update,
         (
             target::handle_target_selection,
-            target::update_unit_frame,
-            target::handle_unit_frame_context_menu,
+            target::manage_target_unit_frame,
+            target::sync_target_unit_frame,
+            target::handle_target_context_menu,
+            ui::unit_frame::update_unit_frames,
         )
             .run_if(in_state(AppState::InGame)),
     );

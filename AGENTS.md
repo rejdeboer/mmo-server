@@ -4,7 +4,7 @@ This is a modern MMORPG monorepo using Rust and Bevy.
 
 ## Core Technologies
 
-- Bevy: 0.18 (CRITICAL: Do not use Bevy 0.17 or older APIs. Ensure modern State and Plugin syntax is used)
+- Bevy: 0.18.1 (CRITICAL: Do not use Bevy 0.17 or older APIs. Ensure modern State and Plugin syntax is used)
 - Axum web server
 - Bitcode serialization
 - Avian3d physics
@@ -20,11 +20,24 @@ The `crates/` directory contains the following crates:
 - `protocol/` - Bitcode structs used for communication between servers and clients
 - `web-server/` - Axum server for auth, account / character management and in-game social features like guild / party chat and invites implemented using WebSockets
 - `web-client/` - Client that talks to the web-server
+- `web-types/` - Shared types for the web API layer (used by `web-server` and `web-client`)
+- `provisioner/` - Database provisioning and seeding tool
+- `simulator/` - Load/stress testing simulator for the game server
 
 ## Networking & Protocol
 - **No Serde for Game Loop:** Use `bitcode` for all `protocol/` structs sent between `game-client` and `game-server` to save bandwidth.
 - **Shared State:** If a Component needs to exist on both the client and server, define it in `game-core`.
 - When updating the `protocol`, ensure you update the serialization/deserialization on *both* the `game-server` and `game-client`.
+
+## Database
+- **PostgreSQL 17** with **SQLx** for compile-time checked queries.
+- Migrations live in `db/migrations/`. Run them via `scripts/init_db.sh` or `sqlx migrate run`.
+- The `.sqlx/` directory contains offline query metadata for CI builds (`SQLX_OFFLINE=true`). After changing any query, run `cargo sqlx prepare --workspace` to update it.
+- The `provisioner` crate handles database seeding for development and testing.
+
+## NATS
+- **async-nats** is used for inter-service messaging between `game-server` and `web-server`.
+- NATS runs locally via `docker-compose.yml`.
 
 ## Rust Best Practices
 - Keep imports clean. Group Bevy imports together (`use bevy::prelude::*;`).
