@@ -1,28 +1,46 @@
-use crate::configuration::{TelemetrySettings, TracingFormat};
-use once_cell::sync::Lazy;
+use crate::configuration::{MetricsSettings, TelemetrySettings, TracingFormat};
+use metrics::describe_gauge;
+use metrics_exporter_prometheus::PrometheusBuilder;
+use metrics_util::MetricKindMask;
+use metrics_util::layers::{Layer, PrefixLayer};
 use opentelemetry::global;
 use opentelemetry_otlp::{Protocol, WithExportConfig};
 use opentelemetry_sdk::{Resource, propagation::TraceContextPropagator};
-use prometheus::IntGauge;
 use std::collections::HashMap;
+use std::net::SocketAddr;
+use tokio::time::Duration;
 use tracing::subscriber::set_global_default;
 use tracing_log::LogTracer;
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt};
 
-pub static REGISTRY: Lazy<prometheus::Registry> =
-    Lazy::new(|| prometheus::Registry::new_custom(Some("web".to_string()), None).unwrap());
+pub fn init_metrics(settings: &MetricsSettings) {
+    let addr = SocketAddr::from(([0, 0, 0, 0], settings.port));
 
-pub static ACTIVE_WS_CONNECTIONS: Lazy<IntGauge> = Lazy::new(|| {
-    IntGauge::new(
-        "social_active_ws_connections",
-        "Current number of active WebSocket connections.",
-    )
-    .unwrap()
-});
+    let (recorder, exporter) = PrometheusBuilder::new()
+        .with_http_listener(addr)
+        .idle_timeout(
+            MetricKindMask::COUNTER | MetricKindMask::HISTOGRAM,
+            Some(Duration::from_secs(10)),
+        )
+        .build()
+        .expect("failed to build prometheus exporter");
+
+    let prefixed_recorder = PrefixLayer::new("web").layer(recorder);
+    metrics::set_global_recorder(prefixed_recorder).expect("failed to set global recorder");
+
+    describe_gauge!(
+        "social_connections_active",
+        "Current number of active WebSocket connections"
+    );
+
+    tokio::spawn(async move {
+        tracing::info!("serving metrics on {}", addr);
+        exporter.await.expect("failed to start metrics exporter");
+    });
+}
 
 pub fn init_telemetry(settings: &TelemetrySettings) {
-    register_metrics();
     init_subscriber(settings);
 }
 
@@ -79,18 +97,4 @@ pub fn get_trace_parent() -> Option<String> {
         propagator.inject_context(&context, &mut context_carrier);
         context_carrier.get("traceparent").cloned()
     })
-}
-
-fn register_metrics() {
-    REGISTRY
-        .register(Box::new(ACTIVE_WS_CONNECTIONS.clone()))
-        .unwrap();
-
-    #[cfg(target_os = "linux")]
-    {
-        use prometheus::process_collector::ProcessCollector;
-
-        let process_collector = ProcessCollector::for_self();
-        REGISTRY.register(Box::new(process_collector)).unwrap();
-    }
 }

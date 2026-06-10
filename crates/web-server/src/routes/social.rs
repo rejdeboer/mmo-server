@@ -3,7 +3,6 @@ use crate::{
     auth::CharacterContext,
     error::ApiError,
     social::{HubCommand, HubMessage, SocketReader, SocketWriter},
-    telemetry::ACTIVE_WS_CONNECTIONS,
 };
 use axum::{
     Extension,
@@ -75,13 +74,13 @@ struct ConnectionGuard;
 
 impl ConnectionGuard {
     fn new() -> Self {
-        ACTIVE_WS_CONNECTIONS.inc();
+        metrics::gauge!("social_connections_active").increment(1.0);
         Self
     }
 }
 
 impl Drop for ConnectionGuard {
     fn drop(&mut self) {
-        ACTIVE_WS_CONNECTIONS.dec();
+        metrics::gauge!("social_connections_active").decrement(1.0);
     }
 }

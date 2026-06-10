@@ -3,10 +3,11 @@ use crate::{
     configuration::{DatabaseSettings, NetcodePrivateKey, Settings},
     realm_resolution::{RealmResolver, create_realm_resolver},
     routes::{
-        account_create, character_create, character_list, game_entry, health, login, metrics_get,
+        account_create, character_create, character_list, game_entry, health, login,
         social,
     },
     social::{Hub, HubMessage, NatsBridge},
+    telemetry::init_metrics,
 };
 use axum::{
     Router, middleware,
@@ -30,7 +31,6 @@ pub struct Server {
 
 pub struct Application {
     app_server: Server,
-    metrics_server: Option<Server>,
     port: u16,
     hub_rx: Receiver<HubMessage>,
     pool: PgPool,
@@ -53,6 +53,10 @@ pub struct QueryParams {
 
 impl Application {
     pub async fn build(settings: Settings) -> Result<Self, std::io::Error> {
+        if let Some(metrics_settings) = &settings.metrics {
+            init_metrics(metrics_settings);
+        }
+
         let app_adderess = format!(
             "{}:{}",
             settings.application.host, settings.application.port
@@ -123,18 +127,8 @@ impl Application {
             router: app_router,
         };
 
-        let metrics_server = if let Some(metrics_settings) = settings.metrics {
-            let metrics_adderess = format!("127.0.0.1:{}", metrics_settings.port);
-            let listener = TcpListener::bind(metrics_adderess).await.unwrap();
-            let router = Router::new().route("/metrics", get(metrics_get));
-            Some(Server { listener, router })
-        } else {
-            None
-        };
-
         Ok(Self {
             app_server,
-            metrics_server,
             port,
             hub_rx,
             pool,
@@ -150,42 +144,13 @@ impl Application {
 
         start_social_hub(self.pool, self.hub_rx, self.nats);
 
-        let app_server = {
-            let listener = self.app_server.listener;
-            let app = self.app_server.router;
-            tokio::spawn(async move {
-                axum::serve(
-                    listener,
-                    app.into_make_service_with_connect_info::<SocketAddr>(),
-                )
-                .await
-            })
-        };
-
-        if let Some(server) = self.metrics_server {
-            tracing::info!(
-                "exposing metrics on {}/metrics",
-                server.listener.local_addr().unwrap()
-            );
-
-            let metrics_server = {
-                let listener = server.listener;
-                let app = server.router;
-                tokio::spawn(async move {
-                    axum::serve(
-                        listener,
-                        app.into_make_service_with_connect_info::<SocketAddr>(),
-                    )
-                    .await
-                })
-            };
-
-            let (r1, r2) = tokio::join!(app_server, metrics_server);
-            r1??;
-            r2??;
-        } else {
-            app_server.await??;
-        }
+        let listener = self.app_server.listener;
+        let app = self.app_server.router;
+        axum::serve(
+            listener,
+            app.into_make_service_with_connect_info::<SocketAddr>(),
+        )
+        .await?;
 
         Ok(())
     }
