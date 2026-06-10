@@ -37,3 +37,7 @@ For an overview of current todos check out `TODO.md`
 ## Deployment
 
 This project is deployed using another repo containing Kubernetes manifests, Flux CD, Proxmox, LGTM. This can be found at `../mmo-deployment`
+
+## Documentation
+
+Only add comments whenever it adds value and proper explanation about what's being done. Avoid obvious or comments for self-describing code.

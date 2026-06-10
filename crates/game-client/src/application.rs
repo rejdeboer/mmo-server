@@ -1,15 +1,16 @@
 use crate::{
     camera::{self, ThirdPersonCamera},
-    chat::{
-        self, CancelChat, ChatInputState, ChatLog, OpenChat, SendChat, SocialReceiver,
-        SocialSender, on_cancel_chat, on_open_chat, on_send_chat,
-    },
     configuration::Settings,
     input::{Chatting, Movement},
     movement::{self, PredictionHistory, RemoteInterpolation},
     network::{NetworkIdMapping, poll_connection, receive_server_events},
+    social::{self, ChatLog, SocialReceiver, SocialSender},
     target::{self, SelectedTarget},
     tick_sync::{self, TickSync},
+    ui::{
+        self, CancelChat, ChatInputState, OpenChat, SendChat, on_cancel_chat, on_open_chat,
+        on_send_chat,
+    },
 };
 use avian3d::prelude::*;
 use bevy::{gltf::GltfLoaderSettings, platform::collections::HashMap, prelude::*};
@@ -132,12 +133,13 @@ pub fn create_authenticated_app(
     app.add_observer(on_enter_game)
         .add_observer(on_send_chat)
         .add_observer(on_cancel_chat)
-        .add_observer(on_open_chat);
+        .add_observer(on_open_chat)
+        .add_observer(social::route_outgoing_chat);
 
     app.insert_state(AppState::Connecting);
     app.insert_resource(Time::<Fixed>::from_hz(game_core::constants::TICK_RATE_HZ));
 
-    app.add_systems(Startup, chat::connect_social);
+    app.add_systems(Startup, social::connect_social);
 
     app.add_systems(
         Update,
@@ -197,9 +199,9 @@ pub fn create_authenticated_app(
     app.add_systems(
         Update,
         (
-            chat::handle_chat_text_input,
-            chat::poll_social_events,
-            chat::update_chat_ui,
+            ui::handle_chat_text_input,
+            ui::update_chat_ui,
+            social::poll_social_events,
         )
             .run_if(in_state(AppState::InGame)),
     );
@@ -317,7 +319,7 @@ fn on_enter_game(
     tracing::info!("spawned player");
 
     // Spawn the chat UI panel
-    chat::spawn_chat_ui(&mut commands);
+    ui::spawn_chat_ui(&mut commands);
 }
 
 fn setup_world(mut commands: Commands, assets: Res<AssetServer>) {

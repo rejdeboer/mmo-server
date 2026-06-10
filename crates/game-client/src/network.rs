@@ -1,6 +1,6 @@
 use crate::{
     application::{ActorDespawnMessage, ActorSpawnMessage, AppState, EnterGame},
-    chat::{ChatLog, ChatMessage, ChatMessageChannel},
+    social::{ChatLog, ChatMessage, ChatMessageChannel},
     tick_sync::TickSync,
 };
 use bevy::{ecs::system::SystemParam, platform::collections::HashMap, prelude::*};

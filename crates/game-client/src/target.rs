@@ -4,8 +4,8 @@ use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 
 use crate::application::NameComponent;
-use crate::chat::SocialSender;
 use crate::movement::RemoteInterpolation;
+use crate::social::SocialSender;
 use game_core::components::{LevelComponent, Vitals};
 
 /// The currently selected target entity.
@@ -411,9 +411,7 @@ pub(crate) fn clear_despawned_target(
     mut selected: ResMut<SelectedTarget>,
     remote_actors: Query<Entity, With<RemoteInterpolation>>,
 ) {
-    if let Some(entity) = selected.0 {
-        if remote_actors.get(entity).is_err() {
-            selected.0 = None;
-        }
+    if let Some(entity) = selected.0 && remote_actors.get(entity).is_err() {
+        selected.0 = None;
     }
 }
