@@ -6,9 +6,7 @@ use bevy::window::PrimaryWindow;
 use crate::application::NameComponent;
 use crate::movement::RemoteInterpolation;
 use crate::social::SocialSender;
-use crate::ui::{
-    ContextMenu, UnitFrame, UnitFrameConfig, context_menu, unit_frame,
-};
+use crate::ui::{ContextMenu, UnitFrame, UnitFrameConfig, context_menu, unit_frame};
 use game_core::components::{LevelComponent, Vitals};
 
 /// The currently selected target entity.
@@ -132,8 +130,13 @@ pub(crate) fn manage_target_unit_frame(
                     0.0
                 };
                 let config = UnitFrameConfig::target(target_entity);
-                let entity =
-                    unit_frame::spawn_unit_frame(&mut commands, &config, &name.0, level.0, health_pct);
+                let entity = unit_frame::spawn_unit_frame(
+                    &mut commands,
+                    &config,
+                    &name.0,
+                    level.0,
+                    health_pct,
+                );
                 commands.entity(entity).insert(TargetUnitFrame);
             }
         }
@@ -238,7 +241,9 @@ pub(crate) fn clear_despawned_target(
     mut selected: ResMut<SelectedTarget>,
     remote_actors: Query<Entity, With<RemoteInterpolation>>,
 ) {
-    if let Some(entity) = selected.0 && remote_actors.get(entity).is_err() {
+    if let Some(entity) = selected.0
+        && remote_actors.get(entity).is_err()
+    {
         selected.0 = None;
     }
 }

@@ -55,10 +55,7 @@ pub fn init_metrics(settings: &MetricsSettings) {
         "social_party_actions_total",
         "Party actions performed by action type"
     );
-    describe_gauge!(
-        "social_parties_active",
-        "Current number of active parties"
-    );
+    describe_gauge!("social_parties_active", "Current number of active parties");
 
     // -- Rate limiting --
     describe_counter!(
@@ -67,10 +64,7 @@ pub fn init_metrics(settings: &MetricsSettings) {
     );
 
     // -- Errors --
-    describe_counter!(
-        "social_errors_total",
-        "Social hub errors by error type"
-    );
+    describe_counter!("social_errors_total", "Social hub errors by error type");
 
     // -- NATS metrics --
     describe_counter!(

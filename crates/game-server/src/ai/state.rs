@@ -51,9 +51,7 @@ pub fn ai_state_transitions(
                 }
 
                 // Leash check
-                if mob_pos.distance_squared(leash.position)
-                    > leash.max_range * leash.max_range
-                {
+                if mob_pos.distance_squared(leash.position) > leash.max_range * leash.max_range {
                     brain.state = AiState::Evading;
                     movement.target_position = Some(leash.position);
                     continue;
@@ -105,9 +103,7 @@ pub fn ai_state_transitions(
                 }
 
                 // Leash check
-                if mob_pos.distance_squared(leash.position)
-                    > leash.max_range * leash.max_range
-                {
+                if mob_pos.distance_squared(leash.position) > leash.max_range * leash.max_range {
                     brain.state = AiState::Evading;
                     movement.target_position = Some(leash.position);
                     continue;

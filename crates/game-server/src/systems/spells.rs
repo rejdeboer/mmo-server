@@ -82,7 +82,11 @@ pub fn process_spell_casts(
         });
 
         // Reset the ability cooldown
-        if let Some(ability) = abilities.known.iter_mut().find(|a| a.spell_id == msg.spell_id) {
+        if let Some(ability) = abilities
+            .known
+            .iter_mut()
+            .find(|a| a.spell_id == msg.spell_id)
+        {
             ability.cooldown.reset();
         }
 

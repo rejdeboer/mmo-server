@@ -108,7 +108,9 @@ fn spawn_monster_entity(
                 .abilities
                 .iter()
                 .filter_map(|&spell_id| {
-                    lib.spells.get(&spell_id).map(|spell| (spell_id, spell.cooldown))
+                    lib.spells
+                        .get(&spell_id)
+                        .map(|spell| (spell_id, spell.cooldown))
                 })
                 .collect()
         })

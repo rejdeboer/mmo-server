@@ -371,7 +371,8 @@ impl Hub {
                 payload: msg.to_vec(),
             };
             nats.publish(&guild_subject(gid), &envelope).await;
-            counter!("social_messages_delivered_total", "channel" => "guild", "delivery" => "nats").increment(1);
+            counter!("social_messages_delivered_total", "channel" => "guild", "delivery" => "nats")
+                .increment(1);
         }
     }
 
@@ -401,7 +402,8 @@ impl Hub {
                 payload: msg.to_vec(),
             };
             nats.publish(&party_chat_subject(party_id), &envelope).await;
-            counter!("social_messages_delivered_total", "channel" => "party", "delivery" => "nats").increment(1);
+            counter!("social_messages_delivered_total", "channel" => "party", "delivery" => "nats")
+                .increment(1);
         }
     }
 

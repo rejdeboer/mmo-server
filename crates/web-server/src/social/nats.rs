@@ -74,7 +74,8 @@ impl NatsBridge {
         };
 
         if let Err(err) = self.client.publish(subject.to_owned(), bytes.into()).await {
-            counter!("nats_publish_failures_total", "subject_prefix" => prefix.clone()).increment(1);
+            counter!("nats_publish_failures_total", "subject_prefix" => prefix.clone())
+                .increment(1);
             tracing::error!(?err, %subject, "failed to publish to NATS");
         }
         counter!("nats_publishes_total", "subject_prefix" => prefix).increment(1);
@@ -92,7 +93,8 @@ impl NatsBridge {
         };
 
         if let Err(err) = self.client.publish(subject.to_owned(), bytes.into()).await {
-            counter!("nats_publish_failures_total", "subject_prefix" => prefix.clone()).increment(1);
+            counter!("nats_publish_failures_total", "subject_prefix" => prefix.clone())
+                .increment(1);
             tracing::error!(?err, %subject, "failed to publish to NATS");
         }
         counter!("nats_publishes_total", "subject_prefix" => prefix).increment(1);

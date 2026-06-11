@@ -7,7 +7,13 @@ use rand::Rng;
 /// a new pause.
 pub fn wander(
     time: Res<Time>,
-    mut q_mobs: Query<(&AiBrain, &LeashAnchor, &mut Wander, &mut AiMovement, &Transform)>,
+    mut q_mobs: Query<(
+        &AiBrain,
+        &LeashAnchor,
+        &mut Wander,
+        &mut AiMovement,
+        &Transform,
+    )>,
 ) {
     let mut rng = rand::thread_rng();
 

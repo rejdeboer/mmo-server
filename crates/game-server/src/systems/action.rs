@@ -55,7 +55,10 @@ pub fn process_client_actions(
 
 pub fn process_client_movements(
     mut server: ResMut<RenetServer>,
-    mut clients: Query<(Entity, &ClientIdComponent, &mut LastClientTick), With<MovementSpeedComponent>>,
+    mut clients: Query<
+        (Entity, &ClientIdComponent, &mut LastClientTick),
+        With<MovementSpeedComponent>,
+    >,
     mut writer: MessageWriter<MoveActionMessage>,
 ) {
     for (entity, client_id, mut last_client_tick) in clients.iter_mut() {

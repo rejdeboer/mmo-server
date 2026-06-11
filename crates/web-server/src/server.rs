@@ -2,16 +2,14 @@ use crate::{
     auth::{account_auth_middleware, character_auth_middleware},
     configuration::{DatabaseSettings, NetcodePrivateKey, Settings},
     realm_resolution::{RealmResolver, create_realm_resolver},
-    routes::{
-        account_create, character_create, character_list, game_entry, health, login,
-        social,
-    },
+    routes::{account_create, character_create, character_list, game_entry, health, login, social},
     social::{Hub, HubMessage, NatsBridge},
     telemetry::init_metrics,
 };
 use axum::{
-    Router, middleware,
+    Router,
     extract::{MatchedPath, Request},
+    middleware,
     response::Response,
     routing::{get, post},
 };
@@ -176,10 +174,7 @@ fn start_social_hub(db_pool: PgPool, receiver: Receiver<HubMessage>, nats: Optio
     });
 }
 
-async fn http_metrics_middleware(
-    request: Request,
-    next: middleware::Next,
-) -> Response {
+async fn http_metrics_middleware(request: Request, next: middleware::Next) -> Response {
     let method = request.method().to_string();
     let route = request
         .extensions()
@@ -194,7 +189,8 @@ async fn http_metrics_middleware(
     let status = response.status().as_u16().to_string();
 
     counter!("http_requests_total", "method" => method.clone(), "route" => route.clone(), "status" => status).increment(1);
-    histogram!("http_request_duration_seconds", "method" => method, "route" => route).record(elapsed);
+    histogram!("http_request_duration_seconds", "method" => method, "route" => route)
+        .record(elapsed);
 
     response
 }

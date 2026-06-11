@@ -3,19 +3,23 @@ use std::collections::HashMap;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum AiBehavior {
+    /// Only fights back when damaged
+    Neutral,
     /// Attacks players on proximity
     #[default]
     Aggressive,
-    /// Only fights back when damaged
-    Neutral,
 }
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub enum AiState {
     #[default]
     Idle,
-    Chase { target: Entity },
-    Combat { target: Entity },
+    Chase {
+        target: Entity,
+    },
+    Combat {
+        target: Entity,
+    },
     Returning,
     Evading,
 }
@@ -50,9 +54,11 @@ impl ThreatTable {
     }
 
     pub fn highest_threat(&self) -> Option<&ThreatEntry> {
-        self.entries
-            .iter()
-            .max_by(|a, b| a.threat.partial_cmp(&b.threat).unwrap_or(std::cmp::Ordering::Equal))
+        self.entries.iter().max_by(|a, b| {
+            a.threat
+                .partial_cmp(&b.threat)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        })
     }
 
     pub fn clear(&mut self) {

@@ -9,16 +9,14 @@ use bevy::prelude::*;
 /// AI selects and casts the best available ability against its current target.
 #[allow(clippy::type_complexity)]
 pub fn ai_select_ability(
-    q_mobs: Query<
-        (
-            Entity,
-            &AiBrain,
-            &Transform,
-            &Abilities,
-            &AiAbilityConfig,
-            Option<&Casting>,
-        ),
-    >,
+    q_mobs: Query<(
+        Entity,
+        &AiBrain,
+        &Transform,
+        &Abilities,
+        &AiAbilityConfig,
+        Option<&Casting>,
+    )>,
     q_targets: Query<&Transform, Without<AiBrain>>,
     library_handle: Res<SpellLibraryHandle>,
     assets: Res<Assets<SpellLibrary>>,
