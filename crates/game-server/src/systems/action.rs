@@ -5,6 +5,7 @@ use crate::{
 };
 use bevy::prelude::*;
 use bevy_renet::{RenetServer, renet::DefaultChannel};
+use game_core::components::MovementSpeedComponent;
 use protocol::client::{MoveAction, PlayerAction};
 use protocol::server::ServerEvent;
 
@@ -54,7 +55,7 @@ pub fn process_client_actions(
 
 pub fn process_client_movements(
     mut server: ResMut<RenetServer>,
-    mut clients: Query<(Entity, &ClientIdComponent, &mut LastClientTick)>,
+    mut clients: Query<(Entity, &ClientIdComponent, &mut LastClientTick), With<MovementSpeedComponent>>,
     mut writer: MessageWriter<MoveActionMessage>,
 ) {
     for (entity, client_id, mut last_client_tick) in clients.iter_mut() {

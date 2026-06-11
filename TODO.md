@@ -8,7 +8,6 @@
 - [ ] Remove `get_client_unchecked` / `get_guild_members_unchecked` panics in hub.rs
 - [ ] Add underflow guard for `target_vitals.hp -= spell.damage`
 - [ ] Update stale dependencies (base64 0.12 -> 0.22, standardize fake/serde-aux versions)
-- [ ] Standardize metrics crate usage (game-server uses `metrics`, web-server uses `prometheus`)
 
 ## Platform Engineering
 

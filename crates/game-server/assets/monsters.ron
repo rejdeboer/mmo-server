@@ -3,16 +3,38 @@
 		"skeleton-warrior": (
 			name: "Skeleton warrior",
 			hp: 50,
-			speed: 1.0,
+			speed: 5.0,
 			asset_id: 1,
 			loot_tables: ["humanoid-t0"],
+			abilities: [100],
+			ai: Some((
+				behavior: Neutral,
+				aggro_radius: 12.0,
+				leash_range: 40.0,
+				ability_priorities: { 100: 1 },
+				wander: Some((
+					radius: 8.0,
+					pause_duration: 4.0,
+				)),
+			)),
 		),
 		"goblin": (
 			name: "Goblin",
 			hp: 50,
-			speed: 1.0,
+			speed: 7.0,
 			asset_id: 2,
 			loot_tables: ["humanoid-t0"],
+			abilities: [101, 102],
+			ai: Some((
+				behavior: Neutral,
+				aggro_radius: 18.0,
+				leash_range: 50.0,
+				ability_priorities: { 101: 1, 102: 3 },
+				wander: Some((
+					radius: 10.0,
+					pause_duration: 3.0,
+				)),
+			)),
 		),
 	}
 )

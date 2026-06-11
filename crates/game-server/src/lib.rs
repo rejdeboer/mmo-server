@@ -1,4 +1,5 @@
 pub mod agones;
+pub mod ai;
 pub mod application;
 pub mod assets;
 mod components;

@@ -1,13 +1,40 @@
 (
     spells: {
-       0 : (
-         name: "Smite",
-         damage: 10,
-         range: 30.0,
-         cooldown: 1.5,
-         casting_duration: 0.0,
-         castable_while_moving: false,
-         visual_id: 0,
-        )
+        0: (
+            name: "Smite",
+            damage: 10,
+            range: 30.0,
+            cooldown: 1.5,
+            casting_duration: 0.0,
+            castable_while_moving: false,
+            visual_id: 0,
+        ),
+        100: (
+            name: "Skeleton Strike",
+            damage: 8,
+            range: 3.0,
+            cooldown: 2.0,
+            casting_duration: 0.0,
+            castable_while_moving: false,
+            visual_id: 10,
+        ),
+        101: (
+            name: "Goblin Slash",
+            damage: 5,
+            range: 2.5,
+            cooldown: 1.5,
+            casting_duration: 0.0,
+            castable_while_moving: false,
+            visual_id: 11,
+        ),
+        102: (
+            name: "Poison Spit",
+            damage: 12,
+            range: 15.0,
+            cooldown: 8.0,
+            casting_duration: 1.0,
+            castable_while_moving: false,
+            visual_id: 12,
+        ),
     }
 )

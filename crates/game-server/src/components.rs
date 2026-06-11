@@ -102,3 +102,32 @@ pub struct Loot {
     pub entries: Vec<LootEntry>,
     pub owner_id: ClientId,
 }
+
+#[derive(Debug, Clone)]
+pub struct Ability {
+    pub spell_id: u32,
+    pub cooldown: Timer,
+}
+
+#[derive(Component, Debug, Clone, Default)]
+pub struct Abilities {
+    pub known: Vec<Ability>,
+}
+
+impl Abilities {
+    pub fn new(spell_ids: &[u32], spell_cooldowns: &std::collections::HashMap<u32, f32>) -> Self {
+        let known = spell_ids
+            .iter()
+            .map(|&spell_id| {
+                let cooldown_secs = spell_cooldowns.get(&spell_id).copied().unwrap_or(1.0);
+                let mut timer = Timer::from_seconds(cooldown_secs, TimerMode::Once);
+                timer.tick(std::time::Duration::from_secs_f32(cooldown_secs));
+                Ability {
+                    spell_id,
+                    cooldown: timer,
+                }
+            })
+            .collect();
+        Self { known }
+    }
+}

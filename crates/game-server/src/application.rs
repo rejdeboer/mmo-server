@@ -1,3 +1,4 @@
+use crate::ai::AiPlugin;
 use crate::components::ServerTick;
 use crate::configuration::Settings;
 use crate::messages::{
@@ -39,6 +40,7 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
 
     app.add_plugins(AppPlugin);
     app.add_plugins(AssetsPlugin);
+    app.add_plugins(AiPlugin);
     app.add_plugins(RenetServerPlugin);
     app.add_plugins(NetcodeServerPlugin);
     app.add_plugins(TokioTasksPlugin::default());
@@ -140,6 +142,7 @@ pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
             crate::systems::on_vitals_changed,
             crate::systems::spawn_mobs,
             crate::systems::tick_casting,
+            crate::systems::tick_ability_cooldowns,
             crate::systems::tick_corpse_despawn_timers,
             crate::systems::update_spatial_grid,
         ),

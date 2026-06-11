@@ -1,8 +1,8 @@
 use crate::{
     application::DatabasePool,
     components::{
-        CharacterIdComponent, ClientIdComponent, InterestedClients, LastClientTick, NameComponent,
-        ServerTick, VisibleEntities,
+        Abilities, CharacterIdComponent, ClientIdComponent, InterestedClients, LastClientTick,
+        NameComponent, ServerTick, VisibleEntities,
     },
     database::load_character_data,
 };
@@ -192,10 +192,14 @@ async fn handle_enter_game_task(
 
         let entity = ctx
             .world
-            .spawn(CharacterBundle::new(
-                ActorBundle::new(&character.name, transform, vitals.clone(), character.level),
-                character.id,
-                client_id,
+            .spawn((
+                CharacterBundle::new(
+                    ActorBundle::new(&character.name, transform, vitals.clone(), character.level),
+                    character.id,
+                    client_id,
+                ),
+                // TODO: Load learned spells from database
+                Abilities::new(&[0], &std::collections::HashMap::from([(0, 1.5)])),
             ))
             .id();
 

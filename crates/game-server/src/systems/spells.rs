@@ -1,6 +1,6 @@
 use crate::{
     assets::{SpellLibrary, SpellLibraryHandle},
-    components::{Casting, ClientIdComponent, InterestedClients, Tapped},
+    components::{Abilities, Casting, ClientIdComponent, InterestedClients, Tapped},
     messages::{
         ApplySpellEffectMessage, CastSpellActionMessage, OutgoingMessage, OutgoingMessageData,
     },
@@ -8,15 +8,17 @@ use crate::{
 use bevy::prelude::*;
 use game_core::components::Vitals;
 
+#[allow(clippy::type_complexity)]
 pub fn process_spell_casts(
     mut commands: Commands,
     mut reader: MessageReader<CastSpellActionMessage>,
     mut writer: MessageWriter<OutgoingMessage>,
-    q_caster: Query<(
-        &ClientIdComponent,
+    mut q_caster: Query<(
+        Option<&ClientIdComponent>,
         &Transform,
         &InterestedClients,
         Option<&Casting>,
+        &mut Abilities,
     )>,
     q_target: Query<&Transform>,
     library_handle: Res<SpellLibraryHandle>,
@@ -28,8 +30,8 @@ pub fn process_spell_casts(
     };
 
     for msg in reader.read() {
-        let Ok((caster_client_id, caster_transform, interested, casting)) =
-            q_caster.get(msg.caster_entity)
+        let Ok((caster_client_id, caster_transform, interested, casting, mut abilities)) =
+            q_caster.get_mut(msg.caster_entity)
         else {
             tracing::warn!(
                 caster = ?msg.caster_entity,
@@ -40,6 +42,16 @@ pub fn process_spell_casts(
 
         if casting.is_some() {
             tracing::debug!(caster = ?msg.caster_entity, "caster tried to cast while already casting");
+            continue;
+        }
+
+        let Some(ability) = abilities.known.iter().find(|a| a.spell_id == msg.spell_id) else {
+            tracing::debug!(caster = ?msg.caster_entity, spell_id = %msg.spell_id, "caster does not know this spell");
+            continue;
+        };
+
+        if !ability.cooldown.is_finished() {
+            tracing::debug!(caster = ?msg.caster_entity, spell_id = %msg.spell_id, "spell is on cooldown");
             continue;
         }
 
@@ -62,13 +74,17 @@ pub fn process_spell_casts(
             continue;
         }
 
-        // TODO: Spell cooldowns
         commands.entity(msg.caster_entity).insert(Casting {
             spell_id: msg.spell_id,
             target: msg.target_entity,
             timer: Timer::from_seconds(spell.casting_duration, TimerMode::Once),
             castable_while_moving: spell.castable_while_moving,
         });
+
+        // Reset the ability cooldown
+        if let Some(ability) = abilities.known.iter_mut().find(|a| a.spell_id == msg.spell_id) {
+            ability.cooldown.reset();
+        }
 
         let outgoing_msg = OutgoingMessageData::StartCasting {
             entity: msg.caster_entity,
@@ -77,7 +93,9 @@ pub fn process_spell_casts(
 
         let mut recipients = Vec::with_capacity(interested.clients.len() + 1);
         recipients.extend(interested.clients.iter().copied());
-        recipients.push(caster_client_id.0);
+        if let Some(client_id) = caster_client_id {
+            recipients.push(client_id.0);
+        }
 
         writer.write(OutgoingMessage {
             recipients,
@@ -180,5 +198,13 @@ pub fn apply_spell_effect(
         });
 
         target_vitals.hp -= spell.damage;
+    }
+}
+
+pub fn tick_ability_cooldowns(time: Res<Time>, mut q_abilities: Query<&mut Abilities>) {
+    for mut abilities in q_abilities.iter_mut() {
+        for ability in abilities.known.iter_mut() {
+            ability.cooldown.tick(time.delta());
+        }
     }
 }
