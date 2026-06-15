@@ -44,6 +44,10 @@ pub enum PlayerAction {
         spell_id: u32,
         target_entity_id: u64,
     },
+    StartAttack {
+        target_entity_id: u64,
+    },
+    StopAttack,
     Chat {
         channel: ChatChannel,
         text: String,

@@ -1,5 +1,7 @@
 use crate::{
     camera::{self, ThirdPersonCamera},
+    combat,
+    combat_feedback::{self, CombatHitMessage},
     configuration::Settings,
     input::{Chatting, Movement},
     movement::{self, PredictionHistory, RemoteInterpolation},
@@ -130,6 +132,7 @@ pub fn create_authenticated_app(
 
     app.add_message::<ActorSpawnMessage>();
     app.add_message::<ActorDespawnMessage>();
+    app.add_message::<CombatHitMessage>();
 
     app.add_observer(on_enter_game)
         .add_observer(on_send_chat)
@@ -213,6 +216,7 @@ pub fn create_authenticated_app(
             target::manage_target_unit_frame,
             target::sync_target_unit_frame,
             target::handle_target_context_menu,
+            combat::send_attack_action,
             player_frame::spawn_player_unit_frame,
             player_frame::handle_player_context_menu,
             ui::unit_frame::update_unit_frames,
@@ -222,6 +226,15 @@ pub fn create_authenticated_app(
     app.add_systems(
         Update,
         target::clear_despawned_target.run_if(in_state(AppState::InGame)),
+    );
+    app.add_systems(
+        Update,
+        (
+            combat_feedback::handle_combat_hits,
+            combat_feedback::update_floating_combat_text,
+            combat_feedback::update_hit_flash,
+        )
+            .run_if(in_state(AppState::InGame)),
     );
 
     // app.add_systems(FixedPostUpdate, ().after(PhysicsSystems::Last));
@@ -380,6 +393,7 @@ pub fn handle_actor_spawn_messages(
             // Their visual position is driven by our RemoteInterpolation buffer
             // (server snapshot interpolation), not by physics simulation.
             NoTransformEasing,
+            NetworkId(actor.id),
             ActorBundle::new(
                 &actor.name,
                 transform,

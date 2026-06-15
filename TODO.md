@@ -25,6 +25,8 @@
 ## Game Development
 
 - [ ] Spell cooldowns and global cooldown (server-authoritative)
+- [ ] Weapon speed-based auto-attack timing (replace constant swing speed)
+- [ ] Weapon damage stats (replace constant auto-attack damage)
 - [ ] NPC AI state machine — threat/aggro tables, leashing, basic pathing
 - [ ] Loot and inventory system — item definitions, slots, equip, DB persistence
 - [ ] Zone transitions — handoff between game-server instances

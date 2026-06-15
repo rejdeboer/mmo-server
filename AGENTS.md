@@ -43,6 +43,10 @@ The `crates/` directory contains the following crates:
 - Keep imports clean. Group Bevy imports together (`use bevy::prelude::*;`).
 - Use `clippy` to ensure idiomatic Rust. Handle all `Result` types properly; do not use `.unwrap()` in production server code unless absolute certainty exists.
 
+## Bevy Best Practices
+- Recent versions of Bevy use `Message` instead of `Event`. Keep this into account when writing event-driven code.
+- Try to use Bevy observers where applicable, look at the game-server crate for examples.
+
 ## TODO
 
 For an overview of current todos check out `TODO.md`

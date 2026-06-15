@@ -1,6 +1,9 @@
 use crate::{
     components::{ClientIdComponent, LastClientTick, ServerTick},
-    messages::{CastSpellActionMessage, IncomingChatMessage, JumpActionMessage, MoveActionMessage},
+    messages::{
+        CastSpellActionMessage, IncomingChatMessage, JumpActionMessage, MoveActionMessage,
+        StartAttackMessage, StopAttackMessage,
+    },
     telemetry::{NETWORK_BYTES_TOTAL_METRIC, NETWORK_PACKETS_TOTAL_METRIC},
 };
 use bevy::prelude::*;
@@ -124,6 +127,17 @@ fn process_player_action(
                 caster_entity: entity,
                 target_entity: Entity::from_bits(target_entity_id),
                 spell_id,
+            });
+        }
+        PlayerAction::StartAttack { target_entity_id } => {
+            commands.write_message(StartAttackMessage {
+                attacker_entity: entity,
+                target_entity: Entity::from_bits(target_entity_id),
+            });
+        }
+        PlayerAction::StopAttack => {
+            commands.write_message(StopAttackMessage {
+                attacker_entity: entity,
             });
         }
         PlayerAction::Ping { client_tick } => {

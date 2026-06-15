@@ -1,5 +1,7 @@
 pub mod application;
 mod camera;
+pub mod combat;
+pub mod combat_feedback;
 pub mod configuration;
 mod input;
 pub mod movement;

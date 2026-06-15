@@ -22,6 +22,17 @@ pub struct CastSpellActionMessage {
 }
 
 #[derive(Message, Debug)]
+pub struct StartAttackMessage {
+    pub attacker_entity: Entity,
+    pub target_entity: Entity,
+}
+
+#[derive(Message, Debug)]
+pub struct StopAttackMessage {
+    pub attacker_entity: Entity,
+}
+
+#[derive(Message, Debug)]
 pub struct IncomingChatMessage {
     pub author: Entity,
     pub channel: ChatChannel,

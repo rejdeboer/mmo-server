@@ -4,6 +4,10 @@ use crate::{
 };
 use bitcode::{Decode, Encode};
 
+/// Sentinel spell_id used in SpellImpact events to indicate a melee auto-attack hit
+/// rather than a spell cast. Clients can check this to differentiate visual feedback.
+pub const AUTO_ATTACK_VISUAL_ID: u32 = u32::MAX;
+
 #[derive(Encode, Decode, Clone)]
 pub struct ActorTransformUpdate {
     pub actor_id: u64,

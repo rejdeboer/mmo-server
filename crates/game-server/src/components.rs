@@ -81,6 +81,12 @@ pub struct Tapped {
     pub owner_id: ClientId,
 }
 
+#[derive(Component)]
+pub struct AutoAttack {
+    pub target: Entity,
+    pub swing_timer: Timer,
+}
+
 #[derive(Clone, Debug)]
 pub struct LootEntry {
     pub item_id: u32,

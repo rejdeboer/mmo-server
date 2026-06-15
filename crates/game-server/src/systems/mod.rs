@@ -1,5 +1,6 @@
 mod action;
 mod chat;
+mod combat;
 mod connection;
 mod metrics;
 mod movement;
@@ -12,6 +13,7 @@ mod vitals;
 
 pub use action::*;
 pub use chat::*;
+pub use combat::*;
 pub use connection::*;
 pub use metrics::*;
 pub use movement::*;
