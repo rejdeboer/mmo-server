@@ -4,6 +4,7 @@ pub mod configuration;
 mod input;
 pub mod movement;
 mod network;
+mod player_frame;
 mod plugins;
 pub mod social;
 pub mod target;

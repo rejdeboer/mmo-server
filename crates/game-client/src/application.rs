@@ -4,6 +4,7 @@ use crate::{
     input::{Chatting, Movement},
     movement::{self, PredictionHistory, RemoteInterpolation},
     network::{NetworkIdMapping, poll_connection, receive_server_events},
+    player_frame,
     social::{self, ChatLog, SocialReceiver, SocialSender},
     target::{self, SelectedTarget},
     tick_sync::{self, TickSync},
@@ -212,6 +213,8 @@ pub fn create_authenticated_app(
             target::manage_target_unit_frame,
             target::sync_target_unit_frame,
             target::handle_target_context_menu,
+            player_frame::spawn_player_unit_frame,
+            player_frame::handle_player_context_menu,
             ui::unit_frame::update_unit_frames,
         )
             .run_if(in_state(AppState::InGame)),

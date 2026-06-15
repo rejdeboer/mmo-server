@@ -65,7 +65,6 @@ impl UnitFrameConfig {
     }
 
     /// Config for a player unit frame (top-left of screen).
-    #[allow(dead_code)]
     pub fn player(tracked_entity: Entity) -> Self {
         Self {
             tracked_entity,
