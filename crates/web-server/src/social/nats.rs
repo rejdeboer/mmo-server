@@ -39,7 +39,7 @@ pub struct PartyUpdate {
 /// Extract the subject prefix (e.g. "social.guild.123" → "social.guild").
 fn subject_prefix(subject: &str) -> &str {
     // Find the second-to-last dot or return the whole subject
-    match subject.rmatch_indices('.').nth(0) {
+    match subject.rmatch_indices('.').next() {
         Some((idx, _)) => &subject[..idx],
         None => subject,
     }
