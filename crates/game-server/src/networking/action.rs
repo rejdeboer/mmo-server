@@ -1,10 +1,9 @@
 use crate::{
-    components::{ClientIdComponent, LastClientTick, ServerTick},
-    messages::{
-        CastSpellActionMessage, IncomingChatMessage, JumpActionMessage, MoveActionMessage,
-        StartAttackMessage, StopAttackMessage,
-    },
+    combat::{CastSpellActionMessage, StartAttackMessage, StopAttackMessage},
+    core::{ClientIdComponent, LastClientTick, ServerTick},
+    social::IncomingChatMessage,
     telemetry::{NETWORK_BYTES_TOTAL_METRIC, NETWORK_PACKETS_TOTAL_METRIC},
+    world::{JumpActionMessage, MoveActionMessage},
 };
 use bevy::prelude::*;
 use bevy_renet::{RenetServer, renet::DefaultChannel};
@@ -94,7 +93,7 @@ pub fn process_client_movements(
         // NOTE: We only handle the latest move action to prevent flooding
         if let Some(action) = latest_action {
             last_client_tick.0 = action.tick;
-            process_player_movement(entity, action, &mut writer);
+            writer.write(MoveActionMessage { entity, action });
         }
     }
 }
@@ -149,12 +148,4 @@ fn process_player_action(
             server.send_message(client_id, DefaultChannel::ReliableOrdered, data.to_vec());
         }
     }
-}
-
-fn process_player_movement(
-    entity: Entity,
-    action: MoveAction,
-    writer: &mut MessageWriter<MoveActionMessage>,
-) {
-    writer.write(MoveActionMessage { entity, action });
 }

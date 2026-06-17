@@ -17,14 +17,15 @@ impl Plugin for AiPlugin {
         app.add_systems(
             FixedUpdate,
             (
-                threat::detect_players,
-                threat::update_threat_on_damage,
-                threat::cleanup_threat_tables,
+                (
+                    threat::detect_players,
+                    threat::update_threat_on_damage,
+                    threat::cleanup_threat_tables,
+                )
+                    .chain(),
                 state::ai_state_transitions,
-                wander::wander,
-                decision::ai_select_ability,
-                movement::apply_ai_movement,
-                leash::reset_evading_mobs,
+                (wander::wander, decision::ai_select_ability),
+                (movement::apply_ai_movement, leash::reset_evading_mobs),
             )
                 .chain(),
         );

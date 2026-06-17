@@ -1,14 +1,22 @@
-use crate::assets::{
-    ItemLibrary, ItemLibraryHandle, LootTableLibrary, LootTableLibraryHandle, MonsterLibrary,
-    MonsterLibraryHandle, SpellLibrary, SpellLibraryHandle,
-};
+mod content_id;
+mod items;
+mod loot;
+mod monsters;
+mod spells;
+
+pub use content_id::ContentId;
+pub use items::*;
+pub use loot::*;
+pub use monsters::*;
+pub use spells::*;
+
 use avian3d::prelude::*;
 use bevy::{asset::RenderAssetUsages, gltf::GltfLoaderSettings, prelude::*};
 use bevy_common_assets::ron::RonAssetPlugin;
 
-pub struct AssetsPlugin;
+pub struct ContentPlugin;
 
-impl Plugin for AssetsPlugin {
+impl Plugin for ContentPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
             RonAssetPlugin::<ItemLibrary>::new(&["items.ron"]),

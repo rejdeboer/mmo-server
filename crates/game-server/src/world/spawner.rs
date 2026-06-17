@@ -4,16 +4,30 @@ use crate::{
         Wander,
     },
     assets::{
-        AiBehaviorDef, ContentId, MonsterDef, MonsterLibrary, MonsterLibraryHandle, SpellLibrary,
-        SpellLibraryHandle,
+        AiBehaviorDef, ContentId, MonsterDef, MonsterId, MonsterLibrary, MonsterLibraryHandle,
+        SpellLibrary, SpellLibraryHandle,
     },
-    components::{Abilities, AssetIdComponent, MobSpawner, MonsterId, Spawned},
-    systems::ActorBundle,
+    combat::Abilities,
+    core::{ActorBundle, AssetIdComponent},
 };
 use bevy::prelude::*;
 use game_core::components::Vitals;
 use rand::Rng;
 use std::time::Duration;
+
+#[derive(Component)]
+pub struct MobSpawner {
+    pub mob_id: ContentId,
+    pub max_mobs: usize,
+    pub timer: Timer,
+    pub spawn_radius: f32,
+    pub level_range: std::ops::Range<i32>,
+}
+
+#[derive(Component)]
+pub struct Spawned {
+    pub spawner: Entity,
+}
 
 pub fn setup_spawners(mut commands: Commands) {
     commands.spawn((

@@ -1,12 +1,49 @@
 use crate::{
     assets::{SpellLibrary, SpellLibraryHandle},
-    components::{Abilities, Casting, ClientIdComponent, InterestedClients, Tapped},
-    messages::{
-        ApplySpellEffectMessage, CastSpellActionMessage, OutgoingMessage, OutgoingMessageData,
-    },
+    combat::messages::{ApplySpellEffectMessage, CastSpellActionMessage},
+    core::{ClientIdComponent, InterestedClients, Tapped},
+    networking::{OutgoingMessage, OutgoingMessageData},
+    telemetry::SPELL_CASTS_TOTAL_METRIC,
 };
 use bevy::prelude::*;
 use game_core::components::Vitals;
+
+#[derive(Component)]
+pub struct Casting {
+    pub spell_id: u32,
+    pub target: Entity,
+    pub timer: Timer,
+    pub castable_while_moving: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct Ability {
+    pub spell_id: u32,
+    pub cooldown: Timer,
+}
+
+#[derive(Component, Debug, Clone, Default)]
+pub struct Abilities {
+    pub known: Vec<Ability>,
+}
+
+impl Abilities {
+    pub fn new(spell_ids: &[u32], spell_cooldowns: &std::collections::HashMap<u32, f32>) -> Self {
+        let known = spell_ids
+            .iter()
+            .map(|&spell_id| {
+                let cooldown_secs = spell_cooldowns.get(&spell_id).copied().unwrap_or(1.0);
+                let mut timer = Timer::from_seconds(cooldown_secs, TimerMode::Once);
+                timer.tick(std::time::Duration::from_secs_f32(cooldown_secs));
+                Ability {
+                    spell_id,
+                    cooldown: timer,
+                }
+            })
+            .collect();
+        Self { known }
+    }
+}
 
 #[allow(clippy::type_complexity)]
 pub fn process_spell_casts(
@@ -42,26 +79,31 @@ pub fn process_spell_casts(
 
         if casting.is_some() {
             tracing::debug!(caster = ?msg.caster_entity, "caster tried to cast while already casting");
+            metrics::counter!(SPELL_CASTS_TOTAL_METRIC, "result" => "rejected").increment(1);
             continue;
         }
 
         let Some(ability) = abilities.known.iter().find(|a| a.spell_id == msg.spell_id) else {
             tracing::debug!(caster = ?msg.caster_entity, spell_id = %msg.spell_id, "caster does not know this spell");
+            metrics::counter!(SPELL_CASTS_TOTAL_METRIC, "result" => "rejected").increment(1);
             continue;
         };
 
         if !ability.cooldown.is_finished() {
             tracing::debug!(caster = ?msg.caster_entity, spell_id = %msg.spell_id, "spell is on cooldown");
+            metrics::counter!(SPELL_CASTS_TOTAL_METRIC, "result" => "rejected").increment(1);
             continue;
         }
 
         let Ok(target_transform) = q_target.get(msg.target_entity) else {
             tracing::debug!(caster = ?msg.caster_entity, target = ?msg.target_entity, "caster selected invalid target");
+            metrics::counter!(SPELL_CASTS_TOTAL_METRIC, "result" => "rejected").increment(1);
             continue;
         };
 
         let Some(spell) = library.spells.get(&msg.spell_id) else {
             tracing::debug!(caster = ?msg.caster_entity, spell_id = %msg.spell_id, "caster used invalid spell ID");
+            metrics::counter!(SPELL_CASTS_TOTAL_METRIC, "result" => "rejected").increment(1);
             continue;
         };
 
@@ -71,6 +113,7 @@ pub fn process_spell_casts(
             > spell.range * spell.range
         {
             tracing::debug!(caster = ?msg.caster_entity, ?spell, "target is out of range");
+            metrics::counter!(SPELL_CASTS_TOTAL_METRIC, "result" => "rejected").increment(1);
             continue;
         }
 
@@ -80,6 +123,14 @@ pub fn process_spell_casts(
             timer: Timer::from_seconds(spell.casting_duration, TimerMode::Once),
             castable_while_moving: spell.castable_while_moving,
         });
+
+        metrics::counter!(SPELL_CASTS_TOTAL_METRIC, "result" => "success").increment(1);
+        tracing::debug!(
+            caster = ?msg.caster_entity,
+            spell_id = %msg.spell_id,
+            target = ?msg.target_entity,
+            "spell cast started"
+        );
 
         // Reset the ability cooldown
         if let Some(ability) = abilities
@@ -121,8 +172,6 @@ pub fn tick_casting(
 ) {
     for (entity, mut cast, transform, client_id) in q_casting.iter_mut() {
         // Cancel non-movable casts if the caster's Transform changed this tick
-        // (i.e. they moved). With kinematic bodies we no longer have LinearVelocity,
-        // so change detection on Transform is the reliable signal.
         if transform.is_changed() && !cast.castable_while_moving {
             commands.entity(entity).remove::<Casting>();
             tracing::debug!(?entity, "caster moved while casting stationary spell");

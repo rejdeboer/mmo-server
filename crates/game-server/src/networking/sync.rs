@@ -1,9 +1,9 @@
 use crate::{
-    components::{
+    core::{
         AssetIdComponent, CharacterIdComponent, ClientIdComponent, InterestedClients,
         LastClientTick, NameComponent,
     },
-    messages::{OutgoingMessage, VisibilityChangedMessage},
+    networking::messages::{OutgoingMessage, VisibilityChangedMessage},
     telemetry::{NETWORK_BYTES_TOTAL_METRIC, NETWORK_PACKETS_TOTAL_METRIC},
 };
 use bevy::{platform::collections::HashMap, prelude::*};

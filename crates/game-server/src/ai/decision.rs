@@ -1,8 +1,7 @@
 use super::components::{AiAbilityConfig, AiBrain, AiState};
 use crate::{
     assets::{SpellLibrary, SpellLibraryHandle},
-    components::{Abilities, Casting},
-    messages::CastSpellActionMessage,
+    combat::{Abilities, CastSpellActionMessage, Casting},
 };
 use bevy::prelude::*;
 

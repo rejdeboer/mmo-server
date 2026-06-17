@@ -1,6 +1,8 @@
 use crate::{
-    components::{AutoAttack, ClientIdComponent, Dead, InterestedClients, Tapped},
-    messages::{OutgoingMessage, OutgoingMessageData, StartAttackMessage, StopAttackMessage},
+    combat::messages::{StartAttackMessage, StopAttackMessage},
+    core::{ClientIdComponent, Dead, InterestedClients, Tapped},
+    networking::{OutgoingMessage, OutgoingMessageData},
+    telemetry::AUTO_ATTACKS_TOTAL_METRIC,
 };
 use bevy::prelude::*;
 use game_core::components::Vitals;
@@ -9,6 +11,12 @@ use protocol::server::AUTO_ATTACK_VISUAL_ID;
 const MELEE_RANGE: f32 = 3.0;
 const AUTO_ATTACK_SPEED: f32 = 2.0;
 const AUTO_ATTACK_DAMAGE: i32 = 5;
+
+#[derive(Component)]
+pub struct AutoAttack {
+    pub target: Entity,
+    pub swing_timer: Timer,
+}
 
 #[allow(clippy::type_complexity)]
 pub fn process_start_attack(
@@ -119,6 +127,7 @@ pub fn tick_auto_attack(
 
         // Apply damage
         target_vitals.hp -= AUTO_ATTACK_DAMAGE;
+        metrics::counter!(AUTO_ATTACKS_TOTAL_METRIC).increment(1);
 
         // Tap the target if this is the first hit from a player
         if let Some(client_id) = attacker_client_id

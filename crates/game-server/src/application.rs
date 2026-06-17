@@ -1,224 +1,114 @@
 use crate::ai::AiPlugin;
-use crate::components::ServerTick;
+use crate::assets::ContentPlugin;
+use crate::combat::{CombatPlugin, CombatSet};
 use crate::configuration::Settings;
-use crate::messages::{
-    ApplySpellEffectMessage, CastSpellActionMessage, IncomingChatMessage, JumpActionMessage,
-    MoveActionMessage, OutgoingMessage, StartAttackMessage, StopAttackMessage,
-    VisibilityChangedMessage,
-};
-use crate::observers::{on_entity_death, reward_kill};
-use crate::party;
-use crate::plugins::{AppPlugin, AssetsPlugin};
-use crate::systems::{on_connection_event, setup_spawners, update_server_metrics};
+use crate::core::ServerTick;
+use crate::database::DatabasePlugin;
+use crate::economy::EconomyPlugin;
+use crate::networking::{NetworkingPlugin, NetworkingSet};
+use crate::observability::ObservabilityPlugin;
+use crate::social::{SocialPlugin, SocialSet};
+use crate::world::{WorldPlugin, WorldSet};
 use avian3d::prelude::*;
-use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
-use bevy::time::common_conditions::on_timer;
-use bevy_renet::RenetServerPlugin;
-use bevy_renet::netcode::{
-    NetcodeServerPlugin, NetcodeServerTransport, ServerAuthentication, ServerConfig,
-};
-use bevy_renet::{RenetServer, renet::ConnectionConfig};
-use bevy_tokio_tasks::{TokioTasksPlugin, TokioTasksRuntime};
-use sqlx::{PgPool, postgres::PgPoolOptions};
-use std::net::{IpAddr, SocketAddr, UdpSocket};
-use std::time::{Duration, SystemTime};
+use bevy_tokio_tasks::TokioTasksPlugin;
 
-#[derive(Resource, Clone)]
-pub struct DatabasePool(pub PgPool);
-
-/// Optional NATS client for receiving cross-service messages (party updates, etc.)
-#[derive(Resource, Clone)]
-pub struct NatsClient(pub async_nats::Client);
-
-#[derive(Debug, Resource, Default)]
-pub struct SpatialGrid {
-    pub cells: HashMap<IVec2, Vec<Entity>>,
-}
-
-pub fn build(settings: Settings) -> Result<(App, u16), std::io::Error> {
+pub fn build(settings: Settings) -> App {
     let mut app = App::new();
 
-    app.add_plugins(AppPlugin);
-    app.add_plugins(AssetsPlugin);
-    app.add_plugins(AiPlugin);
-    app.add_plugins(RenetServerPlugin);
-    app.add_plugins(NetcodeServerPlugin);
-    app.add_plugins(TokioTasksPlugin::default());
-    app.add_plugins(PhysicsPlugins::new(FixedPostUpdate));
+    // App runner (headless vs debug)
+    #[cfg(feature = "debug")]
+    {
+        use avian3d::prelude::PhysicsDebugPlugin;
+        use bevy::log::LogPlugin;
+        use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 
-    let host_ip_addr = IpAddr::V4(
-        settings
-            .server
-            .host
-            .parse()
-            .expect("host should be IPV4 addr"),
-    );
-    let host_addr: SocketAddr = SocketAddr::new(host_ip_addr, settings.server.port);
-    let socket = UdpSocket::bind(host_addr)?;
+        app.add_plugins((
+            DefaultPlugins.build().disable::<LogPlugin>(),
+            PhysicsDebugPlugin,
+            PanOrbitCameraPlugin,
+        ));
+        app.add_systems(Startup, |mut commands: Commands| {
+            commands.spawn((
+                PanOrbitCamera::default(),
+                Transform::from_xyz(-10., 10., 15.).looking_at(Vec3::ZERO, Vec3::Y),
+            ));
+        });
+        info!("running in debug mode");
+    }
+    #[cfg(not(feature = "debug"))]
+    {
+        use bevy::app::ScheduleRunnerPlugin;
+        use bevy::gltf::GltfPlugin;
+        use bevy::image::{CompressedImageFormatSupport, CompressedImageFormats};
+        use bevy::mesh::MeshPlugin;
+        use bevy::scene::ScenePlugin;
 
-    let public_ip_addr = IpAddr::V4(
-        settings
-            .server
-            .public_host
-            .as_ref()
-            .expect("public host should be set")
-            .parse()
-            .expect("host should be IPV4 addr"),
-    );
-    let public_addr: SocketAddr = SocketAddr::new(
-        public_ip_addr,
-        settings
-            .server
-            .public_port
-            .expect("public port should be set"),
-    );
-    let public_addresses: Vec<SocketAddr> = vec![public_addr];
+        let loop_interval =
+            std::time::Duration::from_secs_f64(1.0 / game_core::constants::TICK_RATE_HZ);
+        app.add_plugins(MinimalPlugins.set(ScheduleRunnerPlugin::run_loop(loop_interval)));
+        app.insert_resource(CompressedImageFormatSupport(CompressedImageFormats::NONE));
+        app.add_plugins((
+            AssetPlugin::default(),
+            GltfPlugin::default(),
+            MeshPlugin,
+            ScenePlugin,
+        ));
+        app.init_asset::<StandardMaterial>();
+        app.register_type::<MeshMaterial3d<StandardMaterial>>();
+        info!("running in headless mode");
+    }
 
-    let port = socket.local_addr()?.port();
+    // Infrastructure plugins
+    app.add_plugins((
+        TokioTasksPlugin::default(),
+        PhysicsPlugins::new(FixedPostUpdate),
+    ));
 
-    let authentication = match settings.server.netcode_private_key {
-        Some(private_key) => ServerAuthentication::Secure { private_key },
-        None => {
-            warn!("running in unsecure mode");
-            ServerAuthentication::Unsecure
-        }
-    };
+    // Game plugins
+    app.add_plugins((
+        DatabasePlugin,
+        ContentPlugin,
+        NetworkingPlugin::new(&settings.server),
+        CombatPlugin,
+        WorldPlugin,
+        SocialPlugin,
+        EconomyPlugin,
+        AiPlugin,
+        ObservabilityPlugin,
+    ));
 
-    let netcode_server = RenetServer::new(ConnectionConfig::default());
-    info!("listening on {}", socket.local_addr()?);
-    let netcode_transport = NetcodeServerTransport::new(
-        ServerConfig {
-            current_time: SystemTime::now()
-                .duration_since(SystemTime::UNIX_EPOCH)
-                .unwrap(),
-            max_clients: 100,
-            protocol_id: 0,
-            public_addresses,
-            authentication,
-        },
-        socket,
-    )?;
-
-    app.insert_resource(Time::<Fixed>::from_hz(game_core::constants::TICK_RATE_HZ));
-    app.insert_resource(netcode_server);
-    app.insert_resource(netcode_transport);
-    app.insert_resource(settings);
-    app.insert_resource(SpatialGrid::default());
-    app.insert_resource(ServerTick::default());
-
-    app.add_message::<ApplySpellEffectMessage>();
-    app.add_message::<CastSpellActionMessage>();
-    app.add_message::<IncomingChatMessage>();
-    app.add_message::<JumpActionMessage>();
-    app.add_message::<MoveActionMessage>();
-    app.add_message::<OutgoingMessage>();
-    app.add_message::<StartAttackMessage>();
-    app.add_message::<StopAttackMessage>();
-    app.add_message::<VisibilityChangedMessage>();
-
-    app.add_systems(Startup, (setup_database_pool, setup_nats, setup_spawners));
-    app.add_systems(
+    // Cross-plugin system ordering
+    app.configure_sets(
         FixedPreUpdate,
         (
-            party::process_party_updates,
-            crate::systems::increment_server_tick,
-            crate::systems::process_client_actions,
-            crate::systems::process_client_movements,
-            crate::systems::check_ground_status,
+            SocialSet::ReceiveUpdates,
+            WorldSet::Tick,
+            NetworkingSet::ReceiveInput,
+            WorldSet::PreProcess,
             (
-                crate::systems::process_incoming_chat,
-                crate::systems::process_jump_action_messages,
-                crate::systems::process_move_action_messages,
-                crate::systems::process_spell_casts,
-                crate::systems::process_start_attack,
-                crate::systems::process_stop_attack,
+                CombatSet::ProcessActions,
+                SocialSet::ProcessChat,
+                WorldSet::ProcessMovement,
             ),
         )
             .chain(),
     );
-    app.add_systems(
-        PostUpdate,
-        update_server_metrics.run_if(on_timer(Duration::from_secs(5))),
-    );
-    app.add_systems(
-        FixedUpdate,
-        (
-            crate::systems::on_vitals_changed,
-            crate::systems::spawn_mobs,
-            crate::systems::tick_casting,
-            crate::systems::tick_ability_cooldowns,
-            crate::systems::tick_auto_attack,
-            crate::systems::cancel_auto_attack_on_death,
-            crate::systems::tick_corpse_despawn_timers,
-            crate::systems::update_spatial_grid,
-        ),
-    );
-    app.add_systems(
+
+    app.configure_sets(
         FixedPostUpdate,
         (
-            crate::systems::apply_spell_effect,
-            (
-                crate::systems::update_player_visibility,
-                crate::systems::sync_visibility,
-            )
-                .chain(),
-            crate::systems::sync_server_events,
-            crate::systems::sync_movement,
+            CombatSet::ApplyEffects,
+            NetworkingSet::UpdateVisibility,
+            NetworkingSet::Sync,
         )
+            .chain()
             .after(PhysicsSystems::Last),
     );
 
-    app.add_observer(on_connection_event);
-    app.add_observer(on_entity_death);
-    app.add_observer(reward_kill);
+    app.insert_resource(Time::<Fixed>::from_hz(game_core::constants::TICK_RATE_HZ));
+    app.insert_resource(settings);
+    app.insert_resource(ServerTick::default());
 
-    Ok((app, port))
-}
-
-pub fn get_connection_pool(settings: &Settings) -> PgPool {
-    PgPoolOptions::new().connect_lazy_with(settings.database.with_db())
-}
-
-fn setup_database_pool(
-    mut commands: Commands,
-    runtime: Res<TokioTasksRuntime>,
-    settings: Res<Settings>,
-) {
-    let pool = runtime
-        .runtime()
-        .block_on(async move { get_connection_pool(&settings) });
-    commands.insert_resource(DatabasePool(pool));
-}
-
-fn setup_nats(mut commands: Commands, runtime: Res<TokioTasksRuntime>, settings: Res<Settings>) {
-    let Some(url) = &settings.nats_url else {
-        info!("NATS URL not configured, party updates disabled");
-        return;
-    };
-
-    let url = url.clone();
-    match runtime
-        .runtime()
-        .block_on(async { async_nats::connect(&url).await })
-    {
-        Ok(client) => {
-            info!(%url, "connected to NATS");
-            match runtime
-                .runtime()
-                .block_on(async { client.subscribe("party.update.*").await })
-            {
-                Ok(subscriber) => {
-                    commands.insert_resource(party::PartySubscription(subscriber));
-                }
-                Err(err) => {
-                    error!(?err, "failed to subscribe to party updates");
-                }
-            }
-            commands.insert_resource(NatsClient(client));
-        }
-        Err(err) => {
-            error!(?err, "failed to connect to NATS, party updates disabled");
-        }
-    }
+    app
 }

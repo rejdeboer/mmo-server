@@ -1,5 +1,5 @@
 use super::components::{AiBrain, AiMovement, AiState};
-use crate::components::Casting;
+use crate::combat::Casting;
 use avian3d::prelude::{Collider, SpatialQuery};
 use bevy::prelude::*;
 use game_core::{

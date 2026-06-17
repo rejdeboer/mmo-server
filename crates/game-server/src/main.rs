@@ -21,7 +21,7 @@ fn main() -> anyhow::Result<()> {
         settings.server.public_port = Some(public_port);
     }
 
-    let (mut app, _) = application::build(settings)?;
+    let mut app = application::build(settings);
     tracing::info!("starting application");
     app.run();
     Ok(())

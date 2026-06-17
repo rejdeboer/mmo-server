@@ -1,7 +1,7 @@
 use crate::{
-    application::SpatialGrid,
-    components::{ClientIdComponent, GridCell, InterestedClients, VisibleEntities},
-    messages::VisibilityChangedMessage,
+    core::{ClientIdComponent, GridCell, InterestedClients, VisibleEntities},
+    networking::VisibilityChangedMessage,
+    world::SpatialGrid,
 };
 use bevy::{platform::collections::HashSet, prelude::*};
 

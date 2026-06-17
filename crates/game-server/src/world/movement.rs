@@ -1,6 +1,6 @@
 use crate::{
-    components::{ClientIdComponent, ServerTick},
-    messages::{JumpActionMessage, MoveActionMessage},
+    core::{ClientIdComponent, ServerTick},
+    world::messages::{JumpActionMessage, MoveActionMessage},
 };
 use avian3d::prelude::{Collider, ShapeHits, SpatialQuery};
 use bevy::prelude::*;
@@ -11,7 +11,7 @@ use game_core::{
 };
 
 pub fn increment_server_tick(mut tick: ResMut<ServerTick>) {
-    tick.next();
+    tick.advance();
 }
 
 // TODO: Validate movement
@@ -79,9 +79,6 @@ pub fn check_ground_status(
         let mut is_grounded = false;
 
         for hit in hits.iter() {
-            // NOTE: Check the slope angle.
-            // If the normal is pointing up (Y > 0.7), it's a floor.
-            // If Y is close to 0, it's a wall.
             if hit.normal1.y > 0.7 {
                 is_grounded = true;
                 break;

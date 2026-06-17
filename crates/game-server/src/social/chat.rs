@@ -1,6 +1,8 @@
 use crate::{
-    components::{ClientIdComponent, NameComponent, VisibleEntities},
-    messages::{IncomingChatMessage, OutgoingMessage, OutgoingMessageData},
+    core::{ClientIdComponent, NameComponent, VisibleEntities},
+    networking::{OutgoingMessage, OutgoingMessageData},
+    social::IncomingChatMessage,
+    telemetry::CHAT_MESSAGES_TOTAL_METRIC,
 };
 use bevy::prelude::*;
 use bevy_renet::renet::ClientId;
@@ -42,6 +44,19 @@ pub fn process_incoming_chat(
 
             recipients.push(recipient_id.0);
         }
+
+        let channel_label = match &msg.channel {
+            ChatChannel::Say => "say",
+            ChatChannel::Yell => "yell",
+            ChatChannel::Zone => "zone",
+        };
+        metrics::counter!(CHAT_MESSAGES_TOTAL_METRIC, "channel" => channel_label).increment(1);
+        tracing::debug!(
+            author = ?msg.author,
+            channel = channel_label,
+            recipient_count = recipients.len(),
+            "chat message delivered"
+        );
 
         writer.write(OutgoingMessage::new(
             recipients,

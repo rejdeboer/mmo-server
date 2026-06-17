@@ -15,6 +15,14 @@ pub const CONNECTED_PLAYERS_METRIC: &str = "connected_players_count";
 pub const NETWORK_PACKETS_TOTAL_METRIC: &str = "network_packets_total";
 pub const NETWORK_BYTES_TOTAL_METRIC: &str = "network_bytes_total";
 pub const SERVER_RTT_METRIC: &str = "server_rtt";
+pub const CHAT_MESSAGES_TOTAL_METRIC: &str = "chat_messages_total";
+pub const SPELL_CASTS_TOTAL_METRIC: &str = "spell_casts_total";
+pub const AUTO_ATTACKS_TOTAL_METRIC: &str = "auto_attacks_total";
+pub const PLAYER_DEATHS_TOTAL_METRIC: &str = "player_deaths_total";
+pub const MOB_KILLS_TOTAL_METRIC: &str = "mob_kills_total";
+pub const LOOT_ITEMS_GENERATED_TOTAL_METRIC: &str = "loot_items_generated_total";
+pub const AI_STATE_TRANSITIONS_TOTAL_METRIC: &str = "ai_state_transitions_total";
+pub const AI_EVADES_TOTAL_METRIC: &str = "ai_evades_total";
 
 pub async fn init_prometheus_exporter() {
     tracing::info!("starting prometheus exporter");
@@ -43,6 +51,38 @@ pub async fn init_prometheus_exporter() {
         "Current number of connected players"
     );
     describe_counter!(SERVER_TICK_METRIC, "The current server tick");
+    describe_counter!(
+        CHAT_MESSAGES_TOTAL_METRIC,
+        "Total chat messages sent by players"
+    );
+    describe_counter!(
+        SPELL_CASTS_TOTAL_METRIC,
+        "Total spell cast attempts by players"
+    );
+    describe_counter!(
+        AUTO_ATTACKS_TOTAL_METRIC,
+        "Total auto-attack swings that landed"
+    );
+    describe_counter!(
+        PLAYER_DEATHS_TOTAL_METRIC,
+        "Total player deaths"
+    );
+    describe_counter!(
+        MOB_KILLS_TOTAL_METRIC,
+        "Total mobs killed by players"
+    );
+    describe_counter!(
+        LOOT_ITEMS_GENERATED_TOTAL_METRIC,
+        "Total loot items generated from kills"
+    );
+    describe_counter!(
+        AI_STATE_TRANSITIONS_TOTAL_METRIC,
+        "Total AI state machine transitions"
+    );
+    describe_counter!(
+        AI_EVADES_TOTAL_METRIC,
+        "Total mob evade/leash events"
+    );
 
     tracing::info!("serving metrics on port 9000");
     exporter.await.expect("failed to start exporter");

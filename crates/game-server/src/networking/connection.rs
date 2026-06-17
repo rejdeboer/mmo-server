@@ -1,12 +1,9 @@
 use crate::{
-    application::DatabasePool,
-    components::{
-        Abilities, CharacterIdComponent, ClientIdComponent, InterestedClients, LastClientTick,
-        NameComponent, ServerTick, VisibleEntities,
-    },
+    combat::Abilities,
+    core::{ActorBundle, CharacterBundle, CharacterIdComponent, ClientIdComponent, ServerTick},
+    database::DatabasePool,
     database::load_character_data,
 };
-use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_renet::{
     RenetServer, RenetServerEvent,
@@ -14,87 +11,16 @@ use bevy_renet::{
     renet::{ClientId, DefaultChannel, DisconnectReason, ServerEvent},
 };
 use bevy_tokio_tasks::{TaskContext, TokioTasksRuntime};
-use game_core::{
-    character_controller::CharacterVelocityY,
-    collision::GameLayer,
-    components::{LevelComponent, MovementSpeedComponent, Vitals},
-    constants::BASE_MOVEMENT_SPEED,
-};
+use game_core::{components::Vitals, constants::BASE_MOVEMENT_SPEED};
 use protocol::{
     models::{Actor, ActorAttributes},
     primitives::Transform as NetTransform,
     server::{EnterGameResponse, TokenUserData},
 };
 use sqlx::PgPool;
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 use tracing::{Instrument, Level, instrument};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
-
-#[derive(Bundle)]
-/// Base components used by entities that interact with the world, like players, monsters, NPCs
-pub struct ActorBundle {
-    name: NameComponent,
-    transform: Transform,
-    vitals: Vitals,
-    movement_speed: MovementSpeedComponent,
-    level: LevelComponent,
-    interested_clients: InterestedClients,
-    body: RigidBody,
-    collider: Collider,
-    collision_layers: CollisionLayers,
-    shape_caster: ShapeCaster,
-    locked_axes: LockedAxes,
-    velocity_y: CharacterVelocityY,
-}
-
-impl ActorBundle {
-    pub fn new(name: &str, transform: Transform, vitals: Vitals, level: i32) -> Self {
-        Self {
-            name: NameComponent(Arc::from(name)),
-            transform,
-            vitals: vitals.clone(),
-            movement_speed: MovementSpeedComponent(BASE_MOVEMENT_SPEED),
-            level: LevelComponent(level),
-            interested_clients: InterestedClients::default(),
-            body: RigidBody::Kinematic,
-            collider: Collider::capsule(1., 2.),
-            collision_layers: CollisionLayers::new(
-                GameLayer::Player,
-                [GameLayer::Default, GameLayer::Ground],
-            ),
-            shape_caster: ShapeCaster::new(
-                Collider::capsule(0.9, 0.1),
-                Vec3::ZERO,
-                Quat::IDENTITY,
-                Dir3::NEG_Y,
-            )
-            .with_query_filter(SpatialQueryFilter::from_mask(LayerMask::ALL)),
-            locked_axes: LockedAxes::ROTATION_LOCKED,
-            velocity_y: CharacterVelocityY::default(),
-        }
-    }
-}
-
-#[derive(Bundle)]
-pub struct CharacterBundle {
-    base: ActorBundle,
-    id: CharacterIdComponent,
-    client_id: ClientIdComponent,
-    visible_entities: VisibleEntities,
-    last_client_tick: LastClientTick,
-}
-
-impl CharacterBundle {
-    pub fn new(base: ActorBundle, id: i32, client_id: u64) -> Self {
-        Self {
-            base,
-            id: CharacterIdComponent(id),
-            client_id: ClientIdComponent(client_id),
-            visible_entities: VisibleEntities::default(),
-            last_client_tick: LastClientTick::default(),
-        }
-    }
-}
 
 #[allow(clippy::too_many_arguments)]
 pub fn on_connection_event(

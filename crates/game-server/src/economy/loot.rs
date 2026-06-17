@@ -1,55 +1,37 @@
 use crate::{
-    assets::{LootDb, LootTable},
-    components::{ClientIdComponent, Dead, InterestedClients, Loot, LootEntry, MonsterId, Tapped},
-    messages::{OutgoingMessage, OutgoingMessageData},
+    assets::{LootDb, LootTable, MonsterId},
+    combat::EntityDeath,
+    core::Tapped,
+    networking::OutgoingMessage,
+    networking::OutgoingMessageData,
+    telemetry::{LOOT_ITEMS_GENERATED_TOTAL_METRIC, MOB_KILLS_TOTAL_METRIC},
 };
 use bevy::prelude::*;
-use game_core::components::{MovementSpeedComponent, Vitals};
+use bevy_renet::renet::ClientId;
+use protocol::models::ItemDrop;
 use rand::{Rng, thread_rng};
-use std::{collections::HashMap, time::Duration};
+use std::collections::HashMap;
 
-const CORPSE_DESPAWN_DURATION: Duration = Duration::from_secs(150);
-
-#[derive(EntityEvent)]
-pub struct EntityDeath(pub Entity);
-
-#[derive(Bundle)]
-/// Components that living world actors have
-struct LivingBundle {
-    vitals: Vitals,
-    movement_speed: MovementSpeedComponent,
+#[derive(Clone, Debug)]
+pub struct LootEntry {
+    pub item_id: u32,
+    pub quantity: u16,
 }
 
-pub fn on_entity_death(
-    event: On<EntityDeath>,
-    mut commands: Commands,
-    q_victim: Query<(&InterestedClients, Option<&ClientIdComponent>)>,
-    mut writer: MessageWriter<OutgoingMessage>,
-) {
-    let entity = event.0;
-    commands
-        .entity(entity)
-        .remove::<LivingBundle>()
-        .insert(Dead {
-            despawn_timer: Timer::new(CORPSE_DESPAWN_DURATION, TimerMode::Once),
-        });
-
-    let Ok((interested, victim_client_id)) = q_victim.get(entity) else {
-        return tracing::error!(?entity, "could not retrieve victim components");
-    };
-
-    let mut recipients = Vec::with_capacity(interested.clients.len() + 1);
-    recipients.extend(interested.clients.iter().copied());
-
-    if let Some(victim_client_id) = victim_client_id {
-        recipients.push(victim_client_id.0);
+impl From<LootEntry> for ItemDrop {
+    fn from(value: LootEntry) -> Self {
+        Self {
+            item_id: value.item_id,
+            quantity: value.quantity,
+        }
     }
+}
 
-    let outgoing_msg = OutgoingMessageData::Death { entity };
-    writer.write(OutgoingMessage {
-        recipients,
-        data: outgoing_msg,
-    });
+#[derive(Component)]
+#[allow(dead_code)]
+pub struct Loot {
+    pub entries: Vec<LootEntry>,
+    pub owner_id: ClientId,
 }
 
 pub fn reward_kill(
@@ -77,6 +59,16 @@ pub fn reward_kill(
     };
 
     let loot_entries = generate_loot(loot_tables);
+
+    metrics::counter!(MOB_KILLS_TOTAL_METRIC).increment(1);
+    metrics::counter!(LOOT_ITEMS_GENERATED_TOTAL_METRIC).increment(loot_entries.len() as u64);
+    tracing::debug!(
+        ?monster_id,
+        killer = %killer_client_id,
+        item_count = loot_entries.len(),
+        "loot generated from kill"
+    );
+
     commands.entity(entity).insert(Loot {
         entries: loot_entries.clone(),
         owner_id: killer_client_id,

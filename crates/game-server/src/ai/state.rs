@@ -1,7 +1,8 @@
 use super::components::{AiBrain, AiMovement, AiState, LeashAnchor, ThreatTable};
 use crate::{
     assets::{SpellLibrary, SpellLibraryHandle},
-    components::Abilities,
+    combat::Abilities,
+    telemetry::{AI_EVADES_TOTAL_METRIC, AI_STATE_TRANSITIONS_TOTAL_METRIC},
 };
 use bevy::prelude::*;
 
@@ -38,6 +39,8 @@ pub fn ai_state_transitions(
                         target: top_threat.entity,
                     };
                     movement.target_position = Some(target_transform.translation);
+                    metrics::counter!(AI_STATE_TRANSITIONS_TOTAL_METRIC, "from" => "idle", "to" => "chase").increment(1);
+                    tracing::debug!(?top_threat.entity, "ai transition: idle -> chase");
                 }
             }
             AiState::Chase { target } => {
@@ -47,6 +50,7 @@ pub fn ai_state_transitions(
                 if q_targets.get(target).is_err() || threat_table.entries.is_empty() {
                     brain.state = AiState::Returning;
                     movement.target_position = Some(leash.position);
+                    metrics::counter!(AI_STATE_TRANSITIONS_TOTAL_METRIC, "from" => "chase", "to" => "returning").increment(1);
                     continue;
                 }
 
@@ -54,6 +58,9 @@ pub fn ai_state_transitions(
                 if mob_pos.distance_squared(leash.position) > leash.max_range * leash.max_range {
                     brain.state = AiState::Evading;
                     movement.target_position = Some(leash.position);
+                    metrics::counter!(AI_STATE_TRANSITIONS_TOTAL_METRIC, "from" => "chase", "to" => "evading").increment(1);
+                    metrics::counter!(AI_EVADES_TOTAL_METRIC).increment(1);
+                    tracing::debug!("ai transition: chase -> evading (leash exceeded)");
                     continue;
                 }
 
@@ -71,6 +78,7 @@ pub fn ai_state_transitions(
                 if in_ability_range {
                     brain.state = AiState::Combat { target };
                     movement.target_position = None;
+                    metrics::counter!(AI_STATE_TRANSITIONS_TOTAL_METRIC, "from" => "chase", "to" => "combat").increment(1);
                 } else {
                     movement.target_position = Some(target_pos);
                 }
@@ -89,6 +97,7 @@ pub fn ai_state_transitions(
                         brain.state = AiState::Chase {
                             target: top_threat.entity,
                         };
+                        metrics::counter!(AI_STATE_TRANSITIONS_TOTAL_METRIC, "from" => "chase", "to" => "chase").increment(1);
                     }
                 }
             }
@@ -99,6 +108,7 @@ pub fn ai_state_transitions(
                 if q_targets.get(target).is_err() || threat_table.entries.is_empty() {
                     brain.state = AiState::Returning;
                     movement.target_position = Some(leash.position);
+                    metrics::counter!(AI_STATE_TRANSITIONS_TOTAL_METRIC, "from" => "combat", "to" => "returning").increment(1);
                     continue;
                 }
 
@@ -106,6 +116,9 @@ pub fn ai_state_transitions(
                 if mob_pos.distance_squared(leash.position) > leash.max_range * leash.max_range {
                     brain.state = AiState::Evading;
                     movement.target_position = Some(leash.position);
+                    metrics::counter!(AI_STATE_TRANSITIONS_TOTAL_METRIC, "from" => "combat", "to" => "evading").increment(1);
+                    metrics::counter!(AI_EVADES_TOTAL_METRIC).increment(1);
+                    tracing::debug!("ai transition: combat -> evading (leash exceeded)");
                     continue;
                 }
 
@@ -124,6 +137,7 @@ pub fn ai_state_transitions(
                     // Out of range, chase
                     brain.state = AiState::Chase { target };
                     movement.target_position = Some(target_pos);
+                    metrics::counter!(AI_STATE_TRANSITIONS_TOTAL_METRIC, "from" => "combat", "to" => "chase").increment(1);
                 } else {
                     movement.target_position = None;
                 }
@@ -142,6 +156,7 @@ pub fn ai_state_transitions(
                         brain.state = AiState::Chase {
                             target: top_threat.entity,
                         };
+                        metrics::counter!(AI_STATE_TRANSITIONS_TOTAL_METRIC, "from" => "combat", "to" => "chase").increment(1);
                     }
                 }
             }
@@ -150,6 +165,7 @@ pub fn ai_state_transitions(
                 if dist_sq < 2.0 * 2.0 {
                     brain.state = AiState::Idle;
                     movement.target_position = None;
+                    metrics::counter!(AI_STATE_TRANSITIONS_TOTAL_METRIC, "from" => "returning", "to" => "idle").increment(1);
                 } else {
                     movement.target_position = Some(leash.position);
                 }
@@ -159,6 +175,7 @@ pub fn ai_state_transitions(
                 if dist_sq < 2.0 * 2.0 {
                     brain.state = AiState::Idle;
                     movement.target_position = None;
+                    metrics::counter!(AI_STATE_TRANSITIONS_TOTAL_METRIC, "from" => "evading", "to" => "idle").increment(1);
                 } else {
                     movement.target_position = Some(leash.position);
                 }

@@ -2,24 +2,22 @@ use bevy::prelude::*;
 use futures_util::{FutureExt, StreamExt};
 use serde::Deserialize;
 
-use crate::components::CharacterIdComponent;
+use crate::core::CharacterIdComponent;
 
-/// Party membership update received from the web-server via NATS.
 #[derive(Deserialize, Debug)]
+#[allow(dead_code)]
 pub struct PartyUpdate {
     pub party_id: Option<i32>,
     pub members: Vec<i32>,
 }
 
-/// Component attached to character entities that are in a party.
 #[derive(Component, Debug)]
+#[allow(dead_code)]
 pub struct PartyId(pub i32);
 
-/// Resource holding the NATS wildcard subscription for all party updates.
 #[derive(Resource)]
 pub struct PartySubscription(pub async_nats::Subscriber);
 
-/// System that polls the NATS party subscription and applies updates as components.
 pub fn process_party_updates(
     subscription: Option<ResMut<PartySubscription>>,
     mut commands: Commands,

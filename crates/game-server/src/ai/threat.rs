@@ -1,8 +1,8 @@
 use super::components::{AggroRadius, AiBehavior, AiBrain, AiState, ThreatTable};
 use crate::{
-    application::SpatialGrid,
-    components::{ClientIdComponent, GridCell},
-    messages::ApplySpellEffectMessage,
+    combat::ApplySpellEffectMessage,
+    core::{ClientIdComponent, GridCell},
+    world::SpatialGrid,
 };
 use bevy::prelude::*;
 use game_core::components::Vitals;
