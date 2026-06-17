@@ -34,3 +34,22 @@ pub async fn load_character_data(
     .fetch_one(&pool)
     .await
 }
+
+#[instrument(skip_all)]
+pub async fn load_character_abilities(
+    pool: &Pool<Postgres>,
+    character_id: i32,
+) -> Result<Vec<i32>, sqlx::Error> {
+    let rows = sqlx::query_scalar!(
+        r#"
+        SELECT spell_id
+        FROM character_abilities
+        WHERE character_id = $1
+        "#,
+        character_id,
+    )
+    .fetch_all(pool)
+    .await?;
+
+    Ok(rows)
+}

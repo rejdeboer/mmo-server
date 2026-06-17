@@ -46,6 +46,10 @@ pub struct WebApi(pub WebClient);
 #[derive(Event)]
 pub struct EnterGame(pub EnterGameResponse);
 
+/// The spell IDs the player's character knows, received from the server on login.
+#[derive(Resource)]
+pub struct KnownAbilities(pub Vec<u32>);
+
 #[derive(Component)]
 pub struct PlayerComponent;
 
@@ -266,6 +270,7 @@ fn on_enter_game(
         .with_rotation(player_actor.transform.get_quat());
 
     commands.insert_resource(TickSync::new(response.server_tick));
+    commands.insert_resource(KnownAbilities(response.known_abilities.clone()));
     tracing::info!(
         server_tick = ?response.server_tick,
         "initial tick sync established"

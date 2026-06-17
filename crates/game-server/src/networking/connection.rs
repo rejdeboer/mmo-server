@@ -2,7 +2,7 @@ use crate::{
     combat::Abilities,
     core::{ActorBundle, CharacterBundle, CharacterIdComponent, ClientIdComponent, ServerTick},
     database::DatabasePool,
-    database::load_character_data,
+    database::{load_character_abilities, load_character_data},
 };
 use bevy::prelude::*;
 use bevy_renet::{
@@ -11,7 +11,11 @@ use bevy_renet::{
     renet::{ClientId, DefaultChannel, DisconnectReason, ServerEvent},
 };
 use bevy_tokio_tasks::{TaskContext, TokioTasksRuntime};
-use game_core::{components::Vitals, constants::BASE_MOVEMENT_SPEED};
+use game_core::{
+    components::Vitals,
+    constants::BASE_MOVEMENT_SPEED,
+    spells::{SpellLibrary, SpellLibraryHandle},
+};
 use protocol::{
     models::{Actor, ActorAttributes},
     primitives::Transform as NetTransform,
@@ -101,9 +105,13 @@ async fn handle_enter_game_task(
     mut ctx: TaskContext,
 ) {
     tracing::info!("entering game");
-    let character = load_character_data(pool, character_id)
+    let character = load_character_data(pool.clone(), character_id)
         .await
         .expect("player character data retrieved");
+    let ability_ids = load_character_abilities(&pool, character_id)
+        .await
+        .expect("player abilities retrieved");
+
     ctx.run_on_main_thread(move |ctx| {
         let mut transform = Transform::from_xyz(
             character.position_x,
@@ -116,6 +124,29 @@ async fn handle_enter_game_task(
             max_hp: character.max_hp,
         };
 
+        let spell_ids: Vec<u32> = ability_ids.iter().map(|&id| id as u32).collect();
+
+        // Build cooldown map from SpellLibrary
+        let spell_cooldowns: HashMap<u32, f32> = ctx
+            .world
+            .get_resource::<SpellLibraryHandle>()
+            .and_then(|handle| {
+                ctx.world
+                    .get_resource::<Assets<SpellLibrary>>()
+                    .and_then(|assets| assets.get(&handle.0))
+            })
+            .map(|lib| {
+                spell_ids
+                    .iter()
+                    .filter_map(|&spell_id| {
+                        lib.spells
+                            .get(&spell_id)
+                            .map(|spell| (spell_id, spell.cooldown))
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+
         let entity = ctx
             .world
             .spawn((
@@ -124,8 +155,7 @@ async fn handle_enter_game_task(
                     character.id,
                     client_id,
                 ),
-                // TODO: Load learned spells from database
-                Abilities::new(&[0], &std::collections::HashMap::from([(0, 1.5)])),
+                Abilities::new(&spell_ids, &spell_cooldowns),
             ))
             .id();
 
@@ -154,6 +184,7 @@ async fn handle_enter_game_task(
         let response = EnterGameResponse {
             player_actor,
             server_tick,
+            known_abilities: spell_ids,
         };
 
         let mut server = ctx.world.get_resource_mut::<RenetServer>().unwrap();

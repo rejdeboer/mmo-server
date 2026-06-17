@@ -55,6 +55,7 @@ pub enum ServerEvent {
 pub struct EnterGameResponse {
     pub player_actor: Actor,
     pub server_tick: u32,
+    pub known_abilities: Vec<u32>,
 }
 
 #[derive(Encode, Decode)]
