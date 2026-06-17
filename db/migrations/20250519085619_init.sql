@@ -43,6 +43,14 @@ CREATE TABLE IF NOT EXISTS characters (
         REFERENCES guilds(id)
 );
 
+CREATE TABLE IF NOT EXISTS character_abilities (
+    character_id INT NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+    spell_id INT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (character_id, spell_id)
+);
+
 CREATE INDEX IF NOT EXISTS "idx_characters_id" ON "characters" ("id");
 CREATE INDEX IF NOT EXISTS idx_characters_account_id ON characters(account_id);
 CREATE INDEX IF NOT EXISTS idx_characters_guild_id ON characters(guild_id);
+CREATE INDEX IF NOT EXISTS idx_character_abilities_character_id ON character_abilities(character_id);
