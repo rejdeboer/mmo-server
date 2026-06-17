@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "TRUNCATE TABLE character_abilities, characters, accounts, guilds RESTART IDENTITY CASCADE;",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "3649b17e6627307fb9898a877be1caeb22bf655c75c636044248373e9f901b1b"
+}

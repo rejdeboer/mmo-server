@@ -1,5 +1,6 @@
 use crate::{ApplicationState, auth::AccountContext, domain::CharacterName, error::ApiError};
 use axum::{Extension, Json, extract::State, response::Result};
+use sqlx::PgPool;
 use tracing::instrument;
 use web_types::{Character, CharacterCreate};
 
@@ -22,6 +23,8 @@ impl From<CharacterRow> for Character {
     }
 }
 
+const STARTING_SPELLS: &[i32] = &[3, 4];
+
 // TODO: Implement more validation: character limits, etc...
 #[instrument(skip_all, fields(name = payload.name))]
 pub async fn character_create(
@@ -30,22 +33,13 @@ pub async fn character_create(
     Json(payload): Json<CharacterCreate>,
 ) -> Result<Json<Character>, ApiError> {
     let name = CharacterName::parse(payload.name).map_err(ApiError::BadRequest)?;
-    let row = sqlx::query_as!(
-        CharacterRow,
-        r#"
-        INSERT INTO characters (name, account_id)
-        VALUES ($1, $2)
-        RETURNING id, name, level, experience
-        "#,
-        name.as_ref(),
-        ctx.account_id
-    )
-    .fetch_one(&state.pool)
-    .await
-    .map_err(|error| {
-        tracing::error!(?error, ?ctx, "error creating character");
-        ApiError::UnexpectedError
-    })?;
+
+    let row = create_character(&state.pool, name.as_ref(), ctx.account_id, None)
+        .await
+        .map_err(|error| {
+            tracing::error!(?error, ?ctx, "error creating character");
+            ApiError::UnexpectedError
+        })?;
 
     Ok(Json(row.into()))
 }
@@ -72,4 +66,40 @@ pub async fn character_list(
 
     let characters = rows.into_iter().map(Character::from).collect();
     Ok(Json(characters))
+}
+
+pub async fn create_character(
+    pool: &PgPool,
+    name: &str,
+    account_id: i32,
+    guild_id: Option<i32>,
+) -> sqlx::Result<CharacterRow> {
+    let mut tx = pool.begin().await?;
+
+    let row = sqlx::query_as!(
+        CharacterRow,
+        r#"
+        INSERT INTO characters (name, account_id, guild_id)
+        VALUES ($1, $2, $3)
+        RETURNING id, name, level, experience
+        "#,
+        name,
+        account_id,
+        guild_id,
+    )
+    .fetch_one(&mut *tx)
+    .await?;
+
+    for &spell_id in STARTING_SPELLS {
+        sqlx::query!(
+            "INSERT INTO character_abilities (character_id, spell_id) VALUES ($1, $2)",
+            row.id,
+            spell_id
+        )
+        .execute(&mut *tx)
+        .await?;
+    }
+
+    tx.commit().await?;
+    Ok(row)
 }

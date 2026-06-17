@@ -1,10 +1,10 @@
 use super::components::{AiBrain, AiMovement, AiState, LeashAnchor, ThreatTable};
 use crate::{
-    assets::{SpellLibrary, SpellLibraryHandle},
     combat::Abilities,
     telemetry::{AI_EVADES_TOTAL_METRIC, AI_STATE_TRANSITIONS_TOTAL_METRIC},
 };
 use bevy::prelude::*;
+use game_core::spells::{SpellLibrary, SpellLibraryHandle};
 
 /// Evaluates and applies AI state transitions based on threat, distance, and leash.
 pub fn ai_state_transitions(

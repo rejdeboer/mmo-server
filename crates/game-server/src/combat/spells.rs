@@ -1,12 +1,14 @@
 use crate::{
-    assets::{SpellLibrary, SpellLibraryHandle},
     combat::messages::{ApplySpellEffectMessage, CastSpellActionMessage},
     core::{ClientIdComponent, InterestedClients, Tapped},
     networking::{OutgoingMessage, OutgoingMessageData},
     telemetry::SPELL_CASTS_TOTAL_METRIC,
 };
 use bevy::prelude::*;
-use game_core::components::Vitals;
+use game_core::{
+    components::Vitals,
+    spells::{SpellLibrary, SpellLibraryHandle},
+};
 
 #[derive(Component)]
 pub struct Casting {

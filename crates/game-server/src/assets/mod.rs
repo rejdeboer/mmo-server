@@ -2,17 +2,16 @@ mod content_id;
 mod items;
 mod loot;
 mod monsters;
-mod spells;
 
 pub use content_id::ContentId;
 pub use items::*;
 pub use loot::*;
 pub use monsters::*;
-pub use spells::*;
 
 use avian3d::prelude::*;
 use bevy::{asset::RenderAssetUsages, gltf::GltfLoaderSettings, prelude::*};
 use bevy_common_assets::ron::RonAssetPlugin;
+use game_core::spells::{SpellLibrary, SpellLibraryHandle};
 
 pub struct ContentPlugin;
 

@@ -1,6 +1,6 @@
 use fake::{Fake, faker::internet::en::Username};
 use sqlx::PgPool;
-use web_server::domain::SafePassword;
+use web_server::{domain::SafePassword, routes::create_character};
 
 const TEST_PASSWORD: &str = "Test123!";
 
@@ -10,7 +10,7 @@ pub async fn seed_db(pool: PgPool, count: usize) -> anyhow::Result<()> {
         .hash()
         .unwrap();
 
-    sqlx::query!("TRUNCATE TABLE characters, accounts, guilds RESTART IDENTITY CASCADE;")
+    sqlx::query!("TRUNCATE TABLE character_abilities, characters, accounts, guilds RESTART IDENTITY CASCADE;")
         .execute(&pool)
         .await?;
     let guild_id = sqlx::query!("INSERT INTO guilds (name) VALUES ('Testing Guild') RETURNING id;")
@@ -33,16 +33,7 @@ pub async fn seed_db(pool: PgPool, count: usize) -> anyhow::Result<()> {
         .await?;
 
         let character_name: String = Username().fake();
-        sqlx::query!(
-            r#"
-            INSERT INTO characters (name, account_id, guild_id) VALUES ($1, $2, $3)
-            "#,
-            &character_name,
-            user_id.id,
-            guild_id.id,
-        )
-        .execute(&pool)
-        .await?;
+        create_character(&pool, &character_name, user_id.id, Some(guild_id.id)).await?;
     }
     tracing::info!(?count, "inserted fake users");
     Ok(())

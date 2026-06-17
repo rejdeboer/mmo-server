@@ -29,7 +29,7 @@
 				behavior: Neutral,
 				aggro_radius: 18.0,
 				leash_range: 50.0,
-				ability_priorities: { 101: 1, 102: 3 },
+				ability_priorities: { 100: 1, 101: 3 },
 				wander: Some((
 					radius: 10.0,
 					pause_duration: 3.0,

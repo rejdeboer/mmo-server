@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        INSERT INTO characters (name, account_id)\n        VALUES ($1, $2)\n        RETURNING id, name, level, experience\n        ",
+  "query": "\n        INSERT INTO characters (name, account_id, guild_id)\n        VALUES ($1, $2, $3)\n        RETURNING id, name, level, experience\n        ",
   "describe": {
     "columns": [
       {
@@ -27,6 +27,7 @@
     "parameters": {
       "Left": [
         "Varchar",
+        "Int4",
         "Int4"
       ]
     },
@@ -37,5 +38,5 @@
       false
     ]
   },
-  "hash": "cb104bfaa04f7be4ed888579e02f0003d990125d58e79aa58a7e081ccb49b7d6"
+  "hash": "5b714085f0a6e06db36b8bd2f9903b471da2e62e9d7f52e08f5c26f7b4e2369e"
 }

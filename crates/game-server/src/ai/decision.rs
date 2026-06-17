@@ -1,9 +1,7 @@
 use super::components::{AiAbilityConfig, AiBrain, AiState};
-use crate::{
-    assets::{SpellLibrary, SpellLibraryHandle},
-    combat::{Abilities, CastSpellActionMessage, Casting},
-};
+use crate::combat::{Abilities, CastSpellActionMessage, Casting};
 use bevy::prelude::*;
+use game_core::spells::{SpellLibrary, SpellLibraryHandle};
 
 /// AI selects and casts the best available ability against its current target.
 #[allow(clippy::type_complexity)]

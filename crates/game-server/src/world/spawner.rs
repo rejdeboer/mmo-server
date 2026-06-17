@@ -5,13 +5,15 @@ use crate::{
     },
     assets::{
         AiBehaviorDef, ContentId, MonsterDef, MonsterId, MonsterLibrary, MonsterLibraryHandle,
-        SpellLibrary, SpellLibraryHandle,
     },
     combat::Abilities,
     core::{ActorBundle, AssetIdComponent},
 };
 use bevy::prelude::*;
-use game_core::components::Vitals;
+use game_core::{
+    components::Vitals,
+    spells::{SpellLibrary, SpellLibraryHandle},
+};
 use rand::Rng;
 use std::time::Duration;
 
