@@ -11,3 +11,7 @@ pub struct Chatting;
 #[derive(InputAction)]
 #[action_output(Vec2)]
 pub struct Movement;
+
+#[derive(InputAction)]
+#[action_output(bool)]
+pub struct EscapePressed;

@@ -1,5 +1,6 @@
-use crate::ui::ChatInputState;
+use crate::input::EscapePressed;
 use bevy::prelude::*;
+use bevy_enhanced_input::prelude::*;
 use bevy_renet::{RenetClient, renet::DefaultChannel};
 use game_core::components::NetworkId;
 use protocol::client::PlayerAction;
@@ -8,27 +9,15 @@ use protocol::client::PlayerAction;
 #[derive(Event)]
 pub struct AttackTarget(pub Entity);
 
-/// Sends StopAttack when the player presses Escape.
-pub fn send_stop_attack(
-    keyboard: Res<ButtonInput<KeyCode>>,
-    chat_state: Res<ChatInputState>,
-    mut client: ResMut<RenetClient>,
-) {
-    if chat_state.active {
-        return;
-    }
-
-    if keyboard.just_pressed(KeyCode::Escape) {
-        let action = PlayerAction::StopAttack;
-        let encoded = bitcode::encode(&action);
-        client.send_message(DefaultChannel::ReliableOrdered, encoded);
-    }
-}
+/// Tracks whether the local player is currently auto-attacking.
+#[derive(Resource, Default)]
+pub struct IsAttacking(pub bool);
 
 /// Observer that sends StartAttack to the server when AttackTarget is triggered.
 pub fn on_attack_target(
     event: On<AttackTarget>,
     network_ids: Query<&NetworkId>,
+    mut is_attacking: ResMut<IsAttacking>,
     mut client: ResMut<RenetClient>,
 ) {
     let Ok(network_id) = network_ids.get(event.0) else {
@@ -41,4 +30,22 @@ pub fn on_attack_target(
     };
     let encoded = bitcode::encode(&action);
     client.send_message(DefaultChannel::ReliableOrdered, encoded);
+    is_attacking.0 = true;
+}
+
+/// Observer for the Escape key. Stops attack if currently attacking,
+/// otherwise will open the options menu (TODO).
+pub fn on_escape(
+    _event: On<Start<EscapePressed>>,
+    mut is_attacking: ResMut<IsAttacking>,
+    mut client: ResMut<RenetClient>,
+) {
+    if is_attacking.0 {
+        let action = PlayerAction::StopAttack;
+        let encoded = bitcode::encode(&action);
+        client.send_message(DefaultChannel::ReliableOrdered, encoded);
+        is_attacking.0 = false;
+    } else {
+        // TODO: Open options menu
+    }
 }

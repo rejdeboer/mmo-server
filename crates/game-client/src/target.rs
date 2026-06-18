@@ -4,7 +4,7 @@ use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 
 use crate::application::NameComponent;
-use crate::combat::AttackTarget;
+use crate::combat::{AttackTarget, IsAttacking};
 use crate::movement::RemoteInterpolation;
 use crate::social::SocialSender;
 use crate::ui::{ContextMenu, UnitFrame, UnitFrameConfig, context_menu, unit_frame};
@@ -278,14 +278,16 @@ fn on_invite_click(
     context_menu::despawn_context_menu(&mut commands, &context_menu_q);
 }
 
-/// Clears selected target if the entity is despawned.
+/// Clears selected target and attack state if the entity is despawned.
 pub(crate) fn clear_despawned_target(
     mut selected: ResMut<SelectedTarget>,
+    mut is_attacking: ResMut<IsAttacking>,
     remote_actors: Query<Entity, With<RemoteInterpolation>>,
 ) {
     if let Some(entity) = selected.0
         && remote_actors.get(entity).is_err()
     {
         selected.0 = None;
+        is_attacking.0 = false;
     }
 }

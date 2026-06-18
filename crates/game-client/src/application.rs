@@ -3,7 +3,7 @@ use crate::{
     combat,
     combat_feedback::{self, CombatHitMessage},
     configuration::Settings,
-    input::{Chatting, Movement},
+    input::{Chatting, EscapePressed, Movement},
     movement::{self, PredictionHistory, RemoteInterpolation},
     network::{NetworkIdMapping, poll_connection, receive_server_events},
     player_frame,
@@ -136,6 +136,7 @@ pub fn create_authenticated_app(
     app.insert_resource(SelectedTarget::default());
     app.insert_resource(target::ClickTracker::default());
     app.insert_resource(target::CursorOverUi::default());
+    app.insert_resource(combat::IsAttacking::default());
 
     app.add_message::<ActorSpawnMessage>();
     app.add_message::<ActorDespawnMessage>();
@@ -146,7 +147,8 @@ pub fn create_authenticated_app(
         .add_observer(on_cancel_chat)
         .add_observer(on_open_chat)
         .add_observer(social::route_outgoing_chat)
-        .add_observer(combat::on_attack_target);
+        .add_observer(combat::on_attack_target)
+        .add_observer(combat::on_escape);
 
     app.insert_state(AppState::Connecting);
     app.insert_resource(Time::<Fixed>::from_hz(game_core::constants::TICK_RATE_HZ));
@@ -224,7 +226,6 @@ pub fn create_authenticated_app(
             target::manage_target_unit_frame,
             target::sync_target_unit_frame,
             target::handle_target_context_menu,
-            combat::send_stop_attack,
             player_frame::spawn_player_unit_frame,
             player_frame::handle_player_context_menu,
             ui::unit_frame::update_unit_frames,
@@ -331,6 +332,11 @@ fn on_enter_game(
                 Action::<OpenChat>::new(),
                 Press::default(),
                 Bindings::spawn(Spawn(Binding::from(KeyCode::Enter))),
+            ),
+            (
+                Action::<EscapePressed>::new(),
+                Press::default(),
+                Bindings::spawn(Spawn(Binding::from(KeyCode::Escape))),
             ),
         ]),
         Chatting,
