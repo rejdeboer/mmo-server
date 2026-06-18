@@ -5,7 +5,10 @@ use crate::{
     configuration::Settings,
     input::{Chatting, EscapePressed, Movement},
     movement::{self, PredictionHistory, RemoteInterpolation},
-    network::{NetworkIdMapping, poll_connection, receive_server_events},
+    network::{
+        self, ActorDeathMessage, KillRewardMessage, NetworkIdMapping, ServerChatMessage,
+        SpellImpactMessage, StartCastingMessage, poll_connection, receive_server_events,
+    },
     player_frame,
     social::{self, ChatLog, SocialReceiver, SocialSender},
     target::{self, SelectedTarget},
@@ -141,6 +144,11 @@ pub fn create_authenticated_app(
     app.add_message::<ActorSpawnMessage>();
     app.add_message::<ActorDespawnMessage>();
     app.add_message::<CombatHitMessage>();
+    app.add_message::<SpellImpactMessage>();
+    app.add_message::<ActorDeathMessage>();
+    app.add_message::<StartCastingMessage>();
+    app.add_message::<KillRewardMessage>();
+    app.add_message::<ServerChatMessage>();
 
     app.add_observer(on_enter_game)
         .add_observer(on_send_chat)
@@ -196,6 +204,11 @@ pub fn create_authenticated_app(
             movement::interpolate_remote_actors,
             handle_actor_spawn_messages,
             handle_actor_despawn_messages,
+            network::handle_spell_impacts,
+            network::handle_actor_deaths,
+            network::handle_start_casting,
+            network::handle_kill_rewards,
+            network::handle_server_chat,
         )
             .run_if(in_state(AppState::InGame)),
     );

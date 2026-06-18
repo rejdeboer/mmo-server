@@ -27,7 +27,6 @@
 - [ ] Spell cooldowns and global cooldown (server-authoritative)
 - [ ] Weapon speed-based auto-attack timing (replace constant swing speed)
 - [ ] Weapon damage stats (replace constant auto-attack damage)
-- [ ] NPC AI state machine — threat/aggro tables, leashing, basic pathing
 - [ ] Loot and inventory system — item definitions, slots, equip, DB persistence
 - [ ] Zone transitions — handoff between game-server instances
 - [ ] Death and respawn — corpse runs, respawn timers, XP loss
@@ -37,3 +36,7 @@
 - [ ] Client-side prediction and server reconciliation (input prediction with rollback)
 - [ ] Interest management priority — closer entities update more frequently
 - [ ] Bandwidth budgeting — cap outbound bytes/tick/client, prioritize important updates
+
+## Refactoring
+- Game client is currently pretty hacky. many functions have too much responsibility. Should clean it up using bevy messages / events.
+
