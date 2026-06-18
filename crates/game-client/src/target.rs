@@ -4,6 +4,7 @@ use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 
 use crate::application::NameComponent;
+use crate::combat::AttackTarget;
 use crate::movement::RemoteInterpolation;
 use crate::social::SocialSender;
 use crate::ui::{ContextMenu, UnitFrame, UnitFrameConfig, context_menu, unit_frame};
@@ -18,12 +19,15 @@ pub struct SelectedTarget(pub Option<Entity>);
 #[derive(Resource, Default)]
 pub struct CursorOverUi(pub bool);
 
-/// Tracks whether the left mouse button was a click (not a drag).
+/// Tracks whether mouse button presses were clicks (not drags).
 #[derive(Resource, Default)]
 pub struct ClickTracker {
     pressed: bool,
     start_position: Vec2,
     dragged: bool,
+    right_pressed: bool,
+    right_start_position: Vec2,
+    right_dragged: bool,
 }
 
 /// Marker to identify the target-specific unit frame among all unit frames.
@@ -41,6 +45,7 @@ pub(crate) fn update_cursor_over_ui(
 }
 
 /// Detects left-click (non-drag) on remote actors to select them as target.
+/// Detects right-click (non-drag) on remote actors to select and auto-attack.
 pub(crate) fn handle_target_selection(
     mouse_button: Res<ButtonInput<MouseButton>>,
     windows: Query<&Window, With<PrimaryWindow>>,
@@ -50,12 +55,13 @@ pub(crate) fn handle_target_selection(
     mut selected: ResMut<SelectedTarget>,
     mut click_tracker: ResMut<ClickTracker>,
     cursor_over_ui: Res<CursorOverUi>,
+    mut commands: Commands,
 ) {
     let Ok(window) = windows.single() else {
         return;
     };
 
-    // Track click vs drag
+    // Track left-click vs drag
     if mouse_button.just_pressed(MouseButton::Left)
         && let Some(pos) = window.cursor_position()
     {
@@ -71,37 +77,73 @@ pub(crate) fn handle_target_selection(
         click_tracker.dragged = true;
     }
 
+    // Track right-click vs drag
+    if mouse_button.just_pressed(MouseButton::Right)
+        && let Some(pos) = window.cursor_position()
+    {
+        click_tracker.right_pressed = true;
+        click_tracker.right_start_position = pos;
+        click_tracker.right_dragged = false;
+    }
+
+    if click_tracker.right_pressed
+        && let Some(pos) = window.cursor_position()
+        && pos.distance(click_tracker.right_start_position) > DRAG_THRESHOLD
+    {
+        click_tracker.right_dragged = true;
+    }
+
+    // Left-click release: select/deselect target
     if mouse_button.just_released(MouseButton::Left) {
         let was_click = click_tracker.pressed && !click_tracker.dragged;
         click_tracker.pressed = false;
 
-        if !was_click || cursor_over_ui.0 {
-            return;
-        }
-
-        // Raycast from cursor position
-        let Some(cursor_pos) = window.cursor_position() else {
-            return;
-        };
-        let Ok((camera, camera_transform)) = cameras.single() else {
-            return;
-        };
-        let Ok(ray) = camera.viewport_to_world(camera_transform, cursor_pos) else {
-            return;
-        };
-
-        if let Some(hit) =
-            rapier_context.cast_ray(ray.origin, ray.direction, 100.0, true, &default())
-        {
-            if remote_actors.contains(hit.entity) {
-                selected.0 = Some(hit.entity);
+        if was_click && !cursor_over_ui.0 {
+            if let Some(hit_entity) = raycast_remote_actor(
+                window,
+                &cameras,
+                &rapier_context,
+                &remote_actors,
+            ) {
+                selected.0 = Some(hit_entity);
             } else {
                 selected.0 = None;
             }
-        } else {
-            selected.0 = None;
         }
     }
+
+    // Right-click release: select target and start auto-attack
+    if mouse_button.just_released(MouseButton::Right) {
+        let was_click = click_tracker.right_pressed && !click_tracker.right_dragged;
+        click_tracker.right_pressed = false;
+
+        if was_click && !cursor_over_ui.0 {
+            if let Some(hit_entity) = raycast_remote_actor(
+                window,
+                &cameras,
+                &rapier_context,
+                &remote_actors,
+            ) {
+                selected.0 = Some(hit_entity);
+                commands.trigger(AttackTarget(hit_entity));
+            }
+        }
+    }
+}
+
+/// Raycasts from the cursor position and returns the first remote actor hit.
+fn raycast_remote_actor(
+    window: &Window,
+    cameras: &Query<(&Camera, &GlobalTransform)>,
+    rapier_context: &SpatialQuery,
+    remote_actors: &Query<Entity, With<RemoteInterpolation>>,
+) -> Option<Entity> {
+    let cursor_pos = window.cursor_position()?;
+    let (camera, camera_transform) = cameras.single().ok()?;
+    let ray = camera.viewport_to_world(camera_transform, cursor_pos).ok()?;
+
+    let hit = rapier_context.cast_ray(ray.origin, ray.direction, 100.0, true, &default())?;
+    remote_actors.contains(hit.entity).then_some(hit.entity)
 }
 
 /// Manages the target unit frame lifecycle based on the currently selected target.

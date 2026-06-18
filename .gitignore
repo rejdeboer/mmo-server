@@ -1,3 +1,5 @@
 target
 
 development/*-data
+
+.DS_Store

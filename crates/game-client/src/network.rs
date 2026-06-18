@@ -1,12 +1,16 @@
 use crate::{
-    application::{ActorDespawnMessage, ActorSpawnMessage, AppState, EnterGame},
+    application::{ActorDespawnMessage, ActorSpawnMessage, AppState, EnterGame, PlayerComponent},
     combat_feedback::CombatHitMessage,
     social::{ChatLog, ChatMessage, ChatMessageChannel},
     tick_sync::TickSync,
+    ui::cast_bar::ActiveCast,
 };
 use bevy::{ecs::system::SystemParam, platform::collections::HashMap, prelude::*};
 use bevy_renet::{RenetClient, renet::DefaultChannel};
-use game_core::components::{NetworkId, Vitals};
+use game_core::{
+    components::{NetworkId, Vitals},
+    spells::{SpellLibrary, SpellLibraryHandle},
+};
 use protocol::server::{EnterGameResponse, ServerEvent};
 
 #[derive(Resource)]
@@ -45,6 +49,10 @@ pub fn receive_server_events(
     mut chat_log: ResMut<ChatLog>,
     network_id_mapping: Res<NetworkIdMapping>,
     mut q_vitals: Query<&mut Vitals>,
+    q_player: Query<&PlayerComponent>,
+    spell_library_handle: Res<SpellLibraryHandle>,
+    spell_libraries: Res<Assets<SpellLibrary>>,
+    mut commands: Commands,
 ) {
     while let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
         match bitcode::decode::<ServerEvent>(&message) {
@@ -78,10 +86,24 @@ pub fn receive_server_events(
                     }
                 }
                 ServerEvent::StartCasting {
-                    actor_id: _,
-                    spell_id: _,
+                    actor_id,
+                    spell_id,
                 } => {
-                    // TODO: Show cast bar on the actor
+                    if let Some(&entity) = network_id_mapping.0.get(&NetworkId(actor_id))
+                        && q_player.get(entity).is_ok()
+                        && let Some(library) = spell_libraries.get(&spell_library_handle.0)
+                        && let Some(spell_def) = library.spells.get(&spell_id)
+                        && spell_def.casting_duration > 0.0
+                    {
+                        commands.insert_resource(ActiveCast {
+                            spell_id,
+                            spell_name: spell_def.name.clone(),
+                            timer: Timer::from_seconds(
+                                spell_def.casting_duration,
+                                TimerMode::Once,
+                            ),
+                        });
+                    }
                 }
                 ServerEvent::KillReward {
                     victim_id: _,

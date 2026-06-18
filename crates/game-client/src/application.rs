@@ -11,12 +11,13 @@ use crate::{
     target::{self, SelectedTarget},
     tick_sync::{self, TickSync},
     ui::{
-        self, CancelChat, ChatInputState, OpenChat, SendChat, on_cancel_chat, on_open_chat,
-        on_send_chat,
+        self, CancelChat, ChatInputState, OpenChat, SendChat, action_bar, cast_bar,
+        on_cancel_chat, on_open_chat, on_send_chat,
     },
 };
 use avian3d::prelude::*;
 use bevy::{gltf::GltfLoaderSettings, platform::collections::HashMap, prelude::*};
+use bevy_common_assets::ron::RonAssetPlugin;
 use bevy_enhanced_input::prelude::{Press, *};
 use bevy_renet::{
     RenetClient, RenetClientPlugin,
@@ -28,6 +29,7 @@ use game_core::{
     collision::GameLayer,
     components::{LevelComponent, MovementSpeedComponent, NetworkId, Vitals},
     constants::BASE_MOVEMENT_SPEED,
+    spells::{SpellLibrary, SpellLibraryHandle},
 };
 use protocol::{models::Actor, server::EnterGameResponse};
 use std::{net::UdpSocket, time::SystemTime};
@@ -117,6 +119,7 @@ pub fn create_authenticated_app(
         PhysicsPlugins::new(FixedPostUpdate).set(PhysicsInterpolationPlugin::interpolate_all()),
     );
     app.add_plugins(EnhancedInputPlugin);
+    app.add_plugins(RonAssetPlugin::<SpellLibrary>::new(&["spells.ron"]));
 
     app.add_input_context::<PlayerComponent>();
     app.add_input_context::<Chatting>();
@@ -142,7 +145,8 @@ pub fn create_authenticated_app(
         .add_observer(on_send_chat)
         .add_observer(on_cancel_chat)
         .add_observer(on_open_chat)
-        .add_observer(social::route_outgoing_chat);
+        .add_observer(social::route_outgoing_chat)
+        .add_observer(combat::on_attack_target);
 
     app.insert_state(AppState::Connecting);
     app.insert_resource(Time::<Fixed>::from_hz(game_core::constants::TICK_RATE_HZ));
@@ -220,7 +224,7 @@ pub fn create_authenticated_app(
             target::manage_target_unit_frame,
             target::sync_target_unit_frame,
             target::handle_target_context_menu,
-            combat::send_attack_action,
+            combat::send_stop_attack,
             player_frame::spawn_player_unit_frame,
             player_frame::handle_player_context_menu,
             ui::unit_frame::update_unit_frames,
@@ -237,6 +241,19 @@ pub fn create_authenticated_app(
             combat_feedback::handle_combat_hits,
             combat_feedback::update_floating_combat_text,
             combat_feedback::update_hit_flash,
+        )
+            .run_if(in_state(AppState::InGame)),
+    );
+    app.add_systems(
+        Update,
+        (
+            action_bar::spawn_action_bar,
+            action_bar::handle_ability_input,
+            action_bar::handle_ability_click,
+            action_bar::tick_cooldowns,
+            action_bar::update_slot_visuals,
+            cast_bar::manage_cast_bar,
+            cast_bar::update_cast_bar,
         )
             .run_if(in_state(AppState::InGame)),
     );
@@ -262,6 +279,7 @@ fn on_enter_game(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    assets: Res<AssetServer>,
 ) {
     tracing::info!("entering game");
     let response = &event.0;
@@ -271,6 +289,10 @@ fn on_enter_game(
 
     commands.insert_resource(TickSync::new(response.server_tick));
     commands.insert_resource(KnownAbilities(response.known_abilities.clone()));
+    commands.insert_resource(action_bar::AbilityCooldowns::default());
+
+    let spells_handle = assets.load::<SpellLibrary>("spells.ron");
+    commands.insert_resource(SpellLibraryHandle(spells_handle));
     tracing::info!(
         server_tick = ?response.server_tick,
         "initial tick sync established"

@@ -3645,6 +3645,7 @@ dependencies = [
  "base64 0.12.3",
  "bevy",
  "bevy-tokio-tasks",
+ "bevy_common_assets",
  "bevy_enhanced_input",
  "bevy_renet",
  "bitcode",
@@ -4544,6 +4545,8 @@ dependencies = [
  "moxcms",
  "num-traits 0.2.19",
  "png",
+ "zune-core",
+ "zune-jpeg",
 ]
 
 [[package]]
@@ -10648,4 +10651,19 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.109",
+]
+
+[[package]]
+name = "zune-core"
+version = "0.4.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3f423a2c17029964870cfaabb1f13dfab7d092a62a29a89264f4d36990ca414a"
+
+[[package]]
+name = "zune-jpeg"
+version = "0.4.21"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "29ce2c8a9384ad323cf564b67da86e21d3cfdff87908bc1223ed5c99bc792713"
+dependencies = [
+ "zune-core",
 ]
