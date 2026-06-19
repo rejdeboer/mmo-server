@@ -1,54 +1,16 @@
-//! # Chat UI
-//!
-//! Implements a WoW-style chatbox in the bottom-left corner of the screen.
-//!
-//! ## Input Flow
-//!
-//! The chat system uses `bevy_enhanced_input` input contexts to toggle between
-//! gameplay and text entry:
-//!
-//! - **Normal gameplay**: The player entity has the `PlayerComponent` input context
-//!   which maps WASD to movement. The `Chatting` context is not active.
-//!
-//! - **Press Enter**: The `OpenChat` action fires. The `Chatting` context is
-//!   activated and `PlayerComponent` context is deactivated. The chat input field
-//!   becomes visible.
-//!
-//! - **Press Enter again**: Fires an `OutgoingChatMessage` with the parsed channel
-//!   and text, clears the input, and swaps back to the `PlayerComponent` context.
-//!
-//! - **Press Escape**: Cancels text entry without sending, swaps back to gameplay.
-//!
-//! ## Chat Channels
-//!
-//! The active channel is selected by typing a prefix command:
-//!
-//! - `/s` or `/say` → Say (default)
-//! - `/y` or `/yell` → Yell
-//! - `/z` or `/zone` → Zone
-//! - `/g` or `/guild` → Guild (social)
-//! - `/p` or `/party` → Party (social)
-//! - `/t` or `/trade` → Trade (social)
-//! - `/w <name>` or `/whisper <name>` → Whisper (social)
-//!
-//! The default channel persists between messages (e.g. if you last typed in
-//! guild chat, pressing Enter again defaults to guild).
-
 use bevy::input::keyboard::{Key, KeyboardInput};
 use bevy::prelude::*;
 use bevy_enhanced_input::prelude::*;
 
-use crate::application::PlayerComponent;
+use crate::core::PlayerComponent;
 use crate::input::Chatting;
-use crate::social::{ChatLog, OutgoingChannel, OutgoingChatMessage};
+use crate::theme::palette;
+use super::routing::{OutgoingChannel, OutgoingChatMessage};
+use super::channels::ChatLog;
 
-/// Chat panel width in pixels.
 const CHAT_PANEL_WIDTH: f32 = 500.0;
-
-/// Maximum messages rendered in the visible chat panel.
 const VISIBLE_MESSAGE_COUNT: usize = 12;
 
-/// Whether the chatbox input field is currently active.
 #[derive(Resource, Default)]
 pub struct ChatInputState {
     pub active: bool,
@@ -56,7 +18,6 @@ pub struct ChatInputState {
     pub channel: ActiveChannel,
 }
 
-/// The active input channel that determines where the next message is sent.
 #[derive(Debug, Clone, Default)]
 pub enum ActiveChannel {
     #[default]
@@ -84,7 +45,6 @@ impl ActiveChannel {
         }
     }
 
-    /// Convert to an outgoing channel for network routing.
     fn to_outgoing(&self) -> OutgoingChannel {
         match self {
             Self::Say => OutgoingChannel::Say,
@@ -100,6 +60,18 @@ impl ActiveChannel {
     }
 }
 
+#[derive(InputAction)]
+#[action_output(bool)]
+pub struct OpenChat;
+
+#[derive(InputAction)]
+#[action_output(bool)]
+pub struct SendChat;
+
+#[derive(InputAction)]
+#[action_output(bool)]
+pub struct CancelChat;
+
 #[derive(Component)]
 pub struct ChatPanel;
 
@@ -112,24 +84,7 @@ pub struct ChatInputField;
 #[derive(Component)]
 pub struct ChatInputContainer;
 
-/// Bound in the `PlayerComponent` context — pressing Enter opens chat.
-#[derive(InputAction)]
-#[action_output(bool)]
-pub struct OpenChat;
-
-/// Bound in the `Chatting` context — pressing Enter sends the message.
-#[derive(InputAction)]
-#[action_output(bool)]
-pub struct SendChat;
-
-/// Bound in the `Chatting` context — pressing Escape cancels input.
-#[derive(InputAction)]
-#[action_output(bool)]
-pub struct CancelChat;
-
-/// Spawns the chat UI. Called from the `on_enter_game` observer.
 pub fn spawn_chat_ui(commands: &mut Commands) {
-    // Root panel — bottom-left corner
     let panel = commands
         .spawn((
             ChatPanel,
@@ -144,7 +99,6 @@ pub fn spawn_chat_ui(commands: &mut Commands) {
         ))
         .id();
 
-    // Message list container
     commands.spawn((
         ChatMessageList,
         Node {
@@ -155,11 +109,10 @@ pub fn spawn_chat_ui(commands: &mut Commands) {
             border_radius: BorderRadius::all(Val::Px(4.0)),
             ..default()
         },
-        BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.4)),
+        BackgroundColor(palette::PANEL_BG),
         ChildOf(panel),
     ));
 
-    // Input row (hidden until chat is opened)
     let input_container = commands
         .spawn((
             ChatInputContainer,
@@ -169,13 +122,12 @@ pub fn spawn_chat_ui(commands: &mut Commands) {
                 border_radius: BorderRadius::all(Val::Px(4.0)),
                 ..default()
             },
-            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.6)),
+            BackgroundColor(palette::PANEL_BG_DARK),
             Visibility::Hidden,
             ChildOf(panel),
         ))
         .id();
 
-    // Input text
     commands.spawn((
         ChatInputField,
         Text::new(""),
@@ -188,11 +140,6 @@ pub fn spawn_chat_ui(commands: &mut Commands) {
     ));
 }
 
-// ---------------------------------------------------------------------------
-// Systems
-// ---------------------------------------------------------------------------
-
-/// Refreshes the chat message list UI from the `ChatLog` resource.
 pub fn update_chat_ui(
     chat_log: Res<ChatLog>,
     q_message_list: Query<Entity, With<ChatMessageList>>,
@@ -206,7 +153,6 @@ pub fn update_chat_ui(
         return;
     };
 
-    // Despawn old message children and rebuild.
     commands.entity(list_entity).despawn_related::<Children>();
 
     let skip = chat_log
@@ -235,7 +181,6 @@ pub fn update_chat_ui(
     });
 }
 
-/// Handles keyboard text input while the chat input field is active.
 pub fn handle_chat_text_input(
     mut char_events: MessageReader<KeyboardInput>,
     mut chat_input: ResMut<ChatInputState>,
@@ -276,17 +221,13 @@ pub fn handle_chat_text_input(
         return;
     }
 
-    // Check if the user typed a channel switch command.
-    // Once detected, switch the active channel and clear the command from the text.
     try_switch_channel(&mut chat_input);
 
-    // Display: prefix + message text
     if let Ok(mut text) = q_input_text.single_mut() {
         **text = format!("{}{}", chat_input.channel.prefix(), chat_input.text);
     }
 }
 
-/// Handles the Enter key while in gameplay mode — opens the chat input.
 pub fn on_open_chat(
     open: On<Start<OpenChat>>,
     mut chat_input: ResMut<ChatInputState>,
@@ -306,13 +247,11 @@ pub fn on_open_chat(
         *vis = Visibility::Inherited;
     }
 
-    // Display the channel prefix as the initial prompt
     if let Ok(mut text) = q_input_text.single_mut() {
         **text = chat_input.channel.prefix();
     }
 }
 
-/// Handles Enter while in chat mode — sends the message and returns to gameplay.
 pub fn on_send_chat(
     send: On<Start<SendChat>>,
     mut chat_input: ResMut<ChatInputState>,
@@ -328,7 +267,6 @@ pub fn on_send_chat(
         });
     }
 
-    // Close the input
     close_chat_input(&mut chat_input, &mut q_input_container);
 
     commands.entity(send.context).insert((
@@ -337,7 +275,6 @@ pub fn on_send_chat(
     ));
 }
 
-/// Handles Escape while in chat mode — cancels input and returns to gameplay.
 pub fn on_cancel_chat(
     cancel: On<Start<CancelChat>>,
     mut chat_input: ResMut<ChatInputState>,
@@ -364,13 +301,9 @@ fn close_chat_input(
     }
 }
 
-/// Checks if the current text starts with a channel-switch command.
-/// If a complete command is detected (e.g. "/g "), switches the active channel
-/// and removes the command from the text buffer.
 fn try_switch_channel(chat_input: &mut ResMut<ChatInputState>) {
     let text = &chat_input.text;
 
-    // Simple channel commands: "/cmd " switches and clears
     let channel_commands: &[(&[&str], ActiveChannel)] = &[
         (&["/s ", "/say "], ActiveChannel::Say),
         (&["/y ", "/yell "], ActiveChannel::Yell),
@@ -390,10 +323,8 @@ fn try_switch_channel(chat_input: &mut ResMut<ChatInputState>) {
         }
     }
 
-    // Whisper: "/w name " or "/whisper name " — needs a target name followed by a space
     for prefix in &["/w ", "/whisper "] {
         if let Some(after_cmd) = text.strip_prefix(prefix) {
-            // Wait until the user has typed the target name and a space after it
             if let Some(space_pos) = after_cmd.find(' ') {
                 let target_name = after_cmd[..space_pos].to_string();
                 let rest = after_cmd[space_pos + 1..].to_string();

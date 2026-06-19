@@ -1,21 +1,15 @@
 use bevy::prelude::*;
 
+use crate::chat::{ChatLog, ChatMessage, ChatMessageChannel};
+use crate::core::NameComponent;
+use crate::networking::CombatHitMessage;
+use crate::theme::palette;
+
 const FLOAT_DURATION: f32 = 1.2;
 const FLOAT_DISTANCE: f32 = 60.0;
 const FLASH_DURATION: f32 = 0.15;
 const FLASH_COLOR: LinearRgba = LinearRgba::new(4.0, 0.2, 0.2, 1.0);
 const TEXT_OFFSET_Y: f32 = -40.0;
-
-/// Internal message for combat hit feedback, emitted by network event handling.
-#[derive(Message)]
-pub struct CombatHitMessage {
-    pub target_entity: Entity,
-    pub amount: i32,
-}
-
-// ---------------------------------------------------------------------------
-// Floating combat text
-// ---------------------------------------------------------------------------
 
 #[derive(Component)]
 pub(crate) struct FloatingCombatText {
@@ -23,21 +17,12 @@ pub(crate) struct FloatingCombatText {
     timer: Timer,
 }
 
-// ---------------------------------------------------------------------------
-// Hit flash
-// ---------------------------------------------------------------------------
-
 #[derive(Component)]
 pub(crate) struct HitFlash {
     timer: Timer,
     original_emissive: LinearRgba,
 }
 
-// ---------------------------------------------------------------------------
-// Systems
-// ---------------------------------------------------------------------------
-
-/// Reads combat hit messages and spawns floating text + applies hit flash.
 pub(crate) fn handle_combat_hits(
     mut commands: Commands,
     mut reader: MessageReader<CombatHitMessage>,
@@ -45,14 +30,13 @@ pub(crate) fn handle_combat_hits(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     for msg in reader.read() {
-        // Spawn floating combat text
         commands.spawn((
             FloatingCombatText {
                 target_entity: msg.target_entity,
                 timer: Timer::from_seconds(FLOAT_DURATION, TimerMode::Once),
             },
             Text::new(format!("{}", msg.amount)),
-            TextColor(Color::srgba(1.0, 0.9, 0.1, 1.0)),
+            TextColor(palette::DAMAGE_TEXT),
             TextFont {
                 font_size: 22.0,
                 ..default()
@@ -63,7 +47,6 @@ pub(crate) fn handle_combat_hits(
             },
         ));
 
-        // Apply hit flash
         if let Ok(material_handle) = q_targets.get(msg.target_entity)
             && let Some(material) = materials.get_mut(&material_handle.0)
         {
@@ -78,7 +61,6 @@ pub(crate) fn handle_combat_hits(
     }
 }
 
-/// Animates floating combat text: floats upward, fades out, then despawns.
 pub(crate) fn update_floating_combat_text(
     mut commands: Commands,
     time: Res<Time>,
@@ -100,7 +82,6 @@ pub(crate) fn update_floating_combat_text(
 
         let progress = fct.timer.fraction();
 
-        // Fade out over the last 40% of lifetime
         let alpha = if progress > 0.6 {
             1.0 - (progress - 0.6) / 0.4
         } else {
@@ -108,13 +89,11 @@ pub(crate) fn update_floating_combat_text(
         };
         text_color.0 = Color::srgba(1.0, 0.9, 0.1, alpha);
 
-        // Position: project target world position to screen, float upward
         let Ok(target_transform) = targets.get(fct.target_entity) else {
             commands.entity(entity).despawn();
             continue;
         };
 
-        // Offset above the entity's head (capsule height ~4 units)
         let world_pos = target_transform.translation() + Vec3::Y * 4.5;
 
         let Ok(viewport_pos) = camera.world_to_viewport(camera_global, world_pos) else {
@@ -129,7 +108,6 @@ pub(crate) fn update_floating_combat_text(
     }
 }
 
-/// Ticks hit flash timers and restores original material emissive when done.
 pub(crate) fn update_hit_flash(
     mut commands: Commands,
     time: Res<Time>,
@@ -145,5 +123,24 @@ pub(crate) fn update_hit_flash(
             }
             commands.entity(entity).remove::<HitFlash>();
         }
+    }
+}
+
+pub(crate) fn log_combat_hits(
+    mut reader: MessageReader<CombatHitMessage>,
+    q_names: Query<&NameComponent>,
+    mut chat_log: ResMut<ChatLog>,
+) {
+    for msg in reader.read() {
+        let target_name = q_names
+            .get(msg.target_entity)
+            .map(|n| n.0.as_str())
+            .unwrap_or("Unknown");
+
+        chat_log.push(ChatMessage {
+            channel: ChatMessageChannel::Combat,
+            sender: String::new(),
+            text: format!("{target_name} takes {amount} damage", amount = msg.amount),
+        });
     }
 }

@@ -1,16 +1,15 @@
 pub mod application;
-mod camera;
+mod chat;
 pub mod combat;
-pub mod combat_feedback;
 pub mod configuration;
+pub mod core;
 mod input;
 pub mod movement;
-mod network;
-mod player_frame;
-pub mod social;
-pub mod target;
-pub mod tick_sync;
-mod ui;
+mod networking;
+mod party;
+mod theme;
 pub mod util;
+mod web;
+mod world;
 
 pub use util::decode_token;

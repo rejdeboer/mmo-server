@@ -1,3 +1,4 @@
+use super::IsAttacking;
 use crate::input::EscapePressed;
 use bevy::prelude::*;
 use bevy_enhanced_input::prelude::*;
@@ -9,11 +10,6 @@ use protocol::client::PlayerAction;
 #[derive(Event)]
 pub struct AttackTarget(pub Entity);
 
-/// Tracks whether the local player is currently auto-attacking.
-#[derive(Resource, Default)]
-pub struct IsAttacking(pub bool);
-
-/// Observer that sends StartAttack to the server when AttackTarget is triggered.
 pub fn on_attack_target(
     event: On<AttackTarget>,
     network_ids: Query<&NetworkId>,
@@ -33,8 +29,6 @@ pub fn on_attack_target(
     is_attacking.0 = true;
 }
 
-/// Observer for the Escape key. Stops attack if currently attacking,
-/// otherwise will open the options menu (TODO).
 pub fn on_escape(
     _event: On<Start<EscapePressed>>,
     mut is_attacking: ResMut<IsAttacking>,

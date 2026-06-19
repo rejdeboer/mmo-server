@@ -2,16 +2,14 @@ use bevy::picking::events::{Click, Pointer};
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 
-use crate::application::{NameComponent, PlayerComponent};
-use crate::social::SocialSender;
-use crate::ui::{ContextMenu, UnitFrameConfig, context_menu, unit_frame};
+use crate::core::{NameComponent, PlayerComponent};
+use crate::web::SocialSender;
+use crate::theme::widgets::{self, ContextMenu, UnitFrameConfig};
 use game_core::components::{LevelComponent, Vitals};
 
-/// Marker to identify the player-specific unit frame.
 #[derive(Component)]
 pub(crate) struct PlayerUnitFrame;
 
-/// Spawns the player unit frame. Called once when entering the game.
 pub(crate) fn spawn_player_unit_frame(
     player: Query<(Entity, &NameComponent, &LevelComponent, &Vitals), With<PlayerComponent>>,
     existing_frame: Query<Entity, With<PlayerUnitFrame>>,
@@ -33,11 +31,10 @@ pub(crate) fn spawn_player_unit_frame(
 
     let config = UnitFrameConfig::player(player_entity);
     let frame_entity =
-        unit_frame::spawn_unit_frame(&mut commands, &config, &name.0, level.0, health_pct);
+        widgets::spawn_unit_frame(&mut commands, &config, &name.0, level.0, health_pct);
     commands.entity(frame_entity).insert(PlayerUnitFrame);
 }
 
-/// Shows a context menu on right-click of the player unit frame.
 pub(crate) fn handle_player_context_menu(
     mouse_button: Res<ButtonInput<MouseButton>>,
     windows: Query<&Window, With<PrimaryWindow>>,
@@ -49,10 +46,8 @@ pub(crate) fn handle_player_context_menu(
         return;
     }
 
-    // Close any existing context menu first
-    context_menu::despawn_context_menu(&mut commands, &existing_menu);
+    widgets::despawn_context_menu(&mut commands, &existing_menu);
 
-    // Check if cursor is hovering over the player unit frame
     let is_hovering = unit_frame_interaction
         .iter()
         .any(|i| *i != Interaction::None);
@@ -67,13 +62,13 @@ pub(crate) fn handle_player_context_menu(
         return;
     };
 
-    let menu_entity = context_menu::spawn_context_menu(&mut commands, cursor_pos);
+    let menu_entity = widgets::spawn_context_menu(&mut commands, cursor_pos);
 
     let leave_party_btn =
-        context_menu::spawn_context_menu_button(&mut commands, menu_entity, "Leave Party");
+        widgets::spawn_context_menu_button(&mut commands, menu_entity, "Leave Party");
     commands.entity(leave_party_btn).observe(on_leave_party_click);
 
-    let logout_btn = context_menu::spawn_context_menu_button(&mut commands, menu_entity, "Logout");
+    let logout_btn = widgets::spawn_context_menu_button(&mut commands, menu_entity, "Logout");
     commands.entity(logout_btn).observe(on_logout_click);
 }
 
@@ -91,7 +86,7 @@ fn on_leave_party_click(
         }
     }
 
-    context_menu::despawn_context_menu(&mut commands, &context_menu_q);
+    widgets::despawn_context_menu(&mut commands, &context_menu_q);
 }
 
 fn on_logout_click(
@@ -99,7 +94,7 @@ fn on_logout_click(
     context_menu_q: Query<Entity, With<ContextMenu>>,
     mut commands: Commands,
 ) {
-    context_menu::despawn_context_menu(&mut commands, &context_menu_q);
+    widgets::despawn_context_menu(&mut commands, &context_menu_q);
     // TODO: Transition to character select / disconnect properly
     std::process::exit(0);
 }

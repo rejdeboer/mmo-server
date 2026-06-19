@@ -1,10 +1,11 @@
 use crate::{
-    application::{ActorDespawnMessage, ActorSpawnMessage, AppState, EnterGame, PlayerComponent},
-    combat_feedback::CombatHitMessage,
-    social::{ChatLog, ChatMessage, ChatMessageChannel},
-    tick_sync::TickSync,
-    ui::cast_bar::ActiveCast,
+    application::{AppState, EnterGame},
+    chat::{ChatLog, ChatMessage, ChatMessageChannel},
+    combat::cast_bar::ActiveCast,
+    core::PlayerComponent,
 };
+use super::messages::*;
+use super::tick_sync::TickSync;
 use bevy::{ecs::system::SystemParam, platform::collections::HashMap, prelude::*};
 use bevy_renet::{RenetClient, renet::DefaultChannel};
 use game_core::{
@@ -15,35 +16,6 @@ use protocol::server::{EnterGameResponse, ServerEvent};
 
 #[derive(Resource)]
 pub struct NetworkIdMapping(pub HashMap<NetworkId, Entity>);
-
-#[derive(Message)]
-pub struct SpellImpactMessage {
-    pub target_id: u64,
-    pub spell_id: u32,
-    pub impact_amount: i32,
-}
-
-#[derive(Message)]
-pub struct ActorDeathMessage(pub u64);
-
-#[derive(Message)]
-pub struct StartCastingMessage {
-    pub actor_id: u64,
-    pub spell_id: u32,
-}
-
-#[derive(Message)]
-pub struct KillRewardMessage {
-    pub victim_id: u64,
-    pub loot: Vec<protocol::models::ItemDrop>,
-}
-
-#[derive(Message)]
-pub struct ServerChatMessage {
-    pub channel: protocol::models::ChatChannel,
-    pub sender_name: String,
-    pub text: String,
-}
 
 #[derive(SystemParam)]
 pub struct NetworkMessageWriters<'w> {

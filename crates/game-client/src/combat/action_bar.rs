@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_enhanced_input::prelude::ContextActivity;
 use bevy_renet::{RenetClient, renet::DefaultChannel};
 use game_core::{
     components::NetworkId,
@@ -7,10 +8,10 @@ use game_core::{
 use protocol::client::PlayerAction;
 use std::collections::HashMap;
 
-use crate::application::KnownAbilities;
-use crate::target::SelectedTarget;
-
-use super::ChatInputState;
+use crate::core::PlayerComponent;
+use crate::theme::palette;
+use super::KnownAbilities;
+use crate::world::selection::SelectedTarget;
 
 /// Client-side cooldown tracking per spell_id.
 #[derive(Resource, Default)]
@@ -20,14 +21,13 @@ pub struct AbilityCooldowns(pub HashMap<u32, Timer>);
 #[derive(Component)]
 pub struct ActionBar;
 
-/// Attached to each ability slot button. Holds the spell_id and slot index.
+/// Attached to each ability slot button.
 #[derive(Component)]
 pub struct AbilitySlot {
     pub spell_id: u32,
     pub slot_index: usize,
 }
 
-/// Marker on the keybind label inside a slot.
 #[derive(Component)]
 struct AbilitySlotKeybind;
 
@@ -48,11 +48,10 @@ const KEYBINDS: &[KeyCode] = &[
     KeyCode::Digit9,
 ];
 
-const SLOT_COLOR: Color = Color::srgba(0.2, 0.2, 0.2, 0.9);
-const SLOT_HOVER_COLOR: Color = Color::srgba(0.3, 0.3, 0.3, 0.9);
-const SLOT_COOLDOWN_COLOR: Color = Color::srgba(0.1, 0.1, 0.1, 0.9);
+const SLOT_COLOR: Color = palette::SLOT_BG;
+const SLOT_HOVER_COLOR: Color = palette::SLOT_HOVER;
+const SLOT_COOLDOWN_COLOR: Color = palette::SLOT_COOLDOWN;
 
-/// Spawns the action bar when KnownAbilities and SpellLibrary are available.
 pub fn spawn_action_bar(
     existing: Query<Entity, With<ActionBar>>,
     known: Res<KnownAbilities>,
@@ -109,7 +108,7 @@ pub fn spawn_action_bar(
                 border_radius: BorderRadius::all(Val::Px(6.0)),
                 ..default()
             },
-            BackgroundColor(Color::srgba(0.1, 0.1, 0.1, 0.85)),
+            BackgroundColor(palette::FRAME_BG),
         ))
         .with_children(|bar| {
             for (slot_index, spell_id, visual_id) in &spells {
@@ -136,7 +135,6 @@ pub fn spawn_action_bar(
                     ImageNode::new(icon_handle),
                 ))
                 .with_children(|slot| {
-                    // Keybind number in the bottom-right corner
                     slot.spawn((
                         AbilitySlotKeybind,
                         Text::new(keybind_label.clone()),
@@ -151,10 +149,9 @@ pub fn spawn_action_bar(
         });
 }
 
-/// Reads number keys 1-9 and sends CastSpell to the server.
 pub fn handle_ability_input(
     keyboard: Res<ButtonInput<KeyCode>>,
-    chat_state: Res<ChatInputState>,
+    player_activity: Query<&ContextActivity<PlayerComponent>>,
     selected: Res<SelectedTarget>,
     known: Res<KnownAbilities>,
     targets: Query<&NetworkId>,
@@ -163,7 +160,10 @@ pub fn handle_ability_input(
     mut cooldowns: ResMut<AbilityCooldowns>,
     mut client: ResMut<RenetClient>,
 ) {
-    if chat_state.active {
+    let Ok(activity) = player_activity.single() else {
+        return;
+    };
+    if !**activity {
         return;
     }
 
@@ -197,7 +197,6 @@ pub fn handle_ability_input(
     }
 }
 
-/// Handles mouse clicks on ability slot buttons.
 pub fn handle_ability_click(
     slots: Query<(&Interaction, &AbilitySlot), Changed<Interaction>>,
     selected: Res<SelectedTarget>,
@@ -267,14 +266,12 @@ fn cast_spell(
     }
 }
 
-/// Ticks all client-side ability cooldown timers.
 pub fn tick_cooldowns(time: Res<Time>, mut cooldowns: ResMut<AbilityCooldowns>) {
     for timer in cooldowns.0.values_mut() {
         timer.tick(time.delta());
     }
 }
 
-/// Updates slot background color based on cooldown and hover state.
 pub fn update_slot_visuals(
     cooldowns: Res<AbilityCooldowns>,
     mut slots: Query<(&AbilitySlot, &Interaction, &mut BackgroundColor)>,

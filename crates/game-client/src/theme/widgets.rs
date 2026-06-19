@@ -1,20 +1,16 @@
-//! # Unit Frame UI
-//!
-//! A reusable unit frame widget that displays an entity's name, level, and
-//! health bar. Used for target frames, player frames, party frames, etc.
-//!
-//! ## Usage
-//!
-//! Spawn a unit frame by calling [`spawn_unit_frame`] with a
-//! [`UnitFrameConfig`] describing the tracked entity and positioning. The
-//! [`update_unit_frames`] system automatically keeps all frames in sync with
-//! their tracked entity's current stats. If the tracked entity is despawned,
-//! the frame is automatically removed.
+//! Reusable UI widgets: unit frames and context menus.
 
+use bevy::picking::events::{Out, Over, Pointer};
 use bevy::prelude::*;
 
-use crate::application::NameComponent;
+use crate::core::NameComponent;
 use game_core::components::{LevelComponent, Vitals};
+
+use super::palette;
+
+// ---------------------------------------------------------------------------
+// Unit Frame
+// ---------------------------------------------------------------------------
 
 /// Tracks which entity this unit frame displays.
 #[derive(Component)]
@@ -107,7 +103,7 @@ pub fn spawn_unit_frame(
                 border_radius: BorderRadius::all(Val::Px(4.0)),
                 ..default()
             },
-            BackgroundColor(Color::srgba(0.1, 0.1, 0.1, 0.85)),
+            BackgroundColor(palette::FRAME_BG),
         ))
         .with_children(|parent| {
             // Name + level row
@@ -131,7 +127,7 @@ pub fn spawn_unit_frame(
                     row.spawn((
                         UnitFrameLevel,
                         Text::new(format!("Lv. {}", level)),
-                        TextColor(Color::srgb(0.8, 0.8, 0.2)),
+                        TextColor(palette::LEVEL_COLOR),
                         TextFont {
                             font_size: 12.0,
                             ..default()
@@ -148,7 +144,7 @@ pub fn spawn_unit_frame(
                         border_radius: BorderRadius::all(Val::Px(2.0)),
                         ..default()
                     },
-                    BackgroundColor(Color::srgb(0.2, 0.0, 0.0)),
+                    BackgroundColor(palette::HP_BG),
                 ))
                 .with_children(|bar_bg| {
                     bar_bg.spawn((
@@ -159,7 +155,7 @@ pub fn spawn_unit_frame(
                             border_radius: BorderRadius::all(Val::Px(2.0)),
                             ..default()
                         },
-                        BackgroundColor(Color::srgb(0.1, 0.7, 0.1)),
+                        BackgroundColor(palette::HP_GREEN),
                     ));
                 });
         })
@@ -189,7 +185,6 @@ pub fn update_unit_frames(
             0.0
         };
 
-        // Walk the frame's descendants to find the marker components
         for child in frame_children.iter() {
             if let Ok(mut text) = name_texts.get_mut(child) {
                 **text = name.0.clone();
@@ -198,7 +193,6 @@ pub fn update_unit_frames(
                 **text = format!("Lv. {}", level.0);
             }
 
-            // The health bar is nested deeper (frame -> bar_bg -> bar_fill)
             if let Ok(grandchildren) = children_query.get(child) {
                 for grandchild in grandchildren.iter() {
                     if let Ok(mut text) = name_texts.get_mut(grandchild) {
@@ -213,5 +207,93 @@ pub fn update_unit_frames(
                 }
             }
         }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Context Menu
+// ---------------------------------------------------------------------------
+
+/// Marker for the context menu root node.
+#[derive(Component)]
+pub struct ContextMenu;
+
+/// Marker for context menu buttons.
+#[derive(Component)]
+pub struct ContextMenuButton;
+
+/// Despawns any existing context menu.
+pub fn despawn_context_menu(commands: &mut Commands, existing: &Query<Entity, With<ContextMenu>>) {
+    for entity in existing.iter() {
+        commands.entity(entity).despawn();
+    }
+}
+
+/// Spawns a context menu at the given screen position.
+pub fn spawn_context_menu(commands: &mut Commands, position: Vec2) -> Entity {
+    commands
+        .spawn((
+            ContextMenu,
+            Node {
+                position_type: PositionType::Absolute,
+                left: Val::Px(position.x),
+                top: Val::Px(position.y),
+                flex_direction: FlexDirection::Column,
+                min_width: Val::Px(150.0),
+                padding: UiRect::all(Val::Px(4.0)),
+                border_radius: BorderRadius::all(Val::Px(4.0)),
+                ..default()
+            },
+            BackgroundColor(palette::CONTEXT_MENU_BG),
+            ZIndex(100),
+            Pickable::IGNORE,
+        ))
+        .id()
+}
+
+/// Spawns a button inside a context menu. Returns the button entity so the
+/// caller can attach their own click observer.
+pub fn spawn_context_menu_button(
+    commands: &mut Commands,
+    menu_entity: Entity,
+    label: &str,
+) -> Entity {
+    commands
+        .spawn((
+            ContextMenuButton,
+            Button,
+            Node {
+                padding: UiRect::axes(Val::Px(12.0), Val::Px(6.0)),
+                border_radius: BorderRadius::all(Val::Px(2.0)),
+                ..default()
+            },
+            BackgroundColor(Color::NONE),
+            ChildOf(menu_entity),
+        ))
+        .with_children(|btn| {
+            btn.spawn((
+                Text::new(label),
+                TextColor(Color::WHITE),
+                TextFont {
+                    font_size: 13.0,
+                    ..default()
+                },
+                Pickable::IGNORE,
+            ));
+        })
+        .observe(on_button_hover_start)
+        .observe(on_button_hover_end)
+        .id()
+}
+
+fn on_button_hover_start(event: On<Pointer<Over>>, mut bg_query: Query<&mut BackgroundColor>) {
+    if let Ok(mut bg) = bg_query.get_mut(event.event_target()) {
+        *bg = BackgroundColor(palette::CONTEXT_MENU_HOVER);
+    }
+}
+
+fn on_button_hover_end(event: On<Pointer<Out>>, mut bg_query: Query<&mut BackgroundColor>) {
+    if let Ok(mut bg) = bg_query.get_mut(event.event_target()) {
+        *bg = BackgroundColor(Color::NONE);
     }
 }

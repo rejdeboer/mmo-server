@@ -1,10 +1,9 @@
 use bevy::prelude::*;
 
+use crate::theme::palette;
 use super::action_bar::BAR_BOTTOM;
 
 /// Tracks an in-progress cast for the local player.
-/// Inserted when the server confirms a cast via StartCasting,
-/// removed when the cast timer completes.
 #[derive(Resource)]
 pub struct ActiveCast {
     pub spell_id: u32,
@@ -12,25 +11,19 @@ pub struct ActiveCast {
     pub timer: Timer,
 }
 
-/// Marker on the cast bar root node.
 #[derive(Component)]
 pub struct CastBar;
 
-/// Marker on the cast bar fill node.
 #[derive(Component)]
 pub(crate) struct CastBarFill;
 
-/// Marker on the cast bar spell name text.
 #[derive(Component)]
 pub(crate) struct CastBarText;
 
 const CAST_BAR_WIDTH: f32 = 250.0;
 const CAST_BAR_HEIGHT: f32 = 24.0;
-// Positioned above the action bar
 const CAST_BAR_BOTTOM: f32 = BAR_BOTTOM + 50.0 + 16.0 + 10.0;
 
-/// Manages the cast bar lifecycle. Spawns it when ActiveCast appears with a
-/// non-zero casting duration, despawns it when ActiveCast is removed.
 pub fn manage_cast_bar(
     active_cast: Option<Res<ActiveCast>>,
     existing: Query<Entity, With<CastBar>>,
@@ -42,7 +35,6 @@ pub fn manage_cast_bar(
                 return;
             }
 
-            // Despawn any stale cast bar
             for entity in existing.iter() {
                 commands.entity(entity).despawn();
             }
@@ -67,10 +59,9 @@ pub fn manage_cast_bar(
                         border_radius: BorderRadius::all(Val::Px(4.0)),
                         ..default()
                     },
-                    BackgroundColor(Color::srgba(0.1, 0.1, 0.1, 0.85)),
+                    BackgroundColor(palette::FRAME_BG),
                 ))
                 .with_children(|bar| {
-                    // Progress fill
                     bar.spawn((
                         CastBarFill,
                         Node {
@@ -82,10 +73,9 @@ pub fn manage_cast_bar(
                             border_radius: BorderRadius::all(Val::Px(4.0)),
                             ..default()
                         },
-                        BackgroundColor(Color::srgba(0.8, 0.6, 0.1, 0.8)),
+                        BackgroundColor(palette::CAST_BAR_FILL),
                     ));
 
-                    // Spell name centered over the bar
                     bar.spawn((
                         CastBarText,
                         Node {
@@ -115,8 +105,6 @@ pub fn manage_cast_bar(
     }
 }
 
-/// Ticks the active cast timer and updates the cast bar fill width.
-/// Removes ActiveCast when the timer finishes.
 pub fn update_cast_bar(
     time: Res<Time>,
     mut active_cast: Option<ResMut<ActiveCast>>,

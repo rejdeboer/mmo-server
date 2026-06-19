@@ -1,25 +1,18 @@
 use crate::{
-    camera::{self, ThirdPersonCamera},
+    chat::{self, CancelChat, OpenChat, SendChat},
     combat,
-    combat_feedback::{self, CombatHitMessage},
     configuration::Settings,
+    core::{ActorBundle, PlayerComponent},
     input::{Chatting, EscapePressed, Movement},
-    movement::{self, PredictionHistory, RemoteInterpolation},
-    network::{
-        self, ActorDeathMessage, KillRewardMessage, NetworkIdMapping, ServerChatMessage,
-        SpellImpactMessage, StartCastingMessage, poll_connection, receive_server_events,
-    },
-    player_frame,
-    social::{self, ChatLog, SocialReceiver, SocialSender},
-    target::{self, SelectedTarget},
-    tick_sync::{self, TickSync},
-    ui::{
-        self, CancelChat, ChatInputState, OpenChat, SendChat, action_bar, cast_bar,
-        on_cancel_chat, on_open_chat, on_send_chat,
-    },
+    movement::{self, PredictionHistory},
+    networking::{self, NetworkIdMapping},
+    party,
+    theme,
+    web,
+    world::{self, camera::ThirdPersonCamera, DebugActorMesh},
 };
 use avian3d::prelude::*;
-use bevy::{gltf::GltfLoaderSettings, platform::collections::HashMap, prelude::*};
+use bevy::{platform::collections::HashMap, prelude::*};
 use bevy_common_assets::ron::RonAssetPlugin;
 use bevy_enhanced_input::prelude::{Press, *};
 use bevy_renet::{
@@ -29,12 +22,10 @@ use bevy_renet::{
 };
 use game_core::{
     character_controller::CharacterVelocityY,
-    collision::GameLayer,
-    components::{LevelComponent, MovementSpeedComponent, NetworkId, Vitals},
-    constants::BASE_MOVEMENT_SPEED,
-    spells::{SpellLibrary, SpellLibraryHandle},
+    components::{NetworkId, Vitals},
+    spells::SpellLibrary,
 };
-use protocol::{models::Actor, server::EnterGameResponse};
+use protocol::server::EnterGameResponse;
 use std::{net::UdpSocket, time::SystemTime};
 use web_client::WebClient;
 
@@ -50,62 +41,6 @@ pub struct WebApi(pub WebClient);
 
 #[derive(Event)]
 pub struct EnterGame(pub EnterGameResponse);
-
-/// The spell IDs the player's character knows, received from the server on login.
-#[derive(Resource)]
-pub struct KnownAbilities(pub Vec<u32>);
-
-#[derive(Component)]
-pub struct PlayerComponent;
-
-/// Shared capsule mesh handle used for debug placeholder rendering of all actors.
-#[derive(Resource)]
-pub struct DebugActorMesh(pub Handle<Mesh>);
-
-/// Inserted once the world GLTF's `ColliderConstructorHierarchy` has finished
-/// building trimesh colliders. Movement systems are gated on this resource so
-/// characters don't fall through a not-yet-loaded floor.
-#[derive(Resource)]
-pub struct WorldReady;
-
-#[derive(Component)]
-pub struct NameComponent(pub String);
-
-#[derive(Message)]
-pub struct ActorSpawnMessage(pub Actor);
-
-#[derive(Message)]
-pub struct ActorDespawnMessage(pub NetworkId);
-
-#[derive(Bundle)]
-pub struct ActorBundle {
-    name: NameComponent,
-    transform: Transform,
-    vitals: Vitals,
-    movement_speed: MovementSpeedComponent,
-    level: LevelComponent,
-    body: RigidBody,
-    collider: Collider,
-    collision_layers: CollisionLayers,
-}
-
-impl ActorBundle {
-    pub fn new(name: &str, transform: Transform, vitals: Vitals, level: i32) -> Self {
-        Self {
-            name: NameComponent(name.to_string()),
-            transform,
-            vitals: vitals.clone(),
-            movement_speed: MovementSpeedComponent(BASE_MOVEMENT_SPEED),
-            level: LevelComponent(level),
-            body: RigidBody::Kinematic,
-            collider: Collider::capsule(1., 2.),
-            collision_layers: CollisionLayers::new(
-                GameLayer::Player,
-                [GameLayer::Default, GameLayer::Ground],
-            ),
-        }
-    }
-}
 
 /// Function used for testing to skip the login page
 pub fn create_authenticated_app(
@@ -124,6 +59,17 @@ pub fn create_authenticated_app(
     app.add_plugins(EnhancedInputPlugin);
     app.add_plugins(RonAssetPlugin::<SpellLibrary>::new(&["spells.ron"]));
 
+    app.add_plugins((
+        networking::NetworkingPlugin,
+        web::WebPlugin,
+        theme::ThemePlugin,
+        movement::MovementPlugin,
+        combat::CombatPlugin,
+        world::WorldPlugin,
+        chat::ChatPlugin,
+        party::PartyPlugin,
+    ));
+
     app.add_input_context::<PlayerComponent>();
     app.add_input_context::<Chatting>();
 
@@ -132,149 +78,11 @@ pub fn create_authenticated_app(
     app.insert_resource(RenetClient::new(ConnectionConfig::default()));
     let transport = create_renet_transport(ClientAuthentication::Secure { connect_token });
     app.insert_resource(transport);
-    app.insert_resource(ChatLog::default());
-    app.insert_resource(ChatInputState::default());
-    app.insert_resource(SocialSender(None));
-    app.insert_resource(SocialReceiver(None));
-    app.insert_resource(SelectedTarget::default());
-    app.insert_resource(target::ClickTracker::default());
-    app.insert_resource(target::CursorOverUi::default());
-    app.insert_resource(combat::IsAttacking::default());
 
-    app.add_message::<ActorSpawnMessage>();
-    app.add_message::<ActorDespawnMessage>();
-    app.add_message::<CombatHitMessage>();
-    app.add_message::<SpellImpactMessage>();
-    app.add_message::<ActorDeathMessage>();
-    app.add_message::<StartCastingMessage>();
-    app.add_message::<KillRewardMessage>();
-    app.add_message::<ServerChatMessage>();
-
-    app.add_observer(on_enter_game)
-        .add_observer(on_send_chat)
-        .add_observer(on_cancel_chat)
-        .add_observer(on_open_chat)
-        .add_observer(social::route_outgoing_chat)
-        .add_observer(combat::on_attack_target)
-        .add_observer(combat::on_escape);
+    app.add_observer(on_enter_game);
 
     app.insert_state(AppState::Connecting);
     app.insert_resource(Time::<Fixed>::from_hz(game_core::constants::TICK_RATE_HZ));
-
-    app.add_systems(Startup, social::connect_social);
-
-    app.add_systems(
-        Update,
-        poll_connection.run_if(in_state(AppState::Connecting)),
-    );
-
-    // Input processing and tick sync run in FixedPreUpdate, before physics,
-    // mirroring the server's schedule.
-    // Tick sync always runs; movement prediction is gated on WorldReady so
-    // characters don't fall through the floor before colliders are built.
-    app.add_systems(
-        FixedPreUpdate,
-        (tick_sync::increment_tick, tick_sync::send_ping).run_if(in_state(AppState::InGame)),
-    );
-    app.add_systems(
-        FixedPreUpdate,
-        movement::predict_player_movement
-            .after(tick_sync::increment_tick)
-            .run_if(in_state(AppState::InGame)),
-    );
-
-    // After physics has stepped, send input to server.
-    app.add_systems(
-        FixedPostUpdate,
-        movement::send_player_input
-            .after(PhysicsSystems::Last)
-            .run_if(in_state(AppState::InGame)),
-    );
-
-    // Reconciliation and tick rate adjustment run every render frame.
-    // Remote entity interpolation also runs here for smooth visual movement.
-    // Note: Local player visual interpolation is handled by avian3d's built-in
-    // TransformInterpolation (enabled via interpolate_all above).
-    app.add_systems(
-        Update,
-        (
-            movement::reconcile_with_server,
-            receive_server_events,
-            tick_sync::adjust_tick_rate,
-            movement::interpolate_remote_actors,
-            handle_actor_spawn_messages,
-            handle_actor_despawn_messages,
-            network::handle_spell_impacts,
-            network::handle_actor_deaths,
-            network::handle_start_casting,
-            network::handle_kill_rewards,
-            network::handle_server_chat,
-        )
-            .run_if(in_state(AppState::InGame)),
-    );
-    app.add_systems(
-        Update,
-        (
-            target::update_cursor_over_ui,
-            camera::camera_input,
-            camera::manage_cursor_grab,
-            camera::update_camera_transform,
-        )
-            .chain()
-            .run_if(in_state(AppState::InGame)),
-    );
-    app.add_systems(
-        Update,
-        (
-            ui::handle_chat_text_input,
-            ui::update_chat_ui,
-            social::poll_social_events,
-        )
-            .run_if(in_state(AppState::InGame)),
-    );
-    app.add_systems(
-        Update,
-        (
-            target::handle_target_selection,
-            target::manage_target_unit_frame,
-            target::sync_target_unit_frame,
-            target::handle_target_context_menu,
-            player_frame::spawn_player_unit_frame,
-            player_frame::handle_player_context_menu,
-            ui::unit_frame::update_unit_frames,
-        )
-            .run_if(in_state(AppState::InGame)),
-    );
-    app.add_systems(
-        Update,
-        target::clear_despawned_target.run_if(in_state(AppState::InGame)),
-    );
-    app.add_systems(
-        Update,
-        (
-            combat_feedback::handle_combat_hits,
-            combat_feedback::update_floating_combat_text,
-            combat_feedback::update_hit_flash,
-        )
-            .run_if(in_state(AppState::InGame)),
-    );
-    app.add_systems(
-        Update,
-        (
-            action_bar::spawn_action_bar,
-            action_bar::handle_ability_input,
-            action_bar::handle_ability_click,
-            action_bar::tick_cooldowns,
-            action_bar::update_slot_visuals,
-            cast_bar::manage_cast_bar,
-            cast_bar::update_cast_bar,
-        )
-            .run_if(in_state(AppState::InGame)),
-    );
-
-    // app.add_systems(FixedPostUpdate, ().after(PhysicsSystems::Last));
-
-    app.add_systems(Startup, setup_world);
 
     app
 }
@@ -293,7 +101,6 @@ fn on_enter_game(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    assets: Res<AssetServer>,
 ) {
     tracing::info!("entering game");
     let response = &event.0;
@@ -301,20 +108,6 @@ fn on_enter_game(
     let transform = Transform::from_translation(player_actor.transform.position)
         .with_rotation(player_actor.transform.get_quat());
 
-    commands.insert_resource(TickSync::new(response.server_tick));
-    commands.insert_resource(KnownAbilities(response.known_abilities.clone()));
-    commands.insert_resource(action_bar::AbilityCooldowns::default());
-
-    let spells_handle = assets.load::<SpellLibrary>("spells.ron");
-    commands.insert_resource(SpellLibraryHandle(spells_handle));
-    tracing::info!(
-        server_tick = ?response.server_tick,
-        "initial tick sync established"
-    );
-
-    // Debug placeholder mesh: capsule matching Collider::capsule(1., 2.)
-    // Total height = 2 (cylinder) + 2*1 (hemispheres) = 4 units.
-    // Mesh is centered at origin, so it aligns with the collider.
     let capsule_mesh = meshes.add(Capsule3d::new(1.0, 2.0));
     let player_material = materials.add(StandardMaterial {
         base_color: Color::srgb(0.2, 0.7, 0.2),
@@ -368,7 +161,6 @@ fn on_enter_game(
     ));
     let player_entity_id = player_entity.id();
 
-    // Store the capsule mesh handle as a resource so remote actors can reuse it.
     commands.insert_resource(DebugActorMesh(capsule_mesh));
 
     commands.spawn((
@@ -381,92 +173,4 @@ fn on_enter_game(
     let network_id_mapping = HashMap::from([(network_id, player_entity_id)]);
     commands.insert_resource(NetworkIdMapping(network_id_mapping));
     tracing::info!("spawned player");
-
-    // Spawn the chat UI panel
-    ui::spawn_chat_ui(&mut commands);
-}
-
-fn setup_world(mut commands: Commands, assets: Res<AssetServer>) {
-    commands.spawn((
-        SceneRoot(
-            assets.load_with_settings("world.gltf#Scene0", |s: &mut GltfLoaderSettings| {
-                s.load_cameras = false;
-                s.load_lights = false;
-                s.load_animations = false;
-            }),
-        ),
-        // TODO: We are trying to match Godot here to make it work, but this is hacky
-        Transform::from_xyz(0., -3., 0.),
-        RigidBody::Static,
-        ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
-    ));
-
-    // Directional sunlight.
-    commands.spawn((
-        DirectionalLight {
-            illuminance: 10_000.0,
-            shadows_enabled: true,
-            ..default()
-        },
-        Transform::from_rotation(Quat::from_euler(EulerRot::XYZ, -0.8, 0.4, 0.0)),
-    ));
-}
-
-pub fn handle_actor_spawn_messages(
-    mut reader: MessageReader<ActorSpawnMessage>,
-    mut network_id_mapping: ResMut<NetworkIdMapping>,
-    debug_mesh: Res<DebugActorMesh>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    mut commands: Commands,
-) {
-    for message in reader.read() {
-        let actor = &message.0;
-        let transform = Transform::from_translation(actor.transform.position)
-            .with_rotation(actor.transform.get_quat());
-
-        let base_color = match &actor.attributes {
-            protocol::models::ActorAttributes::Player { .. } => Color::srgb(0.2, 0.4, 0.8),
-            protocol::models::ActorAttributes::Npc { .. } => Color::srgb(0.7, 0.2, 0.2),
-        };
-        let remote_material = materials.add(StandardMaterial {
-            base_color,
-            ..default()
-        });
-
-        let entity = commands.spawn((
-            RemoteInterpolation::default(),
-            // Disable avian's built-in transform easing for remote entities.
-            // Their visual position is driven by our RemoteInterpolation buffer
-            // (server snapshot interpolation), not by physics simulation.
-            NoTransformEasing,
-            NetworkId(actor.id),
-            ActorBundle::new(
-                &actor.name,
-                transform,
-                Vitals::from(actor.vitals.clone()),
-                actor.level as i32,
-            ),
-            Mesh3d(debug_mesh.0.clone()),
-            MeshMaterial3d(remote_material),
-        ));
-        network_id_mapping
-            .0
-            .insert(NetworkId(actor.id), entity.id());
-    }
-}
-
-pub fn handle_actor_despawn_messages(
-    mut reader: MessageReader<ActorDespawnMessage>,
-    mut network_id_mapping: ResMut<NetworkIdMapping>,
-    mut commands: Commands,
-) {
-    for message in reader.read() {
-        let Some(entity) = network_id_mapping.0.get(&message.0) else {
-            tracing::debug!(network_id = ?message.0, "tried to despawn actor, but it did not exist");
-            continue;
-        };
-
-        commands.entity(*entity).despawn();
-        network_id_mapping.0.remove(&message.0);
-    }
 }
