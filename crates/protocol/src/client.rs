@@ -42,10 +42,10 @@ pub enum PlayerAction {
     Jump,
     CastSpell {
         spell_id: u32,
-        target_entity_id: u64,
+        target_network_id: u32,
     },
     StartAttack {
-        target_entity_id: u64,
+        target_network_id: u32,
     },
     StopAttack,
     Chat {

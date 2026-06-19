@@ -2,7 +2,6 @@
 
 ## Quick Wins
 
-- [ ] Replace `entity.to_bits()` with a proper network ID system (game-server, game-core)
 - [ ] Add protocol serialization roundtrip tests using quickcheck (protocol crate)
 - [ ] Fix `resolve_recipient_id` — handle `RowNotFound` separately from DB errors
 - [ ] Remove `get_client_unchecked` / `get_guild_members_unchecked` panics in hub.rs

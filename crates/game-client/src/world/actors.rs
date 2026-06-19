@@ -1,11 +1,12 @@
-use bevy::prelude::*;
 use avian3d::prelude::*;
-use game_core::components::{NetworkId, Vitals};
+use bevy::prelude::*;
+use game_core::components::Vitals;
+use game_core::networking::{NetworkId, NetworkIdMapping};
 
-use crate::core::ActorBundle;
 use super::DebugActorMesh;
+use crate::core::ActorBundle;
 use crate::movement::RemoteInterpolation;
-use crate::networking::{ActorDespawnMessage, ActorSpawnMessage, NetworkIdMapping};
+use crate::networking::{ActorDespawnMessage, ActorSpawnMessage};
 
 pub fn handle_actor_spawn_messages(
     mut reader: MessageReader<ActorSpawnMessage>,

@@ -6,6 +6,7 @@ use crate::{
 };
 use bevy::prelude::*;
 use game_core::components::Vitals;
+use game_core::networking::NetworkId;
 use protocol::server::AUTO_ATTACK_VISUAL_ID;
 
 const MELEE_RANGE: f32 = 3.0;
@@ -72,9 +73,7 @@ pub fn process_stop_attack(
 ) {
     for msg in reader.read() {
         if q_attacker.get(msg.attacker_entity).is_ok() {
-            commands
-                .entity(msg.attacker_entity)
-                .remove::<AutoAttack>();
+            commands.entity(msg.attacker_entity).remove::<AutoAttack>();
         }
     }
 }
@@ -90,6 +89,7 @@ pub fn tick_auto_attack(
     )>,
     mut q_targets: Query<
         (
+            &NetworkId,
             &Transform,
             &mut Vitals,
             &InterestedClients,
@@ -102,7 +102,7 @@ pub fn tick_auto_attack(
     for (attacker_entity, mut auto_attack, attacker_transform, attacker_client_id) in
         q_attackers.iter_mut()
     {
-        let Ok((target_transform, mut target_vitals, interested, tapped)) =
+        let Ok((target_network_id, target_transform, mut target_vitals, interested, tapped)) =
             q_targets.get_mut(auto_attack.target)
         else {
             // Target is dead or despawned, cancel auto-attack
@@ -148,7 +148,7 @@ pub fn tick_auto_attack(
         writer.write(OutgoingMessage {
             recipients,
             data: OutgoingMessageData::SpellImpact {
-                target_entity: auto_attack.target,
+                target_network_id: *target_network_id,
                 spell_id: AUTO_ATTACK_VISUAL_ID,
                 impact_amount: AUTO_ATTACK_DAMAGE,
             },

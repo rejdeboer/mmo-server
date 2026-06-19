@@ -8,6 +8,7 @@ use crate::{
 };
 use bevy::prelude::*;
 use bevy_renet::renet::ClientId;
+use game_core::networking::NetworkId;
 use protocol::models::ItemDrop;
 use rand::{Rng, thread_rng};
 use std::collections::HashMap;
@@ -37,12 +38,12 @@ pub struct Loot {
 pub fn reward_kill(
     event: On<EntityDeath>,
     mut commands: Commands,
-    q_victim: Query<(Option<&MonsterId>, Option<&Tapped>)>,
+    q_victim: Query<(&NetworkId, Option<&MonsterId>, Option<&Tapped>)>,
     loot_db: LootDb,
     mut writer: MessageWriter<OutgoingMessage>,
 ) {
     let entity = event.0;
-    let Ok((monster_id, tapped)) = q_victim.get(entity) else {
+    let Ok((network_id, monster_id, tapped)) = q_victim.get(entity) else {
         return tracing::error!(?entity, "could not retrieve victim components");
     };
 
@@ -77,7 +78,7 @@ pub fn reward_kill(
     writer.write(OutgoingMessage {
         recipients: vec![killer_client_id],
         data: OutgoingMessageData::KillReward {
-            victim: entity,
+            victim_network_id: *network_id,
             loot: loot_entries,
         },
     });

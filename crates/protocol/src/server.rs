@@ -10,7 +10,7 @@ pub const AUTO_ATTACK_VISUAL_ID: u32 = u32::MAX;
 
 #[derive(Encode, Decode, Clone)]
 pub struct ActorTransformUpdate {
-    pub actor_id: u64,
+    pub actor_id: u32,
     pub transform: Transform,
 }
 
@@ -23,20 +23,20 @@ pub struct ServerMovementPayload {
 #[derive(Encode, Decode)]
 pub enum ServerEvent {
     ActorSpawn(Box<Actor>),
-    ActorDespawn(u64),
-    ActorDeath(u64),
+    ActorDespawn(u32),
+    ActorDeath(u32),
     KillReward {
-        victim_id: u64,
+        victim_id: u32,
         loot: Vec<ItemDrop>,
     },
     StartCasting {
-        actor_id: u64,
+        actor_id: u32,
         spell_id: u32,
     },
     SpellImpact {
         // TODO: How will we do spells that do not have a target, or do not deal damage?
         // We probably want to implement impact type, like damage, heal, etc...
-        target_id: u64,
+        target_id: u32,
         spell_id: u32,
         impact_amount: i32,
     },

@@ -9,6 +9,7 @@ use crate::{
 use bevy::{platform::collections::HashMap, prelude::*};
 use bevy_renet::{RenetServer, renet::DefaultChannel};
 use game_core::components::{LevelComponent, MovementSpeedComponent, Vitals};
+use game_core::networking::NetworkId;
 use protocol::{
     models::Actor,
     server::{ActorTransformUpdate, ServerEvent, ServerMovementPayload},
@@ -24,7 +25,7 @@ pub fn sync_movement(
     mut updates_per_client: Local<HashMap<u64, Vec<ActorTransformUpdate>>>,
     q_movement: Query<
         (
-            Entity,
+            &NetworkId,
             &Transform,
             &InterestedClients,
             Option<&ClientIdComponent>,
@@ -37,14 +38,13 @@ pub fn sync_movement(
         clients.clear();
     }
 
-    for (entity, transform, interested, moved_client_id) in q_movement.iter() {
+    for (network_id, transform, interested, moved_client_id) in q_movement.iter() {
         if interested.clients.is_empty() && moved_client_id.is_none() {
             continue;
         }
 
-        // TODO: Use custom network ID u32
         let update = ActorTransformUpdate {
-            actor_id: entity.to_bits(),
+            actor_id: network_id.0,
             transform: NetTransform::from_glam(transform.translation, transform.rotation),
         };
 
@@ -117,6 +117,7 @@ pub fn sync_server_events(
 }
 
 type SpawnableComponents<'a> = (
+    &'a NetworkId,
     &'a NameComponent,
     &'a Transform,
     &'a Vitals,
@@ -137,12 +138,14 @@ pub fn sync_visibility(
 
     for msg in reader.read() {
         for &entity in &msg.removed {
-            let data = encode_buffer.encode(&ServerEvent::ActorDespawn(entity.to_bits()));
-            server.send_message(
-                msg.client_id,
-                DefaultChannel::ReliableOrdered,
-                data.to_vec(),
-            );
+            if let Ok((network_id, ..)) = q_spawnables.get(entity) {
+                let data = encode_buffer.encode(&ServerEvent::ActorDespawn(network_id.0));
+                server.send_message(
+                    msg.client_id,
+                    DefaultChannel::ReliableOrdered,
+                    data.to_vec(),
+                );
+            }
         }
 
         for &entity in &msg.added {
@@ -155,7 +158,7 @@ pub fn sync_visibility(
                 continue;
             }
 
-            if let Ok((name, transform, vitals, level, speed, char_id, asset_id)) =
+            if let Ok((network_id, name, transform, vitals, level, speed, char_id, asset_id)) =
                 q_spawnables.get(entity)
             {
                 let attributes = if let Some(cid) = char_id {
@@ -172,7 +175,7 @@ pub fn sync_visibility(
                 };
 
                 let actor = Actor {
-                    id: entity.to_bits(),
+                    id: network_id.0,
                     attributes,
                     name: name.0.to_string(),
                     transform: NetTransform::from_glam(transform.translation, transform.rotation),

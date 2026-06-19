@@ -5,6 +5,7 @@ use crate::{
 };
 use bevy::prelude::*;
 use game_core::components::{MovementSpeedComponent, Vitals};
+use game_core::networking::NetworkId;
 
 #[derive(EntityEvent)]
 pub struct EntityDeath(pub Entity);
@@ -30,7 +31,7 @@ pub fn on_vitals_changed(
 pub fn on_entity_death(
     event: On<EntityDeath>,
     mut commands: Commands,
-    q_victim: Query<(&InterestedClients, Option<&ClientIdComponent>)>,
+    q_victim: Query<(&NetworkId, &InterestedClients, Option<&ClientIdComponent>)>,
     mut writer: MessageWriter<OutgoingMessage>,
 ) {
     let entity = event.0;
@@ -41,7 +42,7 @@ pub fn on_entity_death(
             despawn_timer: Timer::new(std::time::Duration::from_secs(150), TimerMode::Once),
         });
 
-    let Ok((interested, victim_client_id)) = q_victim.get(entity) else {
+    let Ok((network_id, interested, victim_client_id)) = q_victim.get(entity) else {
         return tracing::error!(?entity, "could not retrieve victim components");
     };
 
@@ -54,7 +55,9 @@ pub fn on_entity_death(
         tracing::info!(?entity, client_id = %victim_client_id.0, "player died");
     }
 
-    let outgoing_msg = OutgoingMessageData::Death { entity };
+    let outgoing_msg = OutgoingMessageData::Death {
+        network_id: *network_id,
+    };
     writer.write(OutgoingMessage {
         recipients,
         data: outgoing_msg,
@@ -63,14 +66,14 @@ pub fn on_entity_death(
 
 pub fn tick_corpse_despawn_timers(
     mut commands: Commands,
-    mut q_dead: Query<(Entity, &mut Dead, &InterestedClients)>,
+    mut q_dead: Query<(Entity, &NetworkId, &mut Dead, &InterestedClients)>,
     time: Res<Time>,
     mut writer: MessageWriter<OutgoingMessage>,
 ) {
-    for (entity, mut dead, interested) in q_dead.iter_mut() {
+    for (entity, network_id, mut dead, interested) in q_dead.iter_mut() {
         dead.despawn_timer.tick(time.delta());
         if dead.despawn_timer.is_finished() {
-            let outgoing_msg = OutgoingMessageData::DespawnCorpse(entity);
+            let outgoing_msg = OutgoingMessageData::DespawnCorpse(*network_id);
             let recipients = interested.clients.iter().copied().collect();
             writer.write(OutgoingMessage {
                 recipients,

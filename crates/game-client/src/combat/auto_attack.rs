@@ -3,7 +3,7 @@ use crate::input::EscapePressed;
 use bevy::prelude::*;
 use bevy_enhanced_input::prelude::*;
 use bevy_renet::{RenetClient, renet::DefaultChannel};
-use game_core::components::NetworkId;
+use game_core::networking::NetworkId;
 use protocol::client::PlayerAction;
 
 /// Triggered when the player right-clicks a remote actor to start auto-attacking.
@@ -22,7 +22,7 @@ pub fn on_attack_target(
     };
 
     let action = PlayerAction::StartAttack {
-        target_entity_id: network_id.0,
+        target_network_id: network_id.0,
     };
     let encoded = bitcode::encode(&action);
     client.send_message(DefaultChannel::ReliableOrdered, encoded);

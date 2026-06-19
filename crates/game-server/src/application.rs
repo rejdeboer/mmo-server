@@ -2,7 +2,7 @@ use crate::ai::AiPlugin;
 use crate::assets::ContentPlugin;
 use crate::combat::{CombatPlugin, CombatSet};
 use crate::configuration::Settings;
-use crate::core::ServerTick;
+use crate::core::{NetworkIdCounter, ServerTick};
 use crate::database::DatabasePlugin;
 use crate::economy::EconomyPlugin;
 use crate::networking::{NetworkingPlugin, NetworkingSet};
@@ -12,6 +12,7 @@ use crate::world::{WorldPlugin, WorldSet};
 use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_tokio_tasks::TokioTasksPlugin;
+use game_core::networking::NetworkIdMapping;
 
 pub fn build(settings: Settings) -> App {
     let mut app = App::new();
@@ -109,6 +110,8 @@ pub fn build(settings: Settings) -> App {
     app.insert_resource(Time::<Fixed>::from_hz(game_core::constants::TICK_RATE_HZ));
     app.insert_resource(settings);
     app.insert_resource(ServerTick::default());
+    app.insert_resource(NetworkIdCounter::default());
+    app.insert_resource(NetworkIdMapping::default());
 
     app
 }

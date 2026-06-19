@@ -1,13 +1,16 @@
-use crate::core::PlayerComponent;
-use crate::networking::NetworkIdMapping;
-use super::prediction::{PredictedState, PredictionHistory};
 use super::interpolation::RemoteInterpolation;
+use super::prediction::{PredictedState, PredictionHistory};
+use crate::core::PlayerComponent;
 use avian3d::prelude::*;
 use bevy::prelude::*;
 use game_core::character_controller::{self, CharacterVelocityY};
-use game_core::components::{GroundedComponent, MovementSpeedComponent, NetworkId};
+use game_core::components::{GroundedComponent, MovementSpeedComponent};
 use game_core::movement::MoveInput;
-use protocol::{client::MoveAction, primitives::YAW_QUANTIZATION_FACTOR, server::ServerMovementPayload};
+use game_core::networking::NetworkId;
+use game_core::networking::NetworkIdMapping;
+use protocol::{
+    client::MoveAction, primitives::YAW_QUANTIZATION_FACTOR, server::ServerMovementPayload,
+};
 use std::f32::consts::TAU;
 
 const RECONCILIATION_THRESHOLD: f32 = 0.1;

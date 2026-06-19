@@ -3,7 +3,7 @@ mod receive;
 mod tick_sync;
 
 pub use messages::*;
-pub use receive::{NetworkIdMapping, poll_connection, receive_server_events};
+pub use receive::{poll_connection, receive_server_events};
 pub use tick_sync::TickSync;
 
 use bevy::prelude::*;

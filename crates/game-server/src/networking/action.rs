@@ -7,13 +7,15 @@ use crate::{
 };
 use bevy::prelude::*;
 use bevy_renet::{RenetServer, renet::DefaultChannel};
-use game_core::components::MovementSpeedComponent;
+use game_core::networking::NetworkId;
+use game_core::{components::MovementSpeedComponent, networking::NetworkIdMapping};
 use protocol::client::{MoveAction, PlayerAction};
 use protocol::server::ServerEvent;
 
 pub fn process_client_actions(
     mut server: ResMut<RenetServer>,
     server_tick: Res<ServerTick>,
+    net_entity_map: Res<NetworkIdMapping>,
     clients: Query<(Entity, &ClientIdComponent)>,
     mut commands: Commands,
     mut encode_buffer: Local<bitcode::Buffer>,
@@ -45,6 +47,7 @@ pub fn process_client_actions(
                         &mut server,
                         server_tick.0,
                         &mut encode_buffer,
+                        &net_entity_map,
                     );
                 }
                 Err(error) => {
@@ -98,6 +101,7 @@ pub fn process_client_movements(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn process_player_action(
     entity: Entity,
     client_id: u64,
@@ -106,6 +110,7 @@ fn process_player_action(
     server: &mut ResMut<RenetServer>,
     current_server_tick: u32,
     encode_buffer: &mut Local<bitcode::Buffer>,
+    net_entity_map: &NetworkIdMapping,
 ) {
     match action {
         PlayerAction::Chat { channel, text } => {
@@ -120,18 +125,34 @@ fn process_player_action(
         }
         PlayerAction::CastSpell {
             spell_id,
-            target_entity_id,
+            target_network_id,
         } => {
+            let Some(target_entity) = net_entity_map.0.get(&NetworkId(target_network_id)).copied()
+            else {
+                tracing::warn!(
+                    %target_network_id,
+                    "client sent CastSpell with unknown network ID"
+                );
+                return;
+            };
             commands.write_message(CastSpellActionMessage {
                 caster_entity: entity,
-                target_entity: Entity::from_bits(target_entity_id),
+                target_entity,
                 spell_id,
             });
         }
-        PlayerAction::StartAttack { target_entity_id } => {
+        PlayerAction::StartAttack { target_network_id } => {
+            let Some(target_entity) = net_entity_map.0.get(&NetworkId(target_network_id)).copied()
+            else {
+                tracing::warn!(
+                    %target_network_id,
+                    "client sent StartAttack with unknown network ID"
+                );
+                return;
+            };
             commands.write_message(StartAttackMessage {
                 attacker_entity: entity,
-                target_entity: Entity::from_bits(target_entity_id),
+                target_entity,
             });
         }
         PlayerAction::StopAttack => {

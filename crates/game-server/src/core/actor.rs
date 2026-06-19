@@ -6,12 +6,14 @@ use game_core::{
     collision::GameLayer,
     components::{LevelComponent, MovementSpeedComponent, Vitals},
     constants::BASE_MOVEMENT_SPEED,
+    networking::NetworkId,
 };
 use std::sync::Arc;
 
 #[derive(Bundle)]
 /// Base components used by entities that interact with the world, like players, monsters, NPCs
 pub struct ActorBundle {
+    pub network_id: NetworkId,
     pub name: NameComponent,
     pub transform: Transform,
     pub vitals: Vitals,
@@ -27,8 +29,15 @@ pub struct ActorBundle {
 }
 
 impl ActorBundle {
-    pub fn new(name: &str, transform: Transform, vitals: Vitals, level: i32) -> Self {
+    pub fn new(
+        network_id: NetworkId,
+        name: &str,
+        transform: Transform,
+        vitals: Vitals,
+        level: i32,
+    ) -> Self {
         Self {
+            network_id,
             name: NameComponent(Arc::from(name)),
             transform,
             vitals: vitals.clone(),

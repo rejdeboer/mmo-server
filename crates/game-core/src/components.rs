@@ -1,9 +1,6 @@
 use bevy::prelude::Component;
 use protocol::models::Vitals as NetVitals;
 
-#[derive(Debug, Component, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct NetworkId(pub u64);
-
 #[derive(Debug, Component, Clone)]
 pub struct Vitals {
     pub hp: i32,

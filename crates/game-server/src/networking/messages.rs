@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy_renet::renet::ClientId;
+use game_core::networking::NetworkId;
 
 use crate::economy::LootEntry;
 
@@ -33,19 +34,19 @@ pub enum OutgoingMessageData {
         text: String,
     },
     Death {
-        entity: Entity,
+        network_id: NetworkId,
     },
-    DespawnCorpse(Entity),
+    DespawnCorpse(NetworkId),
     KillReward {
-        victim: Entity,
+        victim_network_id: NetworkId,
         loot: Vec<LootEntry>,
     },
     StartCasting {
-        entity: Entity,
+        network_id: NetworkId,
         spell_id: u32,
     },
     SpellImpact {
-        target_entity: Entity,
+        target_network_id: NetworkId,
         spell_id: u32,
         impact_amount: i32,
     },
@@ -54,21 +55,22 @@ pub enum OutgoingMessageData {
 impl From<OutgoingMessageData> for protocol::server::ServerEvent {
     fn from(value: OutgoingMessageData) -> Self {
         match value {
-            OutgoingMessageData::Death { entity } => {
-                protocol::server::ServerEvent::ActorDeath(entity.to_bits())
+            OutgoingMessageData::Death { network_id } => {
+                protocol::server::ServerEvent::ActorDeath(network_id.0)
             }
-            OutgoingMessageData::DespawnCorpse(entity) => {
-                protocol::server::ServerEvent::ActorDespawn(entity.to_bits())
+            OutgoingMessageData::DespawnCorpse(network_id) => {
+                protocol::server::ServerEvent::ActorDespawn(network_id.0)
             }
-            OutgoingMessageData::KillReward { victim, loot } => {
-                protocol::server::ServerEvent::KillReward {
-                    victim_id: victim.to_bits(),
-                    loot: loot
-                        .into_iter()
-                        .map(protocol::models::ItemDrop::from)
-                        .collect(),
-                }
-            }
+            OutgoingMessageData::KillReward {
+                victim_network_id,
+                loot,
+            } => protocol::server::ServerEvent::KillReward {
+                victim_id: victim_network_id.0,
+                loot: loot
+                    .into_iter()
+                    .map(protocol::models::ItemDrop::from)
+                    .collect(),
+            },
             OutgoingMessageData::ChatMessage {
                 channel,
                 sender_name,
@@ -78,18 +80,19 @@ impl From<OutgoingMessageData> for protocol::server::ServerEvent {
                 sender_name,
                 text,
             },
-            OutgoingMessageData::StartCasting { entity, spell_id } => {
-                protocol::server::ServerEvent::StartCasting {
-                    actor_id: entity.to_bits(),
-                    spell_id,
-                }
-            }
+            OutgoingMessageData::StartCasting {
+                network_id,
+                spell_id,
+            } => protocol::server::ServerEvent::StartCasting {
+                actor_id: network_id.0,
+                spell_id,
+            },
             OutgoingMessageData::SpellImpact {
-                target_entity,
+                target_network_id,
                 spell_id,
                 impact_amount,
             } => protocol::server::ServerEvent::SpellImpact {
-                target_id: target_entity.to_bits(),
+                target_id: target_network_id.0,
                 spell_id,
                 impact_amount,
             },

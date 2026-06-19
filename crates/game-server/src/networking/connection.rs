@@ -1,6 +1,9 @@
 use crate::{
     combat::Abilities,
-    core::{ActorBundle, CharacterBundle, CharacterIdComponent, ClientIdComponent, ServerTick},
+    core::{
+        ActorBundle, CharacterBundle, CharacterIdComponent, ClientIdComponent, NetworkIdCounter,
+        ServerTick,
+    },
     database::DatabasePool,
     database::{load_character_abilities, load_character_data},
 };
@@ -14,6 +17,7 @@ use bevy_tokio_tasks::{TaskContext, TokioTasksRuntime};
 use game_core::{
     components::Vitals,
     constants::BASE_MOVEMENT_SPEED,
+    networking::NetworkIdMapping,
     spells::{SpellLibrary, SpellLibraryHandle},
 };
 use protocol::{
@@ -147,17 +151,35 @@ async fn handle_enter_game_task(
             })
             .unwrap_or_default();
 
+        let network_id = ctx
+            .world
+            .get_resource_mut::<NetworkIdCounter>()
+            .unwrap()
+            .allocate();
+
         let entity = ctx
             .world
             .spawn((
                 CharacterBundle::new(
-                    ActorBundle::new(&character.name, transform, vitals.clone(), character.level),
+                    ActorBundle::new(
+                        network_id,
+                        &character.name,
+                        transform,
+                        vitals.clone(),
+                        character.level,
+                    ),
                     character.id,
                     client_id,
                 ),
                 Abilities::new(&spell_ids, &spell_cooldowns),
             ))
             .id();
+
+        ctx.world
+            .get_resource_mut::<NetworkIdMapping>()
+            .unwrap()
+            .0
+            .insert(network_id, entity);
 
         let attributes = ActorAttributes::Player {
             character_id: character.id,
@@ -166,7 +188,7 @@ async fn handle_enter_game_task(
         };
 
         let player_actor = Actor {
-            id: entity.to_bits(),
+            id: network_id.0,
             attributes,
             name: character.name,
             transform: NetTransform::from_glam(transform.translation, transform.rotation),

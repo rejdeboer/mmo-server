@@ -5,11 +5,8 @@ use crate::{
     core::{ActorBundle, PlayerComponent},
     input::{Chatting, EscapePressed, Movement},
     movement::{self, PredictionHistory},
-    networking::{self, NetworkIdMapping},
-    party,
-    theme,
-    web,
-    world::{self, camera::ThirdPersonCamera, DebugActorMesh},
+    networking, party, theme, web,
+    world::{self, DebugActorMesh, camera::ThirdPersonCamera},
 };
 use avian3d::prelude::*;
 use bevy::{platform::collections::HashMap, prelude::*};
@@ -22,7 +19,8 @@ use bevy_renet::{
 };
 use game_core::{
     character_controller::CharacterVelocityY,
-    components::{NetworkId, Vitals},
+    components::Vitals,
+    networking::{NetworkId, NetworkIdMapping},
     spells::SpellLibrary,
 };
 use protocol::server::EnterGameResponse;

@@ -7,6 +7,7 @@ use crate::{
 use bevy::prelude::*;
 use game_core::{
     components::Vitals,
+    networking::NetworkId,
     spells::{SpellLibrary, SpellLibraryHandle},
 };
 
@@ -53,6 +54,7 @@ pub fn process_spell_casts(
     mut reader: MessageReader<CastSpellActionMessage>,
     mut writer: MessageWriter<OutgoingMessage>,
     mut q_caster: Query<(
+        &NetworkId,
         Option<&ClientIdComponent>,
         &Transform,
         &InterestedClients,
@@ -69,8 +71,14 @@ pub fn process_spell_casts(
     };
 
     for msg in reader.read() {
-        let Ok((caster_client_id, caster_transform, interested, casting, mut abilities)) =
-            q_caster.get_mut(msg.caster_entity)
+        let Ok((
+            caster_network_id,
+            caster_client_id,
+            caster_transform,
+            interested,
+            casting,
+            mut abilities,
+        )) = q_caster.get_mut(msg.caster_entity)
         else {
             tracing::warn!(
                 caster = ?msg.caster_entity,
@@ -144,7 +152,7 @@ pub fn process_spell_casts(
         }
 
         let outgoing_msg = OutgoingMessageData::StartCasting {
-            entity: msg.caster_entity,
+            network_id: *caster_network_id,
             spell_id: msg.spell_id,
         };
 
@@ -199,6 +207,7 @@ pub fn apply_spell_effect(
     assets: Res<Assets<SpellLibrary>>,
     mut reader: MessageReader<ApplySpellEffectMessage>,
     mut q_target: Query<(
+        &NetworkId,
         &mut Vitals,
         &InterestedClients,
         Option<&ClientIdComponent>,
@@ -216,7 +225,7 @@ pub fn apply_spell_effect(
             continue;
         };
 
-        let Ok((mut target_vitals, interested, target_client_id, tapped)) =
+        let Ok((target_network_id, mut target_vitals, interested, target_client_id, tapped)) =
             q_target.get_mut(msg.target_entity)
         else {
             tracing::debug!(entity_id = ?msg.target_entity, "tried to apply spell to invalid entity");
@@ -224,7 +233,7 @@ pub fn apply_spell_effect(
         };
 
         let outgoing_msg = OutgoingMessageData::SpellImpact {
-            target_entity: msg.target_entity,
+            target_network_id: *target_network_id,
             spell_id: msg.spell_id,
             impact_amount: spell.damage,
         };

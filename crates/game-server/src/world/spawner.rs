@@ -7,11 +7,12 @@ use crate::{
         AiBehaviorDef, ContentId, MonsterDef, MonsterId, MonsterLibrary, MonsterLibraryHandle,
     },
     combat::Abilities,
-    core::{ActorBundle, AssetIdComponent},
+    core::{ActorBundle, AssetIdComponent, NetworkIdCounter},
 };
 use bevy::prelude::*;
 use game_core::{
     components::Vitals,
+    networking::NetworkIdMapping,
     spells::{SpellLibrary, SpellLibraryHandle},
 };
 use rand::Rng;
@@ -54,6 +55,8 @@ pub fn spawn_mobs(
     monster_assets: Res<Assets<MonsterLibrary>>,
     spell_library_handle: Res<SpellLibraryHandle>,
     spell_assets: Res<Assets<SpellLibrary>>,
+    mut net_id_counter: ResMut<NetworkIdCounter>,
+    mut net_entity_map: ResMut<NetworkIdMapping>,
 ) {
     let Some(library) = monster_assets.get(&library_handle.0) else {
         tracing::info!("still waiting for monsters library to load");
@@ -90,6 +93,8 @@ pub fn spawn_mobs(
                     spawn_transform,
                     level,
                     spell_library,
+                    &mut net_id_counter,
+                    &mut net_entity_map,
                 );
                 tracing::info!(
                     name = %blueprint.name,
@@ -102,6 +107,7 @@ pub fn spawn_mobs(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn spawn_monster_entity(
     commands: &mut Commands,
     monster_id: &ContentId,
@@ -110,12 +116,15 @@ fn spawn_monster_entity(
     transform: Transform,
     level: i32,
     spell_library: Option<&SpellLibrary>,
+    net_id_counter: &mut NetworkIdCounter,
+    net_entity_map: &mut NetworkIdMapping,
 ) {
+    let network_id = net_id_counter.allocate();
     let vitals = Vitals {
         hp: blueprint.hp,
         max_hp: blueprint.hp,
     };
-    let actor_bundle = ActorBundle::new(&blueprint.name, transform, vitals, level);
+    let actor_bundle = ActorBundle::new(network_id, &blueprint.name, transform, vitals, level);
 
     // Build spell cooldown map from the spell library
     let spell_cooldowns: std::collections::HashMap<u32, f32> = spell_library
@@ -141,6 +150,9 @@ fn spawn_monster_entity(
         AssetIdComponent(blueprint.asset_id),
         abilities,
     ));
+
+    let entity = entity_commands.id();
+    net_entity_map.0.insert(network_id, entity);
 
     // Attach AI components if AI is configured
     if let Some(ai_def) = &blueprint.ai {

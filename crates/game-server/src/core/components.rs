@@ -1,8 +1,23 @@
 use bevy::{platform::collections::HashSet, prelude::*};
 use bevy_renet::renet::ClientId;
+use game_core::networking::NetworkId;
 use std::sync::Arc;
 
 use crate::telemetry::SERVER_TICK_METRIC;
+
+/// Monotonically incrementing counter for assigning unique network IDs to entities.
+#[derive(Resource, Debug, Default)]
+pub struct NetworkIdCounter(u32);
+
+impl NetworkIdCounter {
+    /// NOTE: wraps after ~4 billion allocations. If the server ever runs long enough
+    /// for this to happen, add collision-skipping logic
+    pub fn allocate(&mut self) -> NetworkId {
+        let id = self.0;
+        self.0 = self.0.wrapping_add(1);
+        NetworkId(id)
+    }
+}
 
 #[derive(Resource, Debug, Default)]
 pub struct ServerTick(pub u32);

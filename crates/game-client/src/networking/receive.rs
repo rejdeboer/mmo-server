@@ -1,21 +1,19 @@
+use super::messages::*;
+use super::tick_sync::TickSync;
 use crate::{
     application::{AppState, EnterGame},
     chat::{ChatLog, ChatMessage, ChatMessageChannel},
     combat::cast_bar::ActiveCast,
     core::PlayerComponent,
 };
-use super::messages::*;
-use super::tick_sync::TickSync;
-use bevy::{ecs::system::SystemParam, platform::collections::HashMap, prelude::*};
+use bevy::{ecs::system::SystemParam, prelude::*};
 use bevy_renet::{RenetClient, renet::DefaultChannel};
 use game_core::{
-    components::{NetworkId, Vitals},
+    components::Vitals,
+    networking::{NetworkId, NetworkIdMapping},
     spells::{SpellLibrary, SpellLibraryHandle},
 };
 use protocol::server::{EnterGameResponse, ServerEvent};
-
-#[derive(Resource)]
-pub struct NetworkIdMapping(pub HashMap<NetworkId, Entity>);
 
 #[derive(SystemParam)]
 pub struct NetworkMessageWriters<'w> {

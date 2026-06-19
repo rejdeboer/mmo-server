@@ -2,15 +2,15 @@ use bevy::prelude::*;
 use bevy_enhanced_input::prelude::ContextActivity;
 use bevy_renet::{RenetClient, renet::DefaultChannel};
 use game_core::{
-    components::NetworkId,
+    networking::NetworkId,
     spells::{SpellLibrary, SpellLibraryHandle},
 };
 use protocol::client::PlayerAction;
 use std::collections::HashMap;
 
+use super::KnownAbilities;
 use crate::core::PlayerComponent;
 use crate::theme::palette;
-use super::KnownAbilities;
 use crate::world::selection::SelectedTarget;
 
 /// Client-side cooldown tracking per spell_id.
@@ -113,8 +113,7 @@ pub fn spawn_action_bar(
         .with_children(|bar| {
             for (slot_index, spell_id, visual_id) in &spells {
                 let keybind_label = format!("{}", slot_index + 1);
-                let icon_handle: Handle<Image> =
-                    assets.load(format!("icons/{}.jpg", visual_id));
+                let icon_handle: Handle<Image> = assets.load(format!("icons/{}.jpg", visual_id));
 
                 bar.spawn((
                     AbilitySlot {
@@ -251,7 +250,7 @@ fn cast_spell(
 
     let action = PlayerAction::CastSpell {
         spell_id,
-        target_entity_id: network_id.0,
+        target_network_id: network_id.0,
     };
     let encoded = bitcode::encode(&action);
     client.send_message(DefaultChannel::ReliableOrdered, encoded);

@@ -11,6 +11,7 @@ use bevy_renet::netcode::{
     NetcodeServerPlugin, NetcodeServerTransport, ServerAuthentication, ServerConfig,
 };
 use bevy_renet::{RenetServer, renet::ConnectionConfig};
+use game_core::networking::{NetworkId, NetworkIdMapping};
 use std::net::{IpAddr, SocketAddr, UdpSocket};
 use std::time::SystemTime;
 
@@ -100,7 +101,10 @@ impl Plugin for NetworkingPlugin {
         // Systems
         app.add_systems(
             FixedPreUpdate,
-            (action::process_client_actions, action::process_client_movements)
+            (
+                action::process_client_actions,
+                action::process_client_movements,
+            )
                 .chain()
                 .in_set(NetworkingSet::ReceiveInput),
         );
@@ -113,10 +117,21 @@ impl Plugin for NetworkingPlugin {
         );
         app.add_systems(
             FixedPostUpdate,
-            (sync::sync_server_events, sync::sync_movement)
-                .in_set(NetworkingSet::Sync),
+            (sync::sync_server_events, sync::sync_movement).in_set(NetworkingSet::Sync),
         );
 
         app.add_observer(connection::on_connection_event);
+        app.add_observer(cleanup_network_entity_map);
+    }
+}
+
+fn cleanup_network_entity_map(
+    trigger: On<Remove, NetworkId>,
+    q_network_ids: Query<&NetworkId>,
+    mut net_entity_map: ResMut<NetworkIdMapping>,
+) {
+    let entity = trigger.event_target();
+    if let Ok(network_id) = q_network_ids.get(entity) {
+        net_entity_map.0.remove(network_id);
     }
 }
