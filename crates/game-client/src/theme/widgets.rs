@@ -297,3 +297,122 @@ fn on_button_hover_end(event: On<Pointer<Out>>, mut bg_query: Query<&mut Backgro
         *bg = BackgroundColor(Color::NONE);
     }
 }
+
+// ---------------------------------------------------------------------------
+// Dialog
+// ---------------------------------------------------------------------------
+
+/// Marker for a dialog root node.
+#[derive(Component)]
+pub struct Dialog;
+
+/// Marker for dialog buttons.
+#[derive(Component)]
+pub struct DialogButton;
+
+/// Stores the base background color so hover observers can restore it.
+#[derive(Component)]
+struct DialogButtonBaseColor(Color);
+
+/// Despawns all entities matching a given marker component.
+pub fn despawn_dialog<M: Component>(
+    commands: &mut Commands,
+    existing: &Query<Entity, With<M>>,
+) {
+    for entity in existing.iter() {
+        commands.entity(entity).despawn();
+    }
+}
+
+/// Spawns a centered dialog with a text message. Returns the root entity
+/// so the caller can add additional children (e.g. button rows).
+pub fn spawn_dialog(commands: &mut Commands, message: &str) -> Entity {
+    commands
+        .spawn((
+            Dialog,
+            Node {
+                position_type: PositionType::Absolute,
+                top: Val::Percent(30.0),
+                left: Val::Percent(50.0),
+                margin: UiRect {
+                    left: Val::Px(-160.0),
+                    ..default()
+                },
+                width: Val::Px(320.0),
+                flex_direction: FlexDirection::Column,
+                align_items: AlignItems::Center,
+                padding: UiRect::all(Val::Px(16.0)),
+                row_gap: Val::Px(12.0),
+                border_radius: BorderRadius::all(Val::Px(6.0)),
+                ..default()
+            },
+            BackgroundColor(palette::DIALOG_BG),
+            ZIndex(101),
+        ))
+        .with_children(|parent| {
+            parent.spawn((
+                Text::new(message),
+                TextColor(Color::WHITE),
+                TextFont {
+                    font_size: 15.0,
+                    ..default()
+                },
+            ));
+        })
+        .id()
+}
+
+/// Spawns a button inside a dialog. Returns the button entity so the caller
+/// can attach a click observer.
+pub fn spawn_dialog_button(
+    commands: &mut Commands,
+    parent_entity: Entity,
+    label: &str,
+    bg_color: Color,
+) -> Entity {
+    commands
+        .spawn((
+            DialogButton,
+            DialogButtonBaseColor(bg_color),
+            Button,
+            Node {
+                padding: UiRect::axes(Val::Px(16.0), Val::Px(8.0)),
+                border_radius: BorderRadius::all(Val::Px(4.0)),
+                ..default()
+            },
+            BackgroundColor(bg_color),
+            ChildOf(parent_entity),
+        ))
+        .with_children(|btn| {
+            btn.spawn((
+                Text::new(label),
+                TextColor(Color::WHITE),
+                TextFont {
+                    font_size: 13.0,
+                    ..default()
+                },
+                Pickable::IGNORE,
+            ));
+        })
+        .observe(on_dialog_button_hover_start)
+        .observe(on_dialog_button_hover_end)
+        .id()
+}
+
+fn on_dialog_button_hover_start(
+    event: On<Pointer<Over>>,
+    mut bg_query: Query<&mut BackgroundColor>,
+) {
+    if let Ok(mut bg) = bg_query.get_mut(event.event_target()) {
+        *bg = BackgroundColor(palette::DIALOG_BUTTON_HOVER);
+    }
+}
+
+fn on_dialog_button_hover_end(
+    event: On<Pointer<Out>>,
+    mut query: Query<(&mut BackgroundColor, &DialogButtonBaseColor)>,
+) {
+    if let Ok((mut bg, base)) = query.get_mut(event.event_target()) {
+        *bg = BackgroundColor(base.0);
+    }
+}

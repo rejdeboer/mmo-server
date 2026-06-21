@@ -22,3 +22,9 @@ pub const CAST_BAR_FILL: Color = Color::srgba(0.8, 0.6, 0.1, 0.8);
 
 // Combat feedback
 pub const DAMAGE_TEXT: Color = Color::srgba(1.0, 0.9, 0.1, 1.0);
+
+// Dialog
+pub const DIALOG_BG: Color = Color::srgba(0.12, 0.12, 0.12, 0.95);
+pub const DIALOG_BUTTON_ACCEPT: Color = Color::srgba(0.15, 0.5, 0.15, 0.9);
+pub const DIALOG_BUTTON_DECLINE: Color = Color::srgba(0.5, 0.15, 0.15, 0.9);
+pub const DIALOG_BUTTON_HOVER: Color = Color::srgba(0.4, 0.4, 0.6, 0.7);

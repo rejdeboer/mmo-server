@@ -578,11 +578,17 @@ impl Hub {
         );
 
         // Notify target of invite
-        self.write_system_message(
-            target_id,
-            &format!("{sender_name} has invited you to a party"),
-        )
-        .await;
+        let Some(target_client) = self.clients.get(&target_id) else {
+            return;
+        };
+        let event = SocialEvent::PartyInvite {
+            from_id: sender_id,
+            from_name: sender_name,
+        };
+        let msg: Arc<[u8]> = Arc::from(bitcode::encode(&event));
+        if let Err(err) = target_client.tx.send(msg).await {
+            tracing::error!(?err, target_id, "failed to send party invite");
+        }
     }
 
     async fn handle_party_accept(&mut self, character_id: i32) {
