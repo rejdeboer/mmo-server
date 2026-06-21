@@ -25,6 +25,8 @@ pub fn handle_social_chat(
 pub fn handle_whisper_received(
     mut reader: MessageReader<WhisperReceivedMessage>,
     mut chat_log: ResMut<ChatLog>,
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
 ) {
     for msg in reader.read() {
         chat_log.push(ChatMessage {
@@ -32,6 +34,10 @@ pub fn handle_whisper_received(
             sender: msg.sender_name.clone(),
             text: msg.text.clone(),
         });
+
+        commands.spawn(AudioPlayer::new(
+            asset_server.load("sounds/whisper-received.ogg"),
+        ));
     }
 }
 
