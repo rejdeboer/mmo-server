@@ -1,4 +1,5 @@
 use bevy::input::keyboard::{Key, KeyboardInput};
+use bevy::picking::events::{Click, Out, Over, Pointer};
 use bevy::prelude::*;
 use bevy_enhanced_input::prelude::*;
 
@@ -6,7 +7,7 @@ use crate::core::PlayerComponent;
 use crate::input::Chatting;
 use crate::theme::palette;
 use super::routing::{OutgoingChannel, OutgoingChatMessage};
-use super::channels::ChatLog;
+use super::channels::{ActiveChatTab, ChatLog, ChatTabUnread};
 
 const CHAT_PANEL_WIDTH: f32 = 500.0;
 const VISIBLE_MESSAGE_COUNT: usize = 12;
@@ -84,6 +85,15 @@ pub struct ChatInputField;
 #[derive(Component)]
 pub struct ChatInputContainer;
 
+#[derive(Component)]
+pub struct ChatTabBar;
+
+#[derive(Component)]
+pub struct ChatTabButton(pub ActiveChatTab);
+
+#[derive(Component)]
+pub struct UnreadDot(pub ActiveChatTab);
+
 pub fn spawn_chat_ui(commands: &mut Commands) {
     let panel = commands
         .spawn((
@@ -98,6 +108,76 @@ pub fn spawn_chat_ui(commands: &mut Commands) {
             },
         ))
         .id();
+
+    // Tab bar
+    let tab_bar = commands
+        .spawn((
+            ChatTabBar,
+            Node {
+                flex_direction: FlexDirection::Row,
+                column_gap: Val::Px(2.0),
+                margin: UiRect::bottom(Val::Px(2.0)),
+                ..default()
+            },
+            ChildOf(panel),
+        ))
+        .id();
+
+    for tab in [ActiveChatTab::Chat, ActiveChatTab::Combat] {
+        let is_active = tab == ActiveChatTab::Chat;
+        let bg = if is_active {
+            palette::PANEL_BG_DARK
+        } else {
+            palette::PANEL_BG
+        };
+
+        let tab_button = commands
+            .spawn((
+                ChatTabButton(tab),
+                Button,
+                Node {
+                    padding: UiRect::axes(Val::Px(12.0), Val::Px(4.0)),
+                    border_radius: BorderRadius::top(Val::Px(4.0)),
+                    align_items: AlignItems::Center,
+                    column_gap: Val::Px(4.0),
+                    ..default()
+                },
+                BackgroundColor(bg),
+                ChildOf(tab_bar),
+            ))
+            .observe(on_tab_click)
+            .observe(on_tab_hover_start)
+            .observe(on_tab_hover_end)
+            .id();
+
+        commands.spawn((
+            Text::new(tab.label()),
+            TextFont {
+                font_size: 13.0,
+                ..default()
+            },
+            TextColor(Color::WHITE),
+            ChildOf(tab_button),
+        ));
+
+        // Unread dot (hidden by default for the active tab)
+        commands.spawn((
+            UnreadDot(tab),
+            Node {
+                width: Val::Px(6.0),
+                height: Val::Px(6.0),
+                border_radius: BorderRadius::all(Val::Px(3.0)),
+                ..default()
+            },
+            BackgroundColor(Color::srgb(1.0, 0.4, 0.4)),
+            if is_active {
+                Visibility::Hidden
+            } else {
+                Visibility::Hidden
+            },
+            ChildOf(tab_button),
+        ));
+    }
 
     commands.spawn((
         ChatMessageList,
@@ -142,10 +222,11 @@ pub fn spawn_chat_ui(commands: &mut Commands) {
 
 pub fn update_chat_ui(
     chat_log: Res<ChatLog>,
+    active_tab: Res<ActiveChatTab>,
     q_message_list: Query<Entity, With<ChatMessageList>>,
     mut commands: Commands,
 ) {
-    if !chat_log.is_changed() {
+    if !chat_log.is_changed() && !active_tab.is_changed() {
         return;
     }
 
@@ -155,13 +236,16 @@ pub fn update_chat_ui(
 
     commands.entity(list_entity).despawn_related::<Children>();
 
-    let skip = chat_log
+    let filtered: Vec<_> = chat_log
         .messages
-        .len()
-        .saturating_sub(VISIBLE_MESSAGE_COUNT);
+        .iter()
+        .filter(|msg| active_tab.accepts(&msg.channel))
+        .collect();
+
+    let skip = filtered.len().saturating_sub(VISIBLE_MESSAGE_COUNT);
 
     commands.entity(list_entity).with_children(|parent| {
-        for msg in chat_log.messages.iter().skip(skip) {
+        for msg in filtered.into_iter().skip(skip) {
             let label = msg.channel.label();
             let display = if msg.sender.is_empty() {
                 format!("{label} {}", msg.text)
@@ -333,5 +417,109 @@ fn try_switch_channel(chat_input: &mut ResMut<ChatInputState>) {
                 return;
             }
         }
+    }
+}
+
+fn on_tab_click(
+    event: On<Pointer<Click>>,
+    q_tabs: Query<&ChatTabButton>,
+    mut active_tab: ResMut<ActiveChatTab>,
+    mut unread: ResMut<ChatTabUnread>,
+) {
+    let Ok(tab_btn) = q_tabs.get(event.event_target()) else {
+        return;
+    };
+    if *active_tab != tab_btn.0 {
+        *active_tab = tab_btn.0;
+        match tab_btn.0 {
+            ActiveChatTab::Chat => unread.chat = false,
+            ActiveChatTab::Combat => unread.combat = false,
+        }
+    }
+}
+
+fn on_tab_hover_start(
+    event: On<Pointer<Over>>,
+    active_tab: Res<ActiveChatTab>,
+    q_tabs: Query<&ChatTabButton>,
+    mut bg_query: Query<&mut BackgroundColor>,
+) {
+    let Ok(tab_btn) = q_tabs.get(event.event_target()) else {
+        return;
+    };
+    if tab_btn.0 != *active_tab {
+        if let Ok(mut bg) = bg_query.get_mut(event.event_target()) {
+            *bg = BackgroundColor(palette::PANEL_BG_DARK);
+        }
+    }
+}
+
+fn on_tab_hover_end(
+    event: On<Pointer<Out>>,
+    active_tab: Res<ActiveChatTab>,
+    q_tabs: Query<&ChatTabButton>,
+    mut bg_query: Query<&mut BackgroundColor>,
+) {
+    let Ok(tab_btn) = q_tabs.get(event.event_target()) else {
+        return;
+    };
+    if tab_btn.0 != *active_tab {
+        if let Ok(mut bg) = bg_query.get_mut(event.event_target()) {
+            *bg = BackgroundColor(palette::PANEL_BG);
+        }
+    }
+}
+
+pub fn update_tab_styles(
+    active_tab: Res<ActiveChatTab>,
+    mut q_tabs: Query<(&ChatTabButton, &mut BackgroundColor)>,
+) {
+    if !active_tab.is_changed() {
+        return;
+    }
+    for (btn, mut bg) in &mut q_tabs {
+        *bg = if btn.0 == *active_tab {
+            BackgroundColor(palette::PANEL_BG_DARK)
+        } else {
+            BackgroundColor(palette::PANEL_BG)
+        };
+    }
+}
+
+pub fn track_unread(
+    chat_log: Res<ChatLog>,
+    active_tab: Res<ActiveChatTab>,
+    mut unread: ResMut<ChatTabUnread>,
+) {
+    if !chat_log.is_changed() {
+        return;
+    }
+    if let Some(last) = chat_log.messages.back() {
+        if !active_tab.accepts(&last.channel) {
+            match last.channel {
+                super::channels::ChatMessageChannel::Combat => unread.combat = true,
+                _ => unread.chat = true,
+            }
+        }
+    }
+}
+
+pub fn update_unread_dots(
+    unread: Res<ChatTabUnread>,
+    mut q_dots: Query<(&UnreadDot, &mut Visibility)>,
+) {
+    if !unread.is_changed() {
+        return;
+    }
+    for (dot, mut vis) in &mut q_dots {
+        let has_unread = match dot.0 {
+            ActiveChatTab::Chat => unread.chat,
+            ActiveChatTab::Combat => unread.combat,
+        };
+        *vis = if has_unread {
+            Visibility::Inherited
+        } else {
+            Visibility::Hidden
+        };
     }
 }

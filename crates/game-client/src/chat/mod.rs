@@ -3,7 +3,7 @@ mod routing;
 mod incoming;
 mod chat_ui;
 
-pub use channels::{ChatLog, ChatMessage, ChatMessageChannel};
+pub use channels::{ActiveChatTab, ChatLog, ChatMessage, ChatMessageChannel, ChatTabUnread};
 pub use chat_ui::{OpenChat, SendChat, CancelChat};
 
 use bevy::prelude::*;
@@ -16,6 +16,8 @@ impl Plugin for ChatPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(ChatLog::default());
         app.insert_resource(chat_ui::ChatInputState::default());
+        app.insert_resource(ActiveChatTab::default());
+        app.insert_resource(ChatTabUnread::default());
 
         app.add_observer(chat_ui::on_send_chat);
         app.add_observer(chat_ui::on_cancel_chat);
@@ -27,6 +29,9 @@ impl Plugin for ChatPlugin {
             Update,
             (
                 chat_ui::handle_chat_text_input,
+                chat_ui::track_unread,
+                chat_ui::update_tab_styles,
+                chat_ui::update_unread_dots,
                 chat_ui::update_chat_ui,
                 incoming::handle_social_chat,
                 incoming::handle_whisper_received,

@@ -57,6 +57,35 @@ impl ChatMessageChannel {
 
 const MAX_CHAT_HISTORY: usize = 200;
 
+#[derive(Resource, Default, PartialEq, Eq, Clone, Copy)]
+pub enum ActiveChatTab {
+    #[default]
+    Chat,
+    Combat,
+}
+
+impl ActiveChatTab {
+    pub fn accepts(&self, channel: &ChatMessageChannel) -> bool {
+        match self {
+            Self::Chat => !matches!(channel, ChatMessageChannel::Combat),
+            Self::Combat => matches!(channel, ChatMessageChannel::Combat),
+        }
+    }
+
+    pub fn label(&self) -> &'static str {
+        match self {
+            Self::Chat => "Chat",
+            Self::Combat => "Combat",
+        }
+    }
+}
+
+#[derive(Resource, Default)]
+pub struct ChatTabUnread {
+    pub chat: bool,
+    pub combat: bool,
+}
+
 #[derive(Resource)]
 pub struct ChatLog {
     pub messages: VecDeque<ChatMessage>,
