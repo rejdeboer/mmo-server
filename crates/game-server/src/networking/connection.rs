@@ -1,8 +1,8 @@
 use crate::{
     combat::Abilities,
     core::{
-        ActorBundle, CharacterBundle, CharacterIdComponent, ClientIdComponent, NetworkIdCounter,
-        ServerTick,
+        ActorBundle, CharacterBundle, CharacterIdComponent, ClientIdComponent, InterestedClients,
+        NetworkIdCounter, ServerTick,
     },
     database::DatabasePool,
     database::{load_character_abilities, load_character_data},
@@ -42,6 +42,7 @@ pub fn on_connection_event(
         &CharacterIdComponent,
         &Transform,
     )>,
+    mut interested: Query<&mut InterestedClients>,
     runtime: Res<TokioTasksRuntime>,
     pool: Res<DatabasePool>,
 ) {
@@ -50,7 +51,15 @@ pub fn on_connection_event(
             process_client_connected(client_id, &transport, &mut server, &pool, &runtime)
         }
         ServerEvent::ClientDisconnected { client_id, reason } => {
-            process_client_disconnected(client_id, reason, &mut commands, players, &pool, &runtime);
+            process_client_disconnected(
+                client_id,
+                reason,
+                &mut commands,
+                players,
+                &mut interested,
+                &pool,
+                &runtime,
+            );
         }
     }
 }
@@ -232,10 +241,15 @@ fn process_client_disconnected(
         &CharacterIdComponent,
         &Transform,
     )>,
+    interested: &mut Query<&mut InterestedClients>,
     pool: &DatabasePool,
     runtime: &TokioTasksRuntime,
 ) {
     tracing::info!(?reason, "client disconnected");
+
+    for mut interested_clients in interested.iter_mut() {
+        interested_clients.clients.remove(&client_id);
+    }
 
     for (entity, player_client_id, character_id, transform) in players.iter() {
         if player_client_id.0 == client_id {

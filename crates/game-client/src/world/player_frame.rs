@@ -93,8 +93,8 @@ fn on_logout_click(
     _event: On<Pointer<Click>>,
     context_menu_q: Query<Entity, With<ContextMenu>>,
     mut commands: Commands,
+    mut app_exit: MessageWriter<AppExit>,
 ) {
     widgets::despawn_context_menu(&mut commands, &context_menu_q);
-    // TODO: Transition to character select / disconnect properly
-    std::process::exit(0);
+    app_exit.write(AppExit::Success);
 }
