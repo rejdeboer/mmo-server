@@ -47,6 +47,14 @@ The `crates/` directory contains the following crates:
 - Recent versions of Bevy use `Message` instead of `Event`. Keep this into account when writing event-driven code.
 - Try to use Bevy observers where applicable, look at the game-server crate for examples.
 
+## Assets
+
+- Licensed art assets live in a **private Git repo with Git LFS**, added as a Git submodule at `assets/`.
+- Both `game-client` and `game-server` access shared assets via **symlinks** into the submodule (e.g., `crates/game-client/assets/world -> ../../../assets/world`).
+- The world is authored in **Blender** and exported via a Python script to GLB + RON files.
+- The server loads the same GLB files as the client but skips materials (`load_materials = RenderAssetUsages::empty()`). There are no separate server-only asset exports.
+- See `docs/world-design.md` for the full world creation workflow.
+
 ## TODO
 
 For an overview of current todos check out `TODO.md`
