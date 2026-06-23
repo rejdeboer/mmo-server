@@ -6,3 +6,9 @@ schemas/schemas
 schemas/build.rs
 
 development
+
+# Server doesn't need textures (load_materials = empty())
+**/*.png
+**/*.jpg
+**/*.tga
+**/*.tif
