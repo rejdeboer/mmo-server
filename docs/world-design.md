@@ -12,12 +12,14 @@ spawner configuration, replacing any hardcoded spawn logic in Rust.
 1. **Single source of truth** -- one set of assets, one zone definition. The
    client and server must never disagree about terrain geometry or prop positions.
 2. **Blender as the level editor** -- all world authoring happens in Blender.
-   A Python export script produces the GLB and RON files consumed by the engine.
-3. **Server skips visuals, not files** -- the server loads the same GLB files as
+   A Python export script produces the terrain GLB and zone RON file.
+3. **Paid props ship as-is** -- licensed GLB assets are not re-exported or
+   modified. The export script only references them by path.
+4. **Server skips visuals, not files** -- the server loads the same GLB files as
    the client but skips materials and textures via
    `load_materials = RenderAssetUsages::empty()`. No separate "server-only"
    exports are needed.
-4. **Data-driven spawning** -- monster spawners, player spawn points, and prop
+5. **Data-driven spawning** -- monster spawners, player spawn points, and prop
    placements are defined in the zone RON file, not in Rust code.
 
 ## Asset Management
@@ -49,11 +51,16 @@ mmo-server/
   assets/                              # Git submodule (private repo, Git LFS)
     world/
       terrain/
-        starting_meadow.glb            # Terrain mesh for the zone
+        starting_meadow.glb            # Terrain mesh (exported from Blender)
       props/
-        tree_oak.glb                   # Individual prop, modeled at origin
-        rock_large.glb
-        house_tavern.glb
+        tent.glb                       # Paid asset, shipped as-is
+        rock_large.glb                 # Paid asset, shipped as-is
+        pine_tree.glb                  # Paid asset, shipped as-is
+      textures/
+        tent_albedo.png                # Textures referenced by prop GLBs
+        tent_normal.png
+        rock_albedo.png
+        ...
       zones/
         starting_meadow.ron            # Zone definition (exported from Blender)
     sounds/
@@ -62,8 +69,6 @@ mmo-server/
     icons/
       3.jpg
       4.jpg
-    textures/
-      ...
 
   crates/
     game-client/assets/
@@ -87,6 +92,32 @@ mmo-server/
     setup_assets.sh                      # Creates symlinks after submodule init
 ```
 
+### Texture Path Resolution
+
+Paid GLB assets reference external textures using relative paths. Bevy resolves
+these paths **relative to the GLB file's location**. The texture directory must
+be placed so that the GLB's internal references resolve correctly.
+
+For example, if `props/tent.glb` internally references `../textures/tent_albedo.png`,
+then the directory layout must have `textures/` as a sibling of `props/`:
+
+```
+world/
+  props/tent.glb          # references "../textures/tent_albedo.png"
+  textures/tent_albedo.png
+```
+
+Check the paid assets' internal texture references and mirror the expected
+directory structure. If the paths don't match, use a tool like `gltf-transform`
+to rewrite texture paths in the GLBs:
+
+```
+npx @gltf-transform/cli inspect tent.glb    # check current paths
+```
+
+If textures load correctly in Bevy (no magenta/pink materials), the layout is
+correct.
+
 ### Symlinks
 
 Both `game-client` and `game-server` access shared assets through symlinks
@@ -100,29 +131,49 @@ mode or `mklink` is required (not a concern for the Linux-based K8s deployment).
 
 ## Blender Workflow
 
-### Zone File (.blend)
+### Props (Paid Assets)
 
-One `.blend` file per zone, stored in `zones/` (source files, not shipped). The
-scene contains:
+Props are **pre-made licensed GLB files**. They are not modeled or re-exported --
+they ship to the engine untouched. The Blender workflow only involves importing
+and placing them:
 
-| Object Type | Blender Representation | Custom Properties |
-|-------------|----------------------|-------------------|
-| Terrain | Mesh object | `type = "terrain"` |
-| Prop | Empty (or linked collection for visual preview) | `type = "prop"`, `prop_id = "tree_oak"`, `collision = "trimesh"` / `"convex"` / `"none"` |
-| Spawner | Empty | `type = "spawner"`, `monster_id`, `max_count`, `radius`, `level_min`, `level_max`, `respawn_secs` |
-| Player spawn | Empty | `type = "player_spawn"` |
+1. Import paid GLBs into the zone's `.blend` file (File > Import > glTF 2.0).
+2. Place, duplicate (Shift+D), rotate, and scale them as needed.
+3. Name instances using the source GLB filename as a prefix:
+   `tent.001`, `tent.002`, `rock_large.001`, `rock_large.002`, etc.
+4. The Blender `.001` suffix is for deduplication only -- the export script
+   strips it to determine the prop_id (which maps to `<prop_id>.glb`).
 
-Organize objects with Blender collections (e.g., `Terrain`, `Props/Trees`,
-`Props/Rocks`, `Spawners`).
+This keeps the Blender workflow natural: you see the full world visually and
+place things like normal scene building.
 
-### Prop Files (.glb)
+### Terrain
 
-Each prop is its own `.blend` and exported `.glb`:
+Terrain is the only mesh authored and exported from Blender:
 
-- Modeled at the origin, facing -Z (Blender/glTF convention).
-- Optionally includes a low-poly child mesh named `collision` for server-side
-  physics (e.g., a cylinder for a tree trunk instead of the full foliage mesh).
-- Exported to `assets/world/props/<prop_id>.glb`.
+- Sculpt terrain directly in the zone `.blend` file.
+- Place it in a `Terrain` collection or name it `terrain`.
+- The export script selects the terrain mesh and exports it as a standalone GLB.
+
+### Spawners and Player Spawn
+
+These are invisible game logic objects with no visual representation:
+
+- **Spawners**: Place an Empty where a monster camp should be. Add custom
+  properties: `type = "spawner"`, `monster_id`, `max_count`, `radius`,
+  `level_min`, `level_max`, `respawn_secs`.
+- **Player spawn**: Place an Empty. Add custom property `type = "player_spawn"`.
+
+### Zone File (.blend) Summary
+
+One `.blend` file per zone, stored in `zones/` (source files, not shipped):
+
+| Object Type | Blender Representation | Identification |
+|-------------|----------------------|----------------|
+| Terrain | Sculpted mesh | In `Terrain` collection or named `terrain` |
+| Prop | Imported GLB, duplicated and placed | Named `<prop_id>.001`, `<prop_id>.002`, etc. |
+| Spawner | Empty | Custom property `type = "spawner"` + config properties |
+| Player spawn | Empty | Custom property `type = "player_spawn"` |
 
 ### Export Script
 
@@ -136,15 +187,17 @@ blender zones/starting_meadow.blend --background \
 
 The script:
 
-1. Finds objects tagged `type = "terrain"`, exports them as a single
-   `terrain/<zone_name>.glb`.
-2. Iterates empties tagged `type = "prop"`, collects their transforms and
-   `prop_id` values.
-3. Iterates empties tagged `type = "spawner"`, collects spawn configuration.
-4. Finds the `type = "player_spawn"` empty.
+1. Finds the terrain mesh, exports it as `terrain/<zone_name>.glb`.
+2. Iterates all mesh objects that are not terrain. Strips the `.001` suffix from
+   each object name to get the `prop_id`. Collects their world-space transforms.
+3. Iterates empties with `type = "spawner"`, collects spawn configuration from
+   custom properties.
+4. Finds the empty with `type = "player_spawn"`.
 5. Writes `zones/<zone_name>.ron` with all collected data.
 6. Validates that every referenced `prop_id` has a corresponding `.glb` in the
    props directory.
+
+The script does **not** export prop GLBs -- only the terrain and the zone RON.
 
 ## Zone Definition Format
 
@@ -157,13 +210,13 @@ ZoneDef(
     player_spawn: (0.0, 5.0, 0.0),
     props: [
         PropInstance(
-            asset: "world/props/tree_oak.glb",
+            asset: "world/props/tent.glb",
             transform: (
                 translation: (10.0, 0.0, -5.0),
                 rotation: (0.0, 0.7071, 0.0, 0.7071),
                 scale: (1.0, 1.0, 1.0),
             ),
-            collision: TrimeshFromMesh,
+            collision: ConvexHull,
         ),
         PropInstance(
             asset: "world/props/rock_large.glb",
@@ -214,23 +267,26 @@ spawners).
 
 ## Props and Collision
 
-Props should have efficient collision representations:
+Since the paid assets are low-poly, collision can be computed directly from the
+visual mesh in most cases:
 
 - **Decorative only** (`collision: None`): grass, flowers, small ground clutter.
   Client renders them; server ignores them entirely.
-- **Convex hull** (`collision: ConvexHull`): rocks, crates, simple shapes. Fast
-  collision, good enough for most solid objects.
-- **Trimesh** (`collision: TrimeshFromMesh`): terrain, buildings, complex
-  walkable geometry. More expensive but accurate.
-- **Dedicated collision mesh**: For props like trees where the visual mesh is
-  complex (5k+ triangles) but the collision should be a simple cylinder, add a
-  low-poly child mesh named `collision` in Blender. The server uses only that
-  child mesh; the client uses both.
+- **Convex hull** (`collision: ConvexHull`): the default for most props. Avian3d
+  computes a convex hull from the mesh at load time. Fast, zero authoring effort,
+  works well for rocks, crates, tents, trees. Low-poly meshes make this cheap.
+- **Trimesh** (`collision: TrimeshFromMesh`): terrain and concave walkable
+  geometry (archways, bridges, building interiors). More expensive but handles
+  concave shapes correctly.
+
+Dedicated hand-authored collision meshes are not needed given low-poly source
+assets. If a specific prop causes issues (e.g., convex hull fills a gap that
+players should walk through), switch it to trimesh.
 
 ## Instancing
 
 Bevy instances mesh data automatically. Spawning 200 entities that reference
-`world/props/tree_oak.glb` loads the mesh once and shares it. The zone RON file
+`world/props/pine_tree.glb` loads the mesh once and shares it. The zone RON file
 can reference the same prop hundreds of times with different transforms at
 negligible memory cost.
 
