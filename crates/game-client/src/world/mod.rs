@@ -1,4 +1,5 @@
 mod scene;
+mod lod;
 mod actors;
 pub mod camera;
 pub mod selection;
@@ -27,7 +28,7 @@ impl Plugin for WorldPlugin {
         app.insert_resource(selection::CursorOverUi::default());
 
         app.add_systems(Startup, scene::load_zone);
-        app.add_systems(Update, scene::spawn_zone_when_ready);
+        app.add_systems(Update, (scene::spawn_zone_when_ready, lod::configure_lod_visibility));
 
         app.add_systems(
             Update,

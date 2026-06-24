@@ -139,7 +139,18 @@ def build_prop_index(props_dir: Path) -> dict[str, str]:
 
 
 # ---------------------------------------------------------------------------
-# RON SERIALIZATION
+# COORDINATE CONVERSION
+#
+# Blender uses Z-up right-handed coordinates:  X=right, Y=forward, Z=up
+# glTF/Bevy uses Y-up right-handed coordinates: X=right, Y=up,      Z=back
+#
+# Conversion:
+#   glTF X =  Blender X
+#   glTF Y =  Blender Z
+#   glTF Z = -Blender Y
+#
+# The glTF exporter applies this to mesh data inside GLBs automatically,
+# but we must apply it manually to the world transforms written to RON.
 # ---------------------------------------------------------------------------
 
 
@@ -150,16 +161,22 @@ def format_f32(value: float) -> str:
     return f"{value:.6f}".rstrip("0").rstrip(".")
 
 
-def quat_to_ron(quat) -> str:
-    """Convert a Blender quaternion (WXYZ) to RON array [x, y, z, w]."""
-    # Blender quaternions are (w, x, y, z), we output [x, y, z, w]
-    x, y, z, w = quat.x, quat.y, quat.z, quat.w
-    return f"({format_f32(x)}, {format_f32(y)}, {format_f32(z)}, {format_f32(w)})"
+def vec3_blender_to_ron(vec) -> str:
+    """Convert a Blender Z-up Vector to Y-up RON tuple."""
+    return f"({format_f32(vec.x)}, {format_f32(vec.z)}, {format_f32(-vec.y)})"
 
 
-def vec3_to_ron(vec) -> str:
-    """Convert a Blender Vector to RON array [x, y, z]."""
-    return f"({format_f32(vec.x)}, {format_f32(vec.y)}, {format_f32(vec.z)})"
+def quat_blender_to_ron(quat) -> str:
+    """Convert a Blender Z-up quaternion to Y-up RON tuple [x, y, z, w]."""
+    return (
+        f"({format_f32(quat.x)}, {format_f32(quat.z)}, "
+        f"{format_f32(-quat.y)}, {format_f32(quat.w)})"
+    )
+
+
+def scale_blender_to_ron(scale) -> str:
+    """Convert a Blender Z-up scale to Y-up RON tuple."""
+    return f"({format_f32(scale.x)}, {format_f32(scale.z)}, {format_f32(scale.y)})"
 
 
 def prop_instance_to_ron(asset: str, obj, collision: str, indent: str = "        ") -> str:
@@ -171,9 +188,9 @@ def prop_instance_to_ron(asset: str, obj, collision: str, indent: str = "       
     lines = [
         f"{indent}(",
         f"{indent}    asset: \"{asset}\",",
-        f"{indent}    translation: {vec3_to_ron(loc)},",
-        f"{indent}    rotation: {quat_to_ron(rot)},",
-        f"{indent}    scale: {vec3_to_ron(scale)},",
+        f"{indent}    translation: {vec3_blender_to_ron(loc)},",
+        f"{indent}    rotation: {quat_blender_to_ron(rot)},",
+        f"{indent}    scale: {scale_blender_to_ron(scale)},",
         f"{indent}    collision: {collision},",
         f"{indent}),",
     ]
@@ -195,7 +212,7 @@ def spawn_point_to_ron(obj, indent: str = "        ") -> str:
     lines = [
         f"{indent}(",
         f"{indent}    id: \"{spawn_id}\",",
-        f"{indent}    position: {vec3_to_ron(loc)},",
+        f"{indent}    position: {vec3_blender_to_ron(loc)},",
         f"{indent}    radius: {format_f32(radius)},",
         f"{indent}    monster_id: \"{monster_id}\",",
         f"{indent}    max_count: {max_count},",
@@ -403,7 +420,7 @@ def main():
         "(",
         f"    id: \"{zone_name}\",",
         f"    terrain: \"{terrain_asset_path}\",",
-        f"    player_spawn: {vec3_to_ron(player_spawn)},",
+        f"    player_spawn: {vec3_blender_to_ron(player_spawn)},",
         "    props: [",
     ]
 

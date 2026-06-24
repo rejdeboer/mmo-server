@@ -1,5 +1,6 @@
 use avian3d::prelude::*;
 use bevy::{asset::RenderAssetUsages, gltf::GltfLoaderSettings, prelude::*};
+use game_core::lod;
 use game_core::zone::{CollisionType, ZoneDef, ZoneDefHandle};
 
 pub fn load_zone(commands: &mut Commands, assets: &AssetServer) {
@@ -83,4 +84,30 @@ pub fn spawn_zone_when_ready(
         prop_count = zone.props.iter().filter(|p| p.collision != CollisionType::None).count(),
         "zone collision loaded"
     );
+}
+
+/// Marker to avoid re-processing entities.
+#[derive(Component)]
+pub struct LodProcessed;
+
+/// Despawns non-LOD0 node entities on the server.
+///
+/// The server only needs the highest-detail mesh (LOD0) for collision.
+/// Lower LOD levels would create inaccurate colliders and waste memory.
+/// Despawning the named node also removes its mesh children.
+pub fn despawn_non_lod0(
+    mut commands: Commands,
+    query: Query<(Entity, &Name), Without<LodProcessed>>,
+) {
+    for (entity, name) in &query {
+        let Some(level) = lod::parse_lod_level(name.as_str()) else {
+            continue;
+        };
+
+        if level > 0 {
+            commands.entity(entity).despawn();
+        } else {
+            commands.entity(entity).insert(LodProcessed);
+        }
+    }
 }

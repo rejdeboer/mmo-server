@@ -27,7 +27,7 @@ impl Plugin for ContentPlugin {
         ));
 
         app.add_systems(PreStartup, setup_assets);
-        app.add_systems(Update, zone::spawn_zone_when_ready);
+        app.add_systems(Update, (zone::spawn_zone_when_ready, zone::despawn_non_lod0));
     }
 }
 
