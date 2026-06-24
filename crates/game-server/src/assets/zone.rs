@@ -1,26 +1,15 @@
 use avian3d::prelude::*;
-use bevy::{gltf::GltfLoaderSettings, prelude::*};
+use bevy::{asset::RenderAssetUsages, gltf::GltfLoaderSettings, prelude::*};
 use game_core::zone::{CollisionType, ZoneDef, ZoneDefHandle};
 
-pub fn load_zone(mut commands: Commands, assets: Res<AssetServer>) {
+pub fn load_zone(commands: &mut Commands, assets: &AssetServer) {
     let handle = assets.load::<ZoneDef>("world/zones/meadow.zone.ron");
     commands.insert_resource(ZoneDefHandle(handle));
-
-    commands.spawn((
-        DirectionalLight {
-            illuminance: 10_000.0,
-            shadows_enabled: true,
-            ..default()
-        },
-        Transform::from_rotation(Quat::from_euler(EulerRot::XYZ, -0.8, 0.4, 0.0)),
-    ));
 }
 
-/// Marker component to indicate the zone has been spawned.
 #[derive(Component)]
 pub struct ZoneTerrain;
 
-/// Marker component for prop entities spawned from the zone definition.
 #[derive(Component)]
 pub struct ZoneProp;
 
@@ -33,7 +22,6 @@ pub fn spawn_zone_when_ready(
 ) {
     let Some(handle) = zone_handle else { return };
 
-    // Already spawned
     if !terrain_query.is_empty() {
         return;
     }
@@ -42,7 +30,7 @@ pub fn spawn_zone_when_ready(
         return;
     };
 
-    // Spawn terrain with full materials and trimesh collision
+    // Spawn terrain without materials, with trimesh collision
     if !zone.terrain.is_empty() {
         commands.spawn((
             ZoneTerrain,
@@ -50,6 +38,7 @@ pub fn spawn_zone_when_ready(
                 assets.load_with_settings(
                     format!("{}#Scene0", zone.terrain),
                     |s: &mut GltfLoaderSettings| {
+                        s.load_materials = RenderAssetUsages::empty();
                         s.load_cameras = false;
                         s.load_lights = false;
                         s.load_animations = false;
@@ -62,14 +51,21 @@ pub fn spawn_zone_when_ready(
         ));
     }
 
-    // Spawn props
+    // Spawn props that have collision (skip decorative props entirely)
     for prop in &zone.props {
-        let mut entity = commands.spawn((
+        let collider_constructor = match prop.collision {
+            CollisionType::None => continue,
+            CollisionType::ConvexHull => ColliderConstructor::ConvexHullFromMesh,
+            CollisionType::TrimeshFromMesh => ColliderConstructor::TrimeshFromMesh,
+        };
+
+        commands.spawn((
             ZoneProp,
             SceneRoot(
                 assets.load_with_settings(
                     format!("{}#Scene0", prop.asset),
                     |s: &mut GltfLoaderSettings| {
+                        s.load_materials = RenderAssetUsages::empty();
                         s.load_cameras = false;
                         s.load_lights = false;
                         s.load_animations = false;
@@ -77,28 +73,14 @@ pub fn spawn_zone_when_ready(
                 ),
             ),
             prop.transform(),
+            RigidBody::Static,
+            ColliderConstructorHierarchy::new(collider_constructor),
         ));
-
-        match prop.collision {
-            CollisionType::ConvexHull => {
-                entity.insert((
-                    RigidBody::Static,
-                    ColliderConstructorHierarchy::new(ColliderConstructor::ConvexHullFromMesh),
-                ));
-            }
-            CollisionType::TrimeshFromMesh => {
-                entity.insert((
-                    RigidBody::Static,
-                    ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
-                ));
-            }
-            CollisionType::None => {}
-        }
     }
 
     tracing::info!(
         zone_id = %zone.id,
-        prop_count = zone.props.len(),
-        "zone loaded"
+        prop_count = zone.props.iter().filter(|p| p.collision != CollisionType::None).count(),
+        "zone collision loaded"
     );
 }

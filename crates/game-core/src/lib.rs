@@ -5,3 +5,4 @@ pub mod constants;
 pub mod movement;
 pub mod networking;
 pub mod spells;
+pub mod zone;

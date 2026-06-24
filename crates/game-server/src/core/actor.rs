@@ -5,7 +5,7 @@ use game_core::{
     character_controller::CharacterVelocityY,
     collision::GameLayer,
     components::{LevelComponent, MovementSpeedComponent, Vitals},
-    constants::BASE_MOVEMENT_SPEED,
+    constants::{ACTOR_COLLIDER_LENGTH, ACTOR_COLLIDER_RADIUS, BASE_MOVEMENT_SPEED},
     networking::NetworkId,
 };
 use std::sync::Arc;
@@ -45,13 +45,13 @@ impl ActorBundle {
             level: LevelComponent(level),
             interested_clients: InterestedClients::default(),
             body: RigidBody::Kinematic,
-            collider: Collider::capsule(1., 2.),
+            collider: Collider::capsule(ACTOR_COLLIDER_RADIUS, ACTOR_COLLIDER_LENGTH),
             collision_layers: CollisionLayers::new(
                 GameLayer::Player,
                 [GameLayer::Default, GameLayer::Ground],
             ),
             shape_caster: ShapeCaster::new(
-                Collider::capsule(0.9, 0.1),
+                Collider::capsule(ACTOR_COLLIDER_RADIUS - 0.1, 0.1),
                 Vec3::ZERO,
                 Quat::IDENTITY,
                 Dir3::NEG_Y,

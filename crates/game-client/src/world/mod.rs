@@ -6,6 +6,8 @@ mod target_frame;
 mod player_frame;
 
 use bevy::prelude::*;
+use bevy_common_assets::ron::RonAssetPlugin;
+use game_core::zone::ZoneDef;
 
 use crate::application::AppState;
 use crate::networking::NetworkingSet;
@@ -18,11 +20,14 @@ pub struct WorldPlugin;
 
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
+        app.add_plugins(RonAssetPlugin::<ZoneDef>::new(&["zone.ron"]));
+
         app.insert_resource(selection::SelectedTarget::default());
         app.insert_resource(selection::ClickTracker::default());
         app.insert_resource(selection::CursorOverUi::default());
 
-        app.add_systems(Startup, scene::setup_world);
+        app.add_systems(Startup, scene::load_zone);
+        app.add_systems(Update, scene::spawn_zone_when_ready);
 
         app.add_systems(
             Update,
@@ -53,9 +58,9 @@ impl Plugin for WorldPlugin {
                 target_frame::manage_target_unit_frame,
                 target_frame::sync_target_unit_frame,
                 target_frame::handle_target_context_menu,
-            player_frame::spawn_player_unit_frame,
-            player_frame::handle_player_context_menu,
-        )
+                player_frame::spawn_player_unit_frame,
+                player_frame::handle_player_context_menu,
+            )
                 .run_if(in_state(AppState::InGame)),
         );
 

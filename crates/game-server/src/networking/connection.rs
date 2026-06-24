@@ -16,7 +16,7 @@ use bevy_renet::{
 use bevy_tokio_tasks::{TaskContext, TokioTasksRuntime};
 use game_core::{
     components::Vitals,
-    constants::BASE_MOVEMENT_SPEED,
+    constants::{ACTOR_HALF_HEIGHT, BASE_MOVEMENT_SPEED},
     networking::NetworkIdMapping,
     spells::{SpellLibrary, SpellLibraryHandle},
 };
@@ -126,9 +126,10 @@ async fn handle_enter_game_task(
         .expect("player abilities retrieved");
 
     ctx.run_on_main_thread(move |ctx| {
+        // DB stores ground-level position (feet); offset Y to capsule center
         let mut transform = Transform::from_xyz(
             character.position_x,
-            character.position_y,
+            character.position_y + ACTOR_HALF_HEIGHT,
             character.position_z,
         );
         transform.rotate_y(character.rotation_yaw);
@@ -258,7 +259,7 @@ fn process_client_disconnected(
             let transform = *transform;
             commands.entity(entity).despawn();
             runtime.spawn_background_task(async move |_| {
-                // TODO: This pos is probably incorrect
+                // Convert capsule-center position back to ground-level for DB storage
                 let pos = transform.translation;
                 let (yaw, _, _) = transform.rotation.to_euler(EulerRot::YXZ);
                 if let Err(error) = sqlx::query!(
@@ -270,7 +271,7 @@ fn process_client_disconnected(
                     "#,
                     character_id,
                     pos.x,
-                    pos.y,
+                    pos.y - ACTOR_HALF_HEIGHT,
                     pos.z,
                     yaw,
                 )

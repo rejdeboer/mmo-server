@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use game_core::{
     collision::GameLayer,
     components::{LevelComponent, MovementSpeedComponent, Vitals},
-    constants::BASE_MOVEMENT_SPEED,
+    constants::{ACTOR_COLLIDER_LENGTH, ACTOR_COLLIDER_RADIUS, BASE_MOVEMENT_SPEED},
 };
 use avian3d::prelude::*;
 
@@ -33,7 +33,7 @@ impl ActorBundle {
             movement_speed: MovementSpeedComponent(BASE_MOVEMENT_SPEED),
             level: LevelComponent(level),
             body: RigidBody::Kinematic,
-            collider: Collider::capsule(1., 2.),
+            collider: Collider::capsule(ACTOR_COLLIDER_RADIUS, ACTOR_COLLIDER_LENGTH),
             collision_layers: CollisionLayers::new(
                 GameLayer::Player,
                 [GameLayer::Default, GameLayer::Ground],

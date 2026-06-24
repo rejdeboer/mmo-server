@@ -12,6 +12,7 @@ use crate::{
 use bevy::prelude::*;
 use game_core::{
     components::Vitals,
+    constants::ACTOR_HALF_HEIGHT,
     networking::NetworkIdMapping,
     spells::{SpellLibrary, SpellLibraryHandle},
 };
@@ -83,7 +84,10 @@ pub fn spawn_mobs(
                 let x = rng.gen_range(-spawner.spawn_radius..spawner.spawn_radius);
                 let z = rng.gen_range(-spawner.spawn_radius..spawner.spawn_radius);
                 let level = rng.gen_range(spawner.level_range.clone());
-                let spawn_transform = transform.with_translation(Vec3::new(x, 0.0, z));
+                // Spawner position is ground-level; offset Y to capsule center
+                let ground_y = transform.translation.y;
+                let spawn_transform =
+                    transform.with_translation(Vec3::new(x, ground_y + ACTOR_HALF_HEIGHT, z));
 
                 spawn_monster_entity(
                     &mut commands,

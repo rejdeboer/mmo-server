@@ -2,16 +2,17 @@ mod content_id;
 mod items;
 mod loot;
 mod monsters;
+mod zone;
 
 pub use content_id::ContentId;
 pub use items::*;
 pub use loot::*;
 pub use monsters::*;
 
-use avian3d::prelude::*;
-use bevy::{asset::RenderAssetUsages, gltf::GltfLoaderSettings, prelude::*};
+use bevy::prelude::*;
 use bevy_common_assets::ron::RonAssetPlugin;
 use game_core::spells::{SpellLibrary, SpellLibraryHandle};
+use game_core::zone::ZoneDef;
 
 pub struct ContentPlugin;
 
@@ -22,27 +23,16 @@ impl Plugin for ContentPlugin {
             RonAssetPlugin::<LootTableLibrary>::new(&["loot_tables.ron"]),
             RonAssetPlugin::<MonsterLibrary>::new(&["monsters.ron"]),
             RonAssetPlugin::<SpellLibrary>::new(&["spells.ron"]),
+            RonAssetPlugin::<ZoneDef>::new(&["zone.ron"]),
         ));
 
         app.add_systems(PreStartup, setup_assets);
+        app.add_systems(Update, zone::spawn_zone_when_ready);
     }
 }
 
 fn setup_assets(mut commands: Commands, assets: Res<AssetServer>) {
-    commands.spawn((
-        SceneRoot(
-            assets.load_with_settings("world.gltf#Scene0", |s: &mut GltfLoaderSettings| {
-                s.load_materials = RenderAssetUsages::empty();
-                s.load_cameras = false;
-                s.load_lights = false;
-                s.load_animations = false;
-            }),
-        ),
-        // TODO: We are trying to match Godot here to make it work, but this is hacky
-        Transform::from_xyz(0., -2., 0.),
-        RigidBody::Static,
-        ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
-    ));
+    zone::load_zone(&mut commands, &assets);
 
     let items_handle = assets.load::<ItemLibrary>("items.ron");
     commands.insert_resource(ItemLibraryHandle(items_handle));
