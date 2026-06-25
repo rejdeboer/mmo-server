@@ -5,5 +5,6 @@ pub mod constants;
 pub mod lod;
 pub mod movement;
 pub mod networking;
+pub mod props;
 pub mod spells;
 pub mod zone;

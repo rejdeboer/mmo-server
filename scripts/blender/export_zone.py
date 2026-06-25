@@ -61,36 +61,6 @@ def to_kebab_case(name: str) -> str:
     return s
 
 # ---------------------------------------------------------------------------
-# COLLISION DEFAULTS
-#
-# Maps prop name prefixes to their collision type.
-# Props not matching any prefix default to ConvexHull.
-# ---------------------------------------------------------------------------
-COLLISION_NONE_PREFIXES = [
-    "SM_Env_Grass_",
-    "SM_Env_Flowers_",
-    "SM_Prop_Mushroom_",
-    "Env_Cloud",
-    "SM_Env_Fog_",
-]
-
-COLLISION_TRIMESH_PREFIXES = [
-    "SM_Bld_",
-]
-
-
-def get_collision_type(name: str) -> str:
-    """Determine the collision type for a prop based on naming conventions."""
-    for prefix in COLLISION_NONE_PREFIXES:
-        if name.startswith(prefix):
-            return "None"
-    for prefix in COLLISION_TRIMESH_PREFIXES:
-        if name.startswith(prefix):
-            return "TrimeshFromMesh"
-    return "ConvexHull"
-
-
-# ---------------------------------------------------------------------------
 # PROP PATH RESOLUTION
 # ---------------------------------------------------------------------------
 
@@ -179,7 +149,7 @@ def scale_blender_to_ron(scale) -> str:
     return f"({format_f32(scale.x)}, {format_f32(scale.z)}, {format_f32(scale.y)})"
 
 
-def prop_instance_to_ron(asset: str, obj, collision: str, indent: str = "        ") -> str:
+def prop_instance_to_ron(asset: str, obj, indent: str = "        ") -> str:
     """Serialize a prop instance to RON format."""
     loc = obj.matrix_world.to_translation()
     rot = obj.matrix_world.to_quaternion()
@@ -191,7 +161,6 @@ def prop_instance_to_ron(asset: str, obj, collision: str, indent: str = "       
         f"{indent}    translation: {vec3_blender_to_ron(loc)},",
         f"{indent}    rotation: {quat_blender_to_ron(rot)},",
         f"{indent}    scale: {scale_blender_to_ron(scale)},",
-        f"{indent}    collision: {collision},",
         f"{indent}),",
     ]
     return "\n".join(lines)
@@ -274,7 +243,7 @@ def collect_props(prop_index: dict[str, str]) -> list[tuple[str, object, str]]:
     """
     Find all collection instances in the scene and resolve their prop paths
     using the auto-generated prop index.
-    Returns list of (asset_path, blender_object, collision_type).
+    Returns list of (asset_path, blender_object).
     """
     props = []
 
@@ -293,8 +262,7 @@ def collect_props(prop_index: dict[str, str]) -> list[tuple[str, object, str]]:
                   f"(object '{obj.name}'). Skipping.")
             continue
 
-        collision = get_collision_type(collection_name)
-        props.append((asset_path, obj, collision))
+        props.append((asset_path, obj))
 
     return props
 
@@ -388,7 +356,7 @@ def main():
         assets_root = output_dir.parent
         valid = True
         seen_paths: set[str] = set()
-        for asset_path, obj, _ in props:
+        for asset_path, obj in props:
             if asset_path in seen_paths:
                 continue
             seen_paths.add(asset_path)
@@ -424,8 +392,8 @@ def main():
         "    props: [",
     ]
 
-    for asset_path, obj, collision in props:
-        ron_lines.append(prop_instance_to_ron(asset_path, obj, collision))
+    for asset_path, obj in props:
+        ron_lines.append(prop_instance_to_ron(asset_path, obj))
 
     ron_lines.append("    ],")
     ron_lines.append("    spawn_points: [")

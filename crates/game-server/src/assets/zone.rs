@@ -1,7 +1,8 @@
 use avian3d::prelude::*;
 use bevy::{asset::RenderAssetUsages, gltf::GltfLoaderSettings, prelude::*};
 use game_core::lod;
-use game_core::zone::{CollisionType, ZoneDef, ZoneDefHandle};
+use game_core::props::{CollisionType, PropsConfig, PropsConfigHandle, model_name_from_asset_path};
+use game_core::zone::{ZoneDef, ZoneDefHandle};
 
 pub fn load_zone(commands: &mut Commands, assets: &AssetServer) {
     let handle = assets.load::<ZoneDef>("world/zones/meadow.zone.ron");
@@ -18,16 +19,22 @@ pub fn spawn_zone_when_ready(
     mut commands: Commands,
     zone_handle: Option<Res<ZoneDefHandle>>,
     zone_assets: Res<Assets<ZoneDef>>,
+    props_handle: Option<Res<PropsConfigHandle>>,
+    props_assets: Res<Assets<PropsConfig>>,
     assets: Res<AssetServer>,
     terrain_query: Query<&ZoneTerrain>,
 ) {
-    let Some(handle) = zone_handle else { return };
+    let Some(zone_h) = zone_handle else { return };
+    let Some(props_h) = props_handle else { return };
 
     if !terrain_query.is_empty() {
         return;
     }
 
-    let Some(zone) = zone_assets.get(&handle.0) else {
+    let Some(zone) = zone_assets.get(&zone_h.0) else {
+        return;
+    };
+    let Some(props_config) = props_assets.get(&props_h.0) else {
         return;
     };
 
@@ -53,8 +60,16 @@ pub fn spawn_zone_when_ready(
     }
 
     // Spawn props that have collision (skip decorative props entirely)
+    let mut spawned = 0;
     for prop in &zone.props {
-        let collider_constructor = match prop.collision {
+        let model_name = model_name_from_asset_path(&prop.asset);
+        let collision = props_config
+            .props
+            .get(model_name)
+            .map(|d| d.collision)
+            .unwrap_or(CollisionType::None);
+
+        let collider_constructor = match collision {
             CollisionType::None => continue,
             CollisionType::ConvexHull => ColliderConstructor::ConvexHullFromMesh,
             CollisionType::TrimeshFromMesh => ColliderConstructor::TrimeshFromMesh,
@@ -77,11 +92,12 @@ pub fn spawn_zone_when_ready(
             RigidBody::Static,
             ColliderConstructorHierarchy::new(collider_constructor),
         ));
+        spawned += 1;
     }
 
     tracing::info!(
         zone_id = %zone.id,
-        prop_count = zone.props.iter().filter(|p| p.collision != CollisionType::None).count(),
+        prop_count = spawned,
         "zone collision loaded"
     );
 }

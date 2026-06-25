@@ -1,6 +1,9 @@
 use avian3d::prelude::*;
 use bevy::{gltf::GltfLoaderSettings, prelude::*};
-use game_core::zone::{CollisionType, ZoneDef, ZoneDefHandle};
+use game_core::{
+    props::{CollisionType, PropsConfig, PropsConfigHandle, model_name_from_asset_path},
+    zone::{ZoneDef, ZoneDefHandle},
+};
 
 pub fn load_zone(mut commands: Commands, assets: Res<AssetServer>) {
     let handle = assets.load::<ZoneDef>("world/zones/meadow.zone.ron");
@@ -28,17 +31,23 @@ pub fn spawn_zone_when_ready(
     mut commands: Commands,
     zone_handle: Option<Res<ZoneDefHandle>>,
     zone_assets: Res<Assets<ZoneDef>>,
+    props_handle: Option<Res<PropsConfigHandle>>,
+    props_assets: Res<Assets<PropsConfig>>,
     assets: Res<AssetServer>,
     terrain_query: Query<&ZoneTerrain>,
 ) {
-    let Some(handle) = zone_handle else { return };
+    let Some(zone_h) = zone_handle else { return };
+    let Some(props_h) = props_handle else { return };
 
     // Already spawned
     if !terrain_query.is_empty() {
         return;
     }
 
-    let Some(zone) = zone_assets.get(&handle.0) else {
+    let Some(zone) = zone_assets.get(&zone_h.0) else {
+        return;
+    };
+    let Some(props_config) = props_assets.get(&props_h.0) else {
         return;
     };
 
@@ -64,6 +73,13 @@ pub fn spawn_zone_when_ready(
 
     // Spawn props
     for prop in &zone.props {
+        let model_name = model_name_from_asset_path(&prop.asset);
+        let collision = props_config
+            .props
+            .get(model_name)
+            .map(|d| d.collision)
+            .unwrap_or(CollisionType::None);
+
         let mut entity = commands.spawn((
             ZoneProp,
             SceneRoot(
@@ -79,7 +95,7 @@ pub fn spawn_zone_when_ready(
             prop.transform(),
         ));
 
-        match prop.collision {
+        match collision {
             CollisionType::ConvexHull => {
                 entity.insert((
                     RigidBody::Static,

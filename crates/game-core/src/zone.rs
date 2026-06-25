@@ -2,20 +2,12 @@ use bevy::prelude::*;
 use bevy::reflect::TypePath;
 use serde::Deserialize;
 
-#[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
-pub enum CollisionType {
-    None,
-    ConvexHull,
-    TrimeshFromMesh,
-}
-
 #[derive(Deserialize, Debug, Clone)]
 pub struct PropInstance {
     pub asset: String,
     pub translation: [f32; 3],
     pub rotation: [f32; 4],
     pub scale: [f32; 3],
-    pub collision: CollisionType,
 }
 
 impl PropInstance {

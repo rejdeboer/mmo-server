@@ -11,6 +11,7 @@ pub use monsters::*;
 
 use bevy::prelude::*;
 use bevy_common_assets::ron::RonAssetPlugin;
+use game_core::props::{PropsConfig, PropsConfigHandle};
 use game_core::spells::{SpellLibrary, SpellLibraryHandle};
 use game_core::zone::ZoneDef;
 
@@ -24,6 +25,7 @@ impl Plugin for ContentPlugin {
             RonAssetPlugin::<MonsterLibrary>::new(&["monsters.ron"]),
             RonAssetPlugin::<SpellLibrary>::new(&["spells.ron"]),
             RonAssetPlugin::<ZoneDef>::new(&["zone.ron"]),
+            RonAssetPlugin::<PropsConfig>::new(&["props.ron"]),
         ));
 
         app.add_systems(PreStartup, setup_assets);
@@ -42,4 +44,6 @@ fn setup_assets(mut commands: Commands, assets: Res<AssetServer>) {
     commands.insert_resource(MonsterLibraryHandle(monsters_handle));
     let spells_handle = assets.load::<SpellLibrary>("spells.ron");
     commands.insert_resource(SpellLibraryHandle(spells_handle));
+    let props_handle = assets.load::<PropsConfig>("world/props.ron");
+    commands.insert_resource(PropsConfigHandle(props_handle));
 }
