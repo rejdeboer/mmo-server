@@ -40,6 +40,10 @@ pub struct SpawnPoint {
 pub struct ZoneDef {
     pub id: String,
     pub terrain: String,
+    #[serde(default)]
+    pub skydome: Option<String>,
+    #[serde(default)]
+    pub skydome_scale: Option<f32>,
     pub player_spawn: [f32; 3],
     pub props: Vec<PropInstance>,
     #[serde(default)]

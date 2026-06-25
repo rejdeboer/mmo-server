@@ -15,6 +15,8 @@ The script expects:
   - Linked collection instances for props (auto-resolved from props directory)
   - Empties with custom property type="spawner" for mob spawners
   - An empty with custom property type="player_spawn" for the spawn point
+  - An empty with custom property type="skydome" for the zone skydome
+    (optionally set an "asset" property to override GLB resolution)
 
 Prop resolution: The script scans assets/world/props/ for all .glb files and
 builds a lookup from filename stem to asset-relative path. Collection instance
@@ -289,6 +291,36 @@ def find_player_spawn():
     return None
 
 
+def find_skydome(prop_index: dict[str, str]) -> tuple[str | None, float | None]:
+    """
+    Find an empty with custom property type='skydome'.
+
+    The empty's name (or 'asset' custom property) is resolved against the prop
+    index to find the GLB path. An optional 'scale' custom property controls
+    the uniform scale factor written to the zone RON.
+    """
+    for obj in bpy.context.scene.objects:
+        if obj.type == "EMPTY" and obj.get("type") == "skydome":
+            scale = obj.get("scale")
+            if scale is not None:
+                scale = float(scale)
+
+            # Allow explicit asset override via custom property
+            asset_override = obj.get("asset")
+            if asset_override:
+                return asset_override, scale
+
+            # Otherwise resolve from prop index using the object name
+            asset_path = prop_index.get(obj.name)
+            if asset_path is None:
+                print(f"WARNING: Skydome empty '{obj.name}' could not be resolved "
+                      f"in prop index. Set an 'asset' custom property or rename "
+                      f"to match a GLB stem.")
+                return None, None
+            return asset_path, scale
+    return None, None
+
+
 # ---------------------------------------------------------------------------
 # MAIN
 # ---------------------------------------------------------------------------
@@ -373,6 +405,11 @@ def main():
     spawners = collect_spawners()
     print(f"Found {len(spawners)} spawner(s)")
 
+    # Find skydome
+    skydome_asset, skydome_scale = find_skydome(prop_index)
+    if skydome_asset:
+        print(f"Skydome: {skydome_asset} (scale: {skydome_scale or 'default'})")
+
     # Find player spawn
     player_spawn_obj = find_player_spawn()
     if player_spawn_obj:
@@ -388,6 +425,14 @@ def main():
         "(",
         f"    id: \"{zone_name}\",",
         f"    terrain: \"{terrain_asset_path}\",",
+    ]
+
+    if skydome_asset:
+        ron_lines.append(f"    skydome: Some(\"{skydome_asset}\"),")
+        if skydome_scale is not None:
+            ron_lines.append(f"    skydome_scale: Some({format_f32(skydome_scale)}),")
+
+    ron_lines += [
         f"    player_spawn: {vec3_blender_to_ron(player_spawn)},",
         "    props: [",
     ]
@@ -414,6 +459,7 @@ def main():
 
     print(f"=== Done: {zone_name} ===")
     print(f"  Terrain: {terrain_asset_path}")
+    print(f"  Skydome: {skydome_asset or 'None'}")
     print(f"  Props: {len(props)}")
     print(f"  Spawners: {len(spawners)}")
 

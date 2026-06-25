@@ -28,7 +28,15 @@ impl Plugin for WorldPlugin {
         app.insert_resource(selection::CursorOverUi::default());
 
         app.add_systems(Startup, scene::load_zone);
-        app.add_systems(Update, (scene::spawn_zone_when_ready, lod::configure_lod_visibility));
+        app.add_systems(
+            Update,
+            (
+                scene::spawn_zone_when_ready,
+                scene::skydome_follow_camera,
+                scene::configure_skydome,
+                lod::configure_lod_visibility,
+            ),
+        );
 
         app.add_systems(
             Update,
