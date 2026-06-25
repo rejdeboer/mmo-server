@@ -12,6 +12,23 @@ pub enum CollisionType {
     TrimeshFromMesh,
 }
 
+/// Serializable alpha mode for materials.
+#[derive(Deserialize, Debug, Clone, Copy, PartialEq)]
+pub enum AlphaModeDef {
+    Opaque,
+    Blend,
+    Mask(f32),
+}
+
+/// A material definition that can be one of several types.
+#[derive(Deserialize, Debug, Clone)]
+pub enum MaterialDef {
+    /// Custom foliage shader with noise coloring and wind displacement.
+    Foliage(FoliageMaterialDef),
+    /// Override fields on the standard PBR material. Unset fields keep the GLB defaults.
+    Standard(StandardMaterialDef),
+}
+
 /// Material color definition for the foliage shader.
 #[derive(Deserialize, Debug, Clone)]
 pub struct FoliageMaterialDef {
@@ -24,6 +41,31 @@ pub struct FoliageMaterialDef {
     pub noise_large_freq: f32,
     pub wind_strength: f32,
     pub wind_frequency: f32,
+    /// Optional base color texture path (relative to assets root).
+    /// Used for alpha masking (e.g., grass blade shape).
+    #[serde(default)]
+    pub base_color_texture: Option<String>,
+}
+
+/// Override fields on the standard PBR material.
+///
+/// All fields are optional — only specified values override the GLB defaults.
+#[derive(Deserialize, Debug, Clone, Default)]
+pub struct StandardMaterialDef {
+    pub base_color: Option<(f32, f32, f32)>,
+    pub perceptual_roughness: Option<f32>,
+    pub metallic: Option<f32>,
+    pub emissive: Option<(f32, f32, f32, f32)>,
+    pub reflectance: Option<f32>,
+    /// Optional base color texture path (relative to assets root).
+    #[serde(default)]
+    pub base_color_texture: Option<String>,
+    /// Override alpha blending mode.
+    #[serde(default)]
+    pub alpha_mode: Option<AlphaModeDef>,
+    /// Override backface culling (true = render both sides).
+    #[serde(default)]
+    pub double_sided: Option<bool>,
 }
 
 /// Per-model configuration: collision + mesh material assignments.
@@ -41,7 +83,7 @@ pub struct PropDef {
 /// assignments, reading only collision types.
 #[derive(Asset, TypePath, Deserialize, Debug)]
 pub struct PropsConfig {
-    pub materials: HashMap<String, FoliageMaterialDef>,
+    pub materials: HashMap<String, MaterialDef>,
     pub props: HashMap<String, PropDef>,
 }
 

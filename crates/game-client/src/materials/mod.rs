@@ -4,7 +4,10 @@ use std::collections::HashMap;
 
 use bevy::prelude::*;
 use bevy_common_assets::ron::RonAssetPlugin;
-use game_core::props::{FoliageMaterialDef, PropsConfig, PropsConfigHandle};
+use game_core::props::{
+    AlphaModeDef, FoliageMaterialDef, MaterialDef, PropsConfig, PropsConfigHandle,
+    StandardMaterialDef,
+};
 
 use foliage::{FoliageExtension, FoliageMaterial};
 
@@ -15,30 +18,43 @@ impl Plugin for MaterialsPlugin {
         app.add_plugins(MaterialPlugin::<FoliageMaterial>::default());
         app.add_plugins(RonAssetPlugin::<PropsConfig>::new(&["props.ron"]));
         app.add_systems(Startup, load_props_config);
-        app.add_systems(Update, (build_material_map, apply_foliage_material).chain());
+        app.add_systems(Update, (build_material_map, apply_materials).chain());
     }
 }
 
-/// Pre-built map from mesh base name to foliage material handle.
+/// Resolved material assignment for a mesh, ready to apply.
+#[derive(Clone)]
+enum ResolvedMaterial {
+    Foliage {
+        extension: FoliageExtension,
+        texture: Option<Handle<Image>>,
+    },
+    Standard {
+        def: StandardMaterialDef,
+        texture: Option<Handle<Image>>,
+    },
+}
+
+/// Maps mesh base name to its resolved material assignment.
 #[derive(Resource)]
-struct FoliageMaterialMap(HashMap<String, Handle<FoliageMaterial>>);
+struct MaterialMap(HashMap<String, ResolvedMaterial>);
 
 /// Marker indicating this entity has already been processed for material replacement.
 #[derive(Component)]
-struct FoliageMaterialApplied;
+struct MaterialApplied;
 
 fn load_props_config(mut commands: Commands, assets: Res<AssetServer>) {
     let handle = assets.load::<PropsConfig>("world/props.ron");
     commands.insert_resource(PropsConfigHandle(handle));
 }
 
-/// Once the config is loaded, pre-create all material handles and build the lookup map.
+/// Once the config is loaded, resolve all mesh name → material assignments.
 fn build_material_map(
     mut commands: Commands,
     config_handle: Option<Res<PropsConfigHandle>>,
     config_assets: Res<Assets<PropsConfig>>,
-    mut foliage_materials: ResMut<Assets<FoliageMaterial>>,
-    existing_map: Option<Res<FoliageMaterialMap>>,
+    existing_map: Option<Res<MaterialMap>>,
+    assets: Res<AssetServer>,
 ) {
     if existing_map.is_some() {
         return;
@@ -49,27 +65,34 @@ fn build_material_map(
         return;
     };
 
-    // Create one material handle per unique material definition
-    let mut material_handles: HashMap<String, Handle<FoliageMaterial>> = HashMap::new();
+    // Resolve each material definition into its ready-to-apply form
+    let mut resolved: HashMap<String, ResolvedMaterial> = HashMap::new();
     for (mat_name, mat_def) in &config.materials {
-        let extension = foliage_extension_from_def(mat_def);
-        let handle = foliage_materials.add(FoliageMaterial {
-            base: StandardMaterial {
-                alpha_mode: AlphaMode::Mask(0.5),
-                cull_mode: None,
-                ..default()
+        let r = match mat_def {
+            MaterialDef::Foliage(def) => ResolvedMaterial::Foliage {
+                extension: foliage_extension_from_def(def),
+                texture: def
+                    .base_color_texture
+                    .as_ref()
+                    .map(|p| assets.load::<Image>(p.clone())),
             },
-            extension,
-        });
-        material_handles.insert(mat_name.clone(), handle);
+            MaterialDef::Standard(def) => ResolvedMaterial::Standard {
+                def: def.clone(),
+                texture: def
+                    .base_color_texture
+                    .as_ref()
+                    .map(|p| assets.load::<Image>(p.clone())),
+            },
+        };
+        resolved.insert(mat_name.clone(), r);
     }
 
-    // Build the mesh name → material handle map from all prop mesh assignments
+    // Build mesh name → resolved material map from all prop mesh assignments
     let mut map = HashMap::new();
     for prop_def in config.props.values() {
         for (mesh_name, mat_name) in &prop_def.meshes {
-            if let Some(handle) = material_handles.get(mat_name) {
-                map.insert(mesh_name.clone(), handle.clone());
+            if let Some(r) = resolved.get(mat_name) {
+                map.insert(mesh_name.clone(), r.clone());
             } else {
                 tracing::warn!(
                     mesh = %mesh_name,
@@ -81,41 +104,113 @@ fn build_material_map(
     }
 
     tracing::info!(
-        materials = material_handles.len(),
+        materials = resolved.len(),
         mesh_assignments = map.len(),
-        "foliage material map built"
+        "material map built"
     );
-    commands.insert_resource(FoliageMaterialMap(map));
+    commands.insert_resource(MaterialMap(map));
 }
 
-/// Identifies foliage mesh entities by looking up their parent name in the
-/// material map, and replaces their `StandardMaterial` with the configured
-/// `FoliageMaterial`.
-fn apply_foliage_material(
+/// Identifies mesh entities by looking up their parent name in the material map,
+/// then applies the configured material — either replacing with a FoliageMaterial
+/// or patching the existing StandardMaterial.
+fn apply_materials(
     mut commands: Commands,
     mesh_query: Query<
         (Entity, &ChildOf, &MeshMaterial3d<StandardMaterial>),
-        Without<FoliageMaterialApplied>,
+        Without<MaterialApplied>,
     >,
     name_query: Query<&Name>,
-    material_map: Option<Res<FoliageMaterialMap>>,
+    material_map: Option<Res<MaterialMap>>,
+    mut standard_materials: ResMut<Assets<StandardMaterial>>,
+    mut foliage_materials: ResMut<Assets<FoliageMaterial>>,
+    mut foliage_cache: Local<HashMap<(AssetId<StandardMaterial>, String), Handle<FoliageMaterial>>>,
 ) {
     let Some(map) = material_map else { return };
 
-    for (entity, child_of, _) in &mesh_query {
+    for (entity, child_of, std_mat) in &mesh_query {
         let Ok(parent_name) = name_query.get(child_of.0) else {
             continue;
         };
 
         let base_name = strip_lod_suffix(parent_name.as_str());
-        let Some(handle) = map.0.get(base_name) else {
+        let Some(resolved) = map.0.get(base_name) else {
             continue;
         };
 
-        commands
-            .entity(entity)
-            .remove::<MeshMaterial3d<StandardMaterial>>()
-            .insert((MeshMaterial3d(handle.clone()), FoliageMaterialApplied));
+        match resolved {
+            ResolvedMaterial::Foliage { extension, texture } => {
+                let std_id = std_mat.0.id();
+                let cache_key = (std_id, base_name.to_string());
+
+                let foliage_handle = foliage_cache.entry(cache_key).or_insert_with(|| {
+                    let mut base = standard_materials
+                        .get(&std_mat.0)
+                        .cloned()
+                        .unwrap_or_default();
+                    base.cull_mode = None;
+                    if let Some(tex) = texture {
+                        base.base_color_texture = Some(tex.clone());
+                        base.alpha_mode = AlphaMode::Blend;
+                    }
+                    foliage_materials.add(FoliageMaterial {
+                        base,
+                        extension: extension.clone(),
+                    })
+                });
+
+                commands.entity(entity).remove::<MeshMaterial3d<StandardMaterial>>().insert((
+                    MeshMaterial3d(foliage_handle.clone()),
+                    MaterialApplied,
+                ));
+            }
+            ResolvedMaterial::Standard { def, texture } => {
+                if let Some(mat) = standard_materials.get_mut(&std_mat.0) {
+                    apply_standard_overrides(mat, def, texture);
+                }
+                commands.entity(entity).insert(MaterialApplied);
+            }
+        }
+    }
+}
+
+/// Applies config overrides to a StandardMaterial, preserving unset fields.
+fn apply_standard_overrides(
+    mat: &mut StandardMaterial,
+    def: &StandardMaterialDef,
+    texture: &Option<Handle<Image>>,
+) {
+    if let Some((r, g, b)) = def.base_color {
+        mat.base_color = Srgba::new(r, g, b, 1.0).into();
+    }
+    if let Some(v) = def.perceptual_roughness {
+        mat.perceptual_roughness = v;
+    }
+    if let Some(v) = def.metallic {
+        mat.metallic = v;
+    }
+    if let Some((r, g, b, intensity)) = def.emissive {
+        mat.emissive = LinearRgba::new(r, g, b, intensity);
+    }
+    if let Some(v) = def.reflectance {
+        mat.reflectance = v;
+    }
+    if let Some(tex) = texture {
+        mat.base_color_texture = Some(tex.clone());
+    }
+    if let Some(alpha) = def.alpha_mode {
+        mat.alpha_mode = match alpha {
+            AlphaModeDef::Opaque => AlphaMode::Opaque,
+            AlphaModeDef::Blend => AlphaMode::Blend,
+            AlphaModeDef::Mask(cutoff) => AlphaMode::Mask(cutoff),
+        };
+    }
+    if let Some(double_sided) = def.double_sided {
+        mat.cull_mode = if double_sided {
+            None
+        } else {
+            Some(bevy::render::render_resource::Face::Back)
+        };
     }
 }
 

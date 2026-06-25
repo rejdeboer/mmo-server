@@ -22,20 +22,14 @@ def main():
     parser = argparse.ArgumentParser(description="Batch convert FBX files to GLB using Blender")
     parser.add_argument("input_dir", help="Directory containing .fbx files")
     parser.add_argument("output_dir", help="Directory to write .glb files to")
-    parser.add_argument("texture_dir", nargs="?", default=None, help="Directory to search for missing textures")
     parser.add_argument("--blender", help="Path to the Blender executable", default=None)
     args = parser.parse_args()
 
     input_dir = os.path.abspath(args.input_dir)
     output_dir = os.path.abspath(args.output_dir)
-    texture_dir = os.path.abspath(args.texture_dir) if args.texture_dir else None
 
     if not os.path.isdir(input_dir):
         print(f"Error: input directory does not exist: {input_dir}", file=sys.stderr)
-        sys.exit(1)
-
-    if texture_dir and not os.path.isdir(texture_dir):
-        print(f"Error: texture directory does not exist: {texture_dir}", file=sys.stderr)
         sys.exit(1)
 
     blender = args.blender or find_blender()
@@ -74,7 +68,6 @@ def main():
                         "--",
                         fbx_file,
                         glb_file,
-                        texture_dir or "",
                     ],
                     check=True,
                     capture_output=True,

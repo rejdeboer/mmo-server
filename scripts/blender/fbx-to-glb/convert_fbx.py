@@ -9,7 +9,6 @@ argv = argv[argv.index("--") + 1:]
 
 fbx_filepath = argv[0]
 glb_filepath = argv[1]
-texture_dir = argv[2] if len(argv) > 2 and argv[2] else None
 
 # Reset Blender scene
 bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -17,26 +16,65 @@ bpy.ops.wm.read_factory_settings(use_empty=True)
 # Import .fbx
 bpy.ops.import_scene.fbx(filepath=fbx_filepath)
 
-# Resolve missing textures by searching the texture directory (or FBX directory)
-search_dir = texture_dir or os.path.dirname(fbx_filepath)
+# Resolve missing textures by searching the FBX directory and its parent
+# (common for asset packs with FBX/ + Textures/ as siblings).
+# If a texture can't be found by its original basename, fall back to the
+# pack's main texture atlas (many Synty props UV-map to a shared atlas).
+search_dirs = [os.path.dirname(fbx_filepath)]
+fbx_parent = os.path.dirname(search_dirs[0])
+if fbx_parent != search_dirs[0]:
+    search_dirs.append(fbx_parent)
+
+# Detect the main texture atlas (largest PNG in the Textures root)
+fallback_texture = None
+textures_dir = os.path.join(fbx_parent, "Textures")
+if os.path.isdir(textures_dir):
+    best_size = 0
+    for f in os.listdir(textures_dir):
+        if not f.lower().endswith(".png"):
+            continue
+        fp = os.path.join(textures_dir, f)
+        sz = os.path.getsize(fp)
+        if sz > best_size:
+            best_size = sz
+            fallback_texture = fp
+
 for img in bpy.data.images:
+    if img.packed_file is not None:
+        continue
     if not img.filepath:
         continue
     if os.path.isfile(bpy.path.abspath(img.filepath)):
         continue
-    basename = os.path.basename(img.filepath).lower()
-    for root, dirs, files in os.walk(search_dir):
-        for f in files:
-            if f.lower() == basename:
-                img.filepath = os.path.join(root, f)
-                img.reload()
+    # Extract basename, handling embedded Windows paths in FBX references
+    raw_path = img.filepath.replace("\\", "/")
+    basename = raw_path.rsplit("/", 1)[-1].lower()
+    found = False
+    for sd in search_dirs:
+        if found:
+            break
+        for root, dirs, files in os.walk(sd):
+            for f in files:
+                if f.lower() == basename:
+                    img.filepath = os.path.join(root, f)
+                    img.reload()
+                    found = True
+                    break
+            if found:
                 break
-        else:
-            continue
-        break
+    if not found and fallback_texture:
+        print(f"INFO: Texture '{basename}' not found, using atlas fallback")
+        img.filepath = fallback_texture
+        img.reload()
 
-# Pack all images so they get embedded in the GLB
-bpy.ops.file.pack_all()
+# Strip all texture data from materials before export.
+# Textures are loaded at runtime from config (props.ron) via the AssetServer,
+# which deduplicates by path. Embedding textures in GLBs would cause VRAM
+# duplication since many models share the same atlas/grass textures.
+# We keep the material node graph structure (preserving alpha_mode, doubleSided)
+# but remove the actual image data.
+for img in list(bpy.data.images):
+    bpy.data.images.remove(img)
 
 # Preserve volume on armature modifiers
 for obj in bpy.context.scene.objects:
