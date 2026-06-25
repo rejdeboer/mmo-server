@@ -40,7 +40,6 @@
 
 - [ ] Show accept/decline UI for party invites (`game-client/src/party/mod.rs`)
 - [ ] Proper logout — transition to character select and disconnect cleanly instead of `std::process::exit(0)` (`game-client/src/world/player_frame.rs`)
-- [ ] Fix hardcoded world scene offset — `Transform::from_xyz(0., -3., 0.)` is a hack to match the Godot export (`game-client/src/world/scene.rs`)
 - [ ] Open options/escape menu when pressing Escape with no active auto-attack (`game-client/src/combat/auto_attack.rs`)
 - [ ] Show loot notification UI on kill rewards (`game-client/src/networking/receive.rs`)
 

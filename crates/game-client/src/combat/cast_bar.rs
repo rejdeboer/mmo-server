@@ -15,7 +15,7 @@ pub struct ActiveCast {
 pub struct CastBar;
 
 #[derive(Component)]
-pub(crate) struct CastBarFill;
+pub struct CastBarFill;
 
 #[derive(Component)]
 pub(crate) struct CastBarText;
