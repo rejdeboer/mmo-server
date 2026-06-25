@@ -150,29 +150,29 @@ fn fragment(
     // Build standard PBR input from base StandardMaterial
     var pbr_input = pbr_input_from_standard_material(in, is_front);
 
-    // Override base_color with foliage noise coloring using vertex colors
-#ifdef VERTEX_COLORS
+    // Determine leaf vs trunk from vertex color B channel.
+    // The FBX asset stores B > 0.5 for leaf vertices and B = 0 for trunk.
     let world_xz = in.world_position.xz;
     let small_freq = foliage.params.x;
     let large_freq = foliage.params.y;
     let noise_small = noise2d(world_xz * small_freq);
     let noise_large = noise2d(world_xz * large_freq);
 
-    let vertex_b = in.color.b;
-
-    if vertex_b > 0.5 {
-        // Leaf: mix between leaf colors using noise
-        var color = mix(foliage.leaf_noise_color.rgb, foliage.leaf_base_color.rgb, noise_small);
-        color = mix(color, foliage.leaf_large_noise_color.rgb, noise_large * 0.4);
-        pbr_input.material.base_color = vec4<f32>(color, pbr_input.material.base_color.a);
-    } else {
-        // Trunk: mix between trunk colors using noise
-        let color = mix(foliage.trunk_noise_color.rgb, foliage.trunk_base_color.rgb, noise_small);
-        pbr_input.material.base_color = vec4<f32>(color, pbr_input.material.base_color.a);
-    }
+#ifdef VERTEX_COLORS
+    let leaf_factor = step(0.5, in.color.b);
+#else
+    let leaf_factor = 1.0;
 #endif
 
-    // Alpha discard (respects base material alpha mode)
+    var leaf_color = mix(foliage.leaf_noise_color.rgb, foliage.leaf_base_color.rgb, noise_small);
+    leaf_color = mix(leaf_color, foliage.leaf_large_noise_color.rgb, noise_large * 0.4);
+
+    let trunk_color = mix(foliage.trunk_noise_color.rgb, foliage.trunk_base_color.rgb, noise_small);
+
+    let final_color = mix(trunk_color, leaf_color, leaf_factor);
+    pbr_input.material.base_color = vec4<f32>(final_color, pbr_input.material.base_color.a);
+
+    // Alpha discard
     pbr_input.material.base_color = alpha_discard(pbr_input.material, pbr_input.material.base_color);
 
 #ifdef PREPASS_PIPELINE

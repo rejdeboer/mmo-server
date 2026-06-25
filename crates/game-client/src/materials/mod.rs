@@ -37,21 +37,24 @@ fn apply_foliage_material(
             continue;
         };
 
-        if !is_foliage_name(parent_name.as_str()) {
+        let name = parent_name.as_str();
+        if !is_foliage_name(name) {
             continue;
         }
 
-        // Build extended material: keep the base StandardMaterial for alpha/textures,
-        // add foliage extension for noise coloring
-        let base = standard_materials
-            .get(&standard_handle.0)
-            .cloned()
-            .unwrap_or_default();
+        let Some(base) = standard_materials.get(&standard_handle.0).cloned() else {
+            continue;
+        };
 
-        let handle = foliage_materials.add(FoliageMaterial {
-            base,
-            extension: FoliageExtension::default(),
-        });
+        // Branches mesh: B=0, gets brown trunk coloring with wind.
+        // Tree/bush mesh: B>0.5 = leaf (green), B=0 = trunk (brown).
+        let extension = if is_branch_name(name) {
+            FoliageExtension::branches()
+        } else {
+            FoliageExtension::default()
+        };
+
+        let handle = foliage_materials.add(FoliageMaterial { base, extension });
 
         commands
             .entity(entity)
@@ -63,8 +66,10 @@ fn apply_foliage_material(
 /// Returns true if the entity name matches foliage prop naming conventions.
 ///
 /// Synty PolygonNatureBiomes foliage props follow patterns like:
-/// - `SM_Env_Tree_*` (trees)
+/// - `SM_Env_Tree_*` (trees — mesh contains both trunk and leaves)
+/// - `SM_Env_Tree_*_Branches_*` (separate branch meshes)
 /// - `SM_Env_Bush_*` (bushes)
+/// - `SM_Env_Grass_*` (grass clumps/patches)
 /// - `SM_Env_Hedge_*` (hedges)
 /// - `SM_Env_Plant_*` (plants)
 /// - `SM_Env_Vine_*` (vines)
@@ -72,7 +77,17 @@ fn is_foliage_name(name: &str) -> bool {
     let upper = name.to_uppercase();
     upper.contains("_TREE_")
         || upper.contains("_BUSH_")
+        || upper.contains("_GRASS_")
         || upper.contains("_HEDGE_")
         || upper.contains("_PLANT_")
         || upper.contains("_VINE_")
+}
+
+/// Returns true if the name indicates a branch-only mesh.
+///
+/// Branch meshes are entirely foliage (all vertices sway) but colored
+/// light brown rather than green.
+fn is_branch_name(name: &str) -> bool {
+    let upper = name.to_uppercase();
+    upper.contains("BRANCH")
 }

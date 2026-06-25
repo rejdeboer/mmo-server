@@ -44,7 +44,7 @@ def main():
         sys.exit(1)
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    convert_script = os.path.join(script_dir, "convert_script.py")
+    convert_script = os.path.join(script_dir, "convert_fbx.py")
 
     os.makedirs(output_dir, exist_ok=True)
 
