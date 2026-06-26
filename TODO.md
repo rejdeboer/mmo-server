@@ -42,6 +42,7 @@
 - [ ] Proper logout — transition to character select and disconnect cleanly instead of `std::process::exit(0)` (`game-client/src/world/player_frame.rs`)
 - [ ] Open options/escape menu when pressing Escape with no active auto-attack (`game-client/src/combat/auto_attack.rs`)
 - [ ] Show loot notification UI on kill rewards (`game-client/src/networking/receive.rs`)
+- [ ] Character models and animations
 
 ## Refactoring
 - Game client is currently pretty hacky. many functions have too much responsibility. Should clean it up using bevy messages / events.
